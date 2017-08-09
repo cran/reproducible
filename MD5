@@ -1,7 +1,7 @@
-f1c75ebc39d474f7acb90c421e40c58b *DESCRIPTION
+498f19fc7952e9109b0f69032dbbe352 *DESCRIPTION
 d8dddf246129f66e3533ef80940200e8 *NAMESPACE
-e7bb11133873fb81abe3489c9f78e2bd *NEWS.md
-9026329ecd3a988d002bb91a9a7f78cb *R/cache-helpers.R
+c3f7af3c35494dce75d55a5acca5f382 *NEWS.md
+bf1eeeca9b1b3277010c60bc09183aa0 *R/cache-helpers.R
 35eda9fc14269b3ee93e5e120a280eed *R/cache-tools.R
 6fd222e2396eef7d5bed822f77b2d053 *R/cache.R
 b5274cf125d7c9a9cb4e9172c99b69bc *R/consistentPaths.R
@@ -37,7 +37,7 @@ b4dbe20539d7ac9ca1e7c5a2a5d3b12b *man/robustDigest.Rd
 adc190fc967667f184f31c37c6dd6179 *man/tagsByClass.Rd
 2b41729615c25364cc74cd10e13bc193 *man/viewCache.Rd
 22c1619e69411c92fd520df0a53f8d8d *tests/test-all.R
-ebc62b801797dfe09b4d3d79a7c035c9 *tests/testthat/test-cache.R
+dc590b6857441063e8d7db5ca812f0b4 *tests/testthat/test-cache.R
 427e9265ee4fb3d7bc6fe6ec1aa2654e *tests/testthat/test-cacheArguments.R
 a203161f0e071bbb5f2d4735d2e65da7 *tests/testthat/test-checkPath.R
 f98f87608efae3190272effc308b1736 *tests/testthat/test-copy.R
