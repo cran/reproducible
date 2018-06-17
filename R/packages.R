@@ -27,7 +27,7 @@ if (getRversion() >= "3.1.0") {
 #' \code{.libPaths()}, i.e., not the \code{libPath} provided.
 #' This hidden file will be used if a user runs \code{pkgSnapshot},
 #' enabling a new user to rebuild the entire dependency chain, without having to
-#' install all packages in an isolated directory (as does packrat).
+#' install all packages in an isolated directory (as does \pkg{packrat}).
 #' This will save potentially a lot of time and disk space, and yet maintain reproducibility.
 #' \emph{NOTE}: since there is only one hidden file in a \code{libPath}, any call to
 #' \code{pkgSnapshot} will make a snapshot of the most recent call to \code{Require}.
@@ -77,14 +77,13 @@ if (getRversion() >= "3.1.0") {
 #'
 #' @examples
 #' \dontrun{
-#'
 #' # simple usage, like conditional install.packages then library
 #' Require("stats") # analogous to require(stats), but slower because it checks for
 #'                  #   pkg dependencies, and installs them, if missing
 #' tempPkgFolder <- file.path(tempdir(), "Packages")
 #'
-#' # use standAlone, means it will put it in libPath, even if it already exists in another local
-#' #   library (e.g., personal library)
+#' # use standAlone, means it will put it in libPath, even if it already exists
+#' #   in another local library (e.g., personal library)
 #' Require("crayon", libPath = tempPkgFolder, standAlone = TRUE)
 #'
 #' # make a package version snapshot
@@ -111,6 +110,7 @@ if (getRversion() >= "3.1.0") {
 #' Require(c("cranlogs", "covr"), libPath = tempPkgFolder)
 #'
 #' }
+#'
 Require <- function(packages, packageVersionFile, libPath = .libPaths()[1], # nolint
                     install_githubArgs = list(),       # nolint
                     install.packagesArgs = list(), standAlone = FALSE,      # nolint
@@ -123,7 +123,6 @@ Require <- function(packages, packageVersionFile, libPath = .libPaths()[1], # no
     if (!exists(subpackages, envir = parent.frame())) # if it does exist, then it is not a name, but an object
       packages <- subpackages
   }
-
 
   if (!is.character(packages)) {
     stop("packages should be a character vector or a name")
@@ -249,11 +248,10 @@ newLibPaths <- function(libPath) {
   invisible(.libPaths())
 }
 
-
-#' Determine versions all installed pacakges
+#' Determine versions all installed packages
 #'
 #' This code is adapted from \code{\link[versions]{installed.versions}},
-#' but uses an \code{Rcpp} alternative to readLines for speed.
+#' but uses an \code{Rcpp} alternative to \code{readLines} for speed.
 #' It will be anywhere from 2x to 10x faster than the
 #' \code{\link[versions]{installed.versions}} function.
 #' This is also many times faster than \code{utils::installed.packages},
@@ -455,9 +453,10 @@ pkgDepRaw <- function(packages, libPath, recursive = TRUE, depends = TRUE,
 #' Determine package dependencies, first looking at local filesystem
 #'
 #' This is intended to replace \code{\link[tools]{package_dependencies}} or
-#' \code{pkgDep} in the miniCRAN package, but with modfications for speed. It will first check
-#' local package directory(ies) in \code{libPath}, and it if the function cannont find
-#' the packages there, then it will use \code{\link[tools]{package_dependencies}}.
+#' \code{pkgDep} in the \pkg{miniCRAN} package, but with modifications for speed.
+#' It will first check local package directories in \code{libPath}, and it if
+#' the function cannot find the packages there, then it will use
+#' \code{\link[tools]{package_dependencies}}.
 #'
 #' @note \code{package_dependencies} and \code{pkgDep} will differ under the following
 #' circumstances:
@@ -475,11 +474,12 @@ pkgDepRaw <- function(packages, libPath, recursive = TRUE, depends = TRUE,
 #' @param linkingTo Logical. Include packages listed in "LinkingTo". Default TRUE.
 #' @param recursive Logical. Should dependencies of dependencies be searched, recursively.
 #'                  NOTE Dependencies of suggests will not be recursive. Default TRUE.
-#' @examples
-#' pkgDep("crayon")
-#' @rdname pkgDep
 #' @export
 #' @importFrom memoise memoise
+#' @rdname pkgDep
+#'
+#' @examples
+#' pkgDep("crayon")
 pkgDep <- memoise(pkgDepRaw)
 
 pkgDep2 <- memoise(pkgDepRaw)
@@ -794,17 +794,17 @@ installVersions <- function(gitHubPackages, packageVersionFile = ".packageVersio
 #'
 #' @inheritParams Require
 #' @param repos The remote repository (e.g., a CRAN mirror), passed to \code{install.packages},
-#' @param githubPkgs Character vector of github repositoriess and packages, in the
+#' @param githubPkgs Character vector of github repositories and packages, in the
 #'                   form \code{repository/package@branch}, with branch being optional.
 #' @param githubPkgNames Character vector of the package names, i.e., just the R package name.
 #' @param nonLibPathPkgs Character vector of all installed packages that are in \code{.libPaths},
 #'                       but not in \code{libPath}. This would normally include a listing of
 #'                       base packages, but may also include other library paths if
 #'                       \code{standAlone} if \code{FALSE}
+#' @importFrom data.table data.table setDT setnames
+#' @importFrom memoise forget is.memoised memoise
+#' @importFrom utils assignInMyNamespace available.packages install.packages installed.packages read.table
 #' @importFrom versions install.versions
-#' @importFrom memoise is.memoised memoise forget
-#' @importFrom data.table setDT data.table setnames
-#' @importFrom utils read.table available.packages installed.packages install.packages assignInMyNamespace
 #' @rdname installPackages
 #' @examples
 #' \dontrun{

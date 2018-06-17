@@ -1,5 +1,7 @@
 #' Pipe that is Cache-aware, being deprecated
 #'
+#' STILL EXPERIMENTAL. THIS MAY NOT WORK AS ANTICIPATED.
+#'
 #' This pipe will likely be deprecated, as it masks
 #' other pipes in the R ecosystem. This is fine, except to work,
 #' the reproducible package must be guaranteed to be first
@@ -7,8 +9,8 @@
 #' see the \code{\%C\%} function ?pipe
 #'
 #' A pipe that works with Cache. The code for this is based on a verbatim copy from
-#' \url{https://github.com/tidyverse/magrittr/blob/master/R/pipe.R} on Sep 8, 2017,
-#' based on commit 81c2e2410ebb7c560a2b4a8384ef5c20946373c3, with enhancements
+#' \url{https://github.com/tidyverse/magrittr/blob/master/R/pipe.R} on Sept 8, 2017,
+#' based on commit \code{81c2e2410ebb7c560a2b4a8384ef5c20946373c3}, with enhancements
 #' to make it Cache-aware.
 #' This version is a drop-in replacement for \code{\link[magrittr]{\%>\%}} and will
 #' work identically when there is no Cache. To use this, simply add \code{\%>\% Cache()}
@@ -21,7 +23,7 @@
 #' type of caching. Here, if there is a call to \code{Cache} in the pipe sequence,
 #' the entire pipe chain before the call to \code{Cache} will have its arguments
 #' examined and digested. This digest is compared to the cache repository database.
-#' If there is an identical pipe sequence in the Cache respository, then it will return
+#' If there is an identical pipe sequence in the Cache repository, then it will return
 #' the final result of the entire pipe up to the Cache call. If there is no
 #' identical copy in the cache repository, then it will evaluate the pipe sequence as per
 #' normal, caching the return value at the point of the \code{Cache} call
@@ -36,8 +38,10 @@
 #' @seealso pipe
 #' @rdname pipe2
 #' @examples
+#' \dontrun{
 #' tmpdir <- file.path(tempdir(), "testCache")
 #' checkPath(tmpdir, create = TRUE)
+#' try(detach("package:magrittr", unload = TRUE)) # magrittr, if loaded, gives an error below
 #' a <- rnorm(10, 16) %>% mean() %>% prod(., 6)
 #' b <- rnorm(10, 16) %>% mean() %>% prod(., 6) %>% Cache(cacheRepo = tmpdir)
 #' d <- rnorm(10, 16) %>% mean() %>% prod(., 6) %>% Cache(cacheRepo = tmpdir)
@@ -53,7 +57,7 @@
 #' all.equal(f3, f4) # different because the runif is after the Cache
 #'
 #' unlink(tmpdir, recursive = TRUE)
-#'
+#' }
 `%>%` <- function(lhs, rhs) {
   # magrittr code below
   parent <- parent.frame()
@@ -70,6 +74,7 @@
     freduce(value, `_function_list`)
   }), env, env), c("fseq", "function"))
   env[["freduce"]] <- freduce
+
   if (getFromNamespace("is_placeholder", ns = "magrittr")(lhs)) {
     env[["_fseq"]]
   } else {
@@ -125,8 +130,10 @@
 #################
 #' A cache-aware pipe that does not mask with \%>\%
 #'
+#' STILL EXPERIMENTAL. THIS MAY NOT WORK AS ANTICIPATED.
+#'
 #' This pipe can only be used at the start of a pipe chain, and must
-#' be preceeded by \code{Cache(...)} to allow other Cache arguments to be passed.
+#' be preceded by \code{Cache(...)} to allow other Cache arguments to be passed.
 #'
 #' This will take the input arguments of the
 #' first function immediately following the \code{Cache() \%C\%} and the
@@ -138,6 +145,7 @@
 #' be cached for future use. The entire chain must be identical, therefore.
 #' The required usage should be straight forward to insert into existing code
 #' that uses pipes (\code{Cache() \%C\% ... remaining pipes}.
+#' \code{This is still experimental; use with care}.
 #'
 #' @rdname pipe
 #' @name pipe
@@ -148,12 +156,14 @@
 #' @aliases %C%
 #' @export
 #' @examples
+#'
+#' # dontrun{ # these can't be automatically run due to package conflicts with magrittr
 #' tmpdir <- file.path(tempdir(), "testCache")
 #' checkPath(tmpdir, create = TRUE)
 #' a <- rnorm(10, 16) %>%
 #'      mean() %>%
 #'      prod(., 6)
-#' b <- Cache(cacheRepo = tmpdir) %C%
+#' b <- Cache(cacheRepo = tmpdir) %C% # use of the %C% pipe!
 #'      rnorm(10, 16) %>%
 #'      mean() %>%
 #'      prod(., 6)
@@ -172,6 +182,7 @@
 #' all.equal(a,e) # different because the final function, prod, has a changed argument.
 #'
 #' unlink(tmpdir, recursive = TRUE)
+#' #}
 `%C%` <- function(lhs, rhs) {
   # adapted from magrittr code below
   parent <- parent.frame()
@@ -186,7 +197,7 @@
   whPipeCall <- unlist(lapply(mcs, function(elem) as.character(elem[[1]]) %in% c("%C%", "%>%")))
   # Take the first one, which will be one with the whole pipe sequence
   mc <- mcs[whPipeCall][[1]]
-  mc[[2]][[2]] <- parse(text = gsub(deparse(mc[[2]][[2]]), pattern = "%C%",
+  mc <- parse(text = gsub(deparse(mc), pattern = "%C%",
                                     replacement = "%>%"))[[1]]
   chain_parts <- getFromNamespace("split_chain", ns = "magrittr")(mc, env = env) # nolint
   pipes <- chain_parts[["pipes"]][-1]
@@ -200,7 +211,7 @@
   #   lhs[[1]] <- lhs[[1]][[1]]
   # }
 
-  env[["_function_list"]] <- lapply(1:length(rhss), function(i) {
+  env[["_function_list"]] <- lapply(seq(rhss), function(i) {
     getFromNamespace("wrap_function", ns = "magrittr")(rhss[[i]], pipes[[i]], parent)
   })
   env[["_fseq"]] <- `class<-`(eval(quote(function(value) {
@@ -235,4 +246,23 @@
       else invisible(result[["value"]])
     }
   }
+}
+
+#' The special assign operator \code{\%<\%} is equivalent to Cache. See examples at the end.
+#'
+#' @export
+#' @rdname cache
+#' @param lhs A name to assign to.
+#' @param rhs A function call
+#' @examples
+#' # Equivalent
+#' a <- Cache(rnorm, 1)
+#' b %<% rnorm(1)
+#'
+`%<%` <- function(lhs, rhs) {
+  lhsChar <- deparse(substitute(lhs))
+  mc <- match.call()["rhs"]
+  RHS <- as.list(mc)[[1]]
+  assign(lhsChar, do.call(Cache, as.list(RHS)), envir = parent.frame())
+  return(invisible(get(lhsChar, envir = parent.frame(), inherits = FALSE)))
 }

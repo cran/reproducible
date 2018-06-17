@@ -65,7 +65,7 @@ the packages and their dependencies, even if the version used is located in
 \code{.libPaths()}, i.e., not the \code{libPath} provided.
 This hidden file will be used if a user runs \code{pkgSnapshot},
 enabling a new user to rebuild the entire dependency chain, without having to
-install all packages in an isolated directory (as does packrat).
+install all packages in an isolated directory (as does \pkg{packrat}).
 This will save potentially a lot of time and disk space, and yet maintain reproducibility.
 \emph{NOTE}: since there is only one hidden file in a \code{libPath}, any call to
 \code{pkgSnapshot} will make a snapshot of the most recent call to \code{Require}.
@@ -88,14 +88,13 @@ element should be wiped, using \code{forget = TRUE}.
 }
 \examples{
 \dontrun{
-
 # simple usage, like conditional install.packages then library
 Require("stats") # analogous to require(stats), but slower because it checks for
                  #   pkg dependencies, and installs them, if missing
 tempPkgFolder <- file.path(tempdir(), "Packages")
 
-# use standAlone, means it will put it in libPath, even if it already exists in another local
-#   library (e.g., personal library)
+# use standAlone, means it will put it in libPath, even if it already exists
+#   in another local library (e.g., personal library)
 Require("crayon", libPath = tempPkgFolder, standAlone = TRUE)
 
 # make a package version snapshot
@@ -122,4 +121,5 @@ Require("crayon", packageVersionFile = packageVersionFile)
 Require(c("cranlogs", "covr"), libPath = tempPkgFolder)
 
 }
+
 }

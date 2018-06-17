@@ -35,6 +35,8 @@ setMethod(
 #'
 #' @param object Any R object.
 #' @param functionName A character string indicating the function name
+#' @param fromMemoise Logical. If \code{TRUE}, the message will be about
+#'        recovery from memoised copy
 #'
 #' @author Eliot McIntire
 #' @export
@@ -43,7 +45,8 @@ setMethod(
 #' a <- 1
 #' .cacheMessage(a, "mean")
 #'
-setGeneric(".cacheMessage", function(object, functionName) {
+setGeneric(".cacheMessage", function(object, functionName,
+                                     fromMemoise = getOption("reproducible.useMemoise", TRUE)) {
   standardGeneric(".cacheMessage")
 })
 
@@ -52,9 +55,18 @@ setGeneric(".cacheMessage", function(object, functionName) {
 setMethod(
   ".cacheMessage",
   signature = "ANY",
-  definition = function(object, functionName) {
-    message(crayon::blue("  loading cached result from previous ", functionName, " call.",
-                         sep = ""))
+  definition = function(object, functionName,
+                        fromMemoise) {
+    if (isTRUE(fromMemoise)) {
+      message(crayon::blue("  loading memoised result from previous ", functionName, " call.",
+                           sep = ""))
+    } else if (!is.na(fromMemoise)){
+      message(crayon::blue("  loading cached result from previous ", functionName, " call, ",
+                           "adding to memoised copy", sep = ""))
+    } else {
+      message(crayon::blue("  loading cached result from previous ", functionName, " call.",
+                           sep = ""))
+    }
 })
 
 ################################################################################
@@ -193,10 +205,15 @@ setMethod(
   signature = "ANY",
   definition = function(object, create) {
     cacheRepo <- tryCatch(checkPath(object, create), error = function(x) {
+      cacheRepo <- if (nzchar(getOption("reproducible.cachePath"))) {
+        message("No cacheRepo supplied. Using value in getOption('reproducible.cachePath')")
+        getOption("reproducible.cachePath", tempdir())
+      } else {
         message("No cacheRepo supplied. Using tempdir()")
         tempdir()
-      })
-
+      }
+      checkPath(path = cacheRepo, create = create)
+    })
 })
 
 ################################################################################
@@ -388,7 +405,7 @@ setClass("Path", slots = c(.Data = "character"), contains = "character",
 #' to detect a candidate for recovery from the cache.
 #' Paths, are different. While they are character strings, there are many ways to
 #' write the same path. Examples of identical meaning, but different character strings are:
-#' path exanding of \code{~} vs. not, double back slash vs. single forward slash,
+#' path expanding of \code{~} vs. not, double back slash vs. single forward slash,
 #' relative path vs. absolute path.
 #' All of these should be assessed for their actual file or directory location,
 #' NOT their character string. By converting all character string that are actual
@@ -396,6 +413,8 @@ setClass("Path", slots = c(.Data = "character"), contains = "character",
 #' the location, NOT the character string representation.
 #'
 #' @param obj A character string to convert to a \code{Path}.
+#' @param nParentDirs A numeric indicating the number of parent directories starting
+#'                    from basename(obj) = 0 to keep for the digest
 #'
 #' @export
 #' @rdname Path-class
@@ -407,33 +426,36 @@ setClass("Path", slots = c(.Data = "character"), contains = "character",
 #' is(tmpf, "Path")     ## FALSE
 #' is(tmpfPath, "Path") ## TRUE
 #'
-asPath <- function(obj) {
+asPath <- function(obj, nParentDirs = 0) {
   UseMethod("asPath", obj)
 }
 
 #' @export
 #' @importFrom methods is
 #' @rdname Path-class
-asPath.character <- function(obj) {  # nolint
+asPath.character <- function(obj, nParentDirs = 0) {  # nolint
   class(obj) <- c("Path", is(obj))
+  attr(obj, "nParentDirs") <- nParentDirs
   return(obj)
 }
 
+#' If using \code{as("string", "Path")}, there is no option to pass \code{nParentDirs}.
+#' So, using \code{asPath} directly (e.g., \code{asPath("string", 0))}) is preferred.
 #' @export
 #' @importFrom methods new
 #' @rdname Path-class
 #' @name asPath
 setAs(from = "character", to = "Path", function(from) {
-  new("Path", from)
+  asPath(from, 0)
 })
 
 ################################################################################
 #' Clear erroneous archivist artifacts
 #'
 #' Stub artifacts can result from several causes. The most common being
-#' erroneous removal of a file in the sqlite database. This can be caused
+#' erroneous removal of a file in the SQLite database. This can be caused
 #' sometimes if an archive object is being saved multiple times by multiple
-#' threads. This function will clear entries in the sqlite database which
+#' threads. This function will clear entries in the SQLite database which
 #' have no actual file with data.
 #'
 #' @return Invoked for its side effect on the \code{repoDir}.
@@ -534,13 +556,17 @@ setMethod(
   isRasterLayer <- TRUE
   isStack <- is(obj, "RasterStack")
   repoDir <- checkPath(repoDir, create = TRUE)
-  isRepo <- if (!all(c("backpack.db", "gallery") %in% list.files(repoDir))) {
-    FALSE
-  } else {
-    TRUE
-  }
+  isRepo <- all(c("backpack.db", "gallery") %in% list.files(repoDir))
 
-  if (!inMemory(obj)) {
+  if (inMemory(obj)) {
+    isFilebacked <- FALSE
+    if (is.factor(obj)) {
+      fileExt <- ".grd"
+    } else {
+      fileExt <- ".tif"
+    }
+    curFilename <- basename(tempfile(pattern = "raster", fileext = fileExt, tmpdir = ""))
+  } else {
     isFilebacked <- TRUE
     if (is(obj, "RasterLayer")) {
       curFilename <- normalizePath(filename(obj), winslash = "/", mustWork = FALSE)
@@ -549,14 +575,6 @@ setMethod(
         normalizePath(filename(x), winslash = "/", mustWork = FALSE)))
       curFilename <- unique(curFilenames)
     }
-  } else {
-    isFilebacked <- FALSE
-    if (is.factor(obj)) {
-      fileExt <- ".grd"
-    } else {
-      fileExt <- ".tif"
-    }
-    curFilename <- basename(tempfile(pattern = "raster", fileext = fileExt, tmpdir = ""))
   }
 
   if (any(!file.exists(curFilename)) & isFilebacked & isRasterLayer) {
@@ -566,15 +584,19 @@ setMethod(
         file.path(repoDir, splittedFilenames[[1]][[length(splittedFilenames[[1]])]]),
         winslash = "/", mustWork = FALSE)
     } else {
-      normalizePath(
-        file.path(repoDir, splittedFilenames),
-        winslash = "/", mustWork = FALSE)
+      splittedFilenames2 <- lapply(splittedFilenames, function(x) {
+        ifelse(length(x), x[length(x)], "")
+      })
+
+      normalizePath(file.path(repoDir, splittedFilenames2), winslash = "/", mustWork = FALSE)
     }
     if (any(!file.exists(trySaveFilename))) {
-      stop("The raster that is supposed to be on disk with this or these filename(s) ",
-           curFilename, " has been deleted. It must be recreated e.g.,",
-           "try showCache(userTags = \"writeRaster\"), examine that and possibly -- with",
-           "caution -- clearCache(userTags = \"writeRaster\")")
+      stop("The following rasters are supposed to be on disk but appear to have been deleted:\n",
+           paste("    ", curFilename, collapse = "\n"),
+           "\n\nThese files must be recreated, e.g., try:\n",
+           "  showCache(userTags = \"writeRaster\").\n",
+           "\nExamine that and possibly [with caution!]:\n",
+           "  reproducible::clearCache(userTags = \"writeRaster\")")
     } else {
       slot(slot(obj, "file"), "name") <- saveFilename <- curFilename <- trySaveFilename
     }
@@ -639,29 +661,27 @@ setMethod(
 }
 
 
-#' Copy a file using \code{Robocopy} on Windows and \code{rsync} on Linux/macOS
+#' Copy a file using \code{robocopy} on Windows and \code{rsync} on Linux/macOS
 #'
 #' This is replacement for \code{file.copy}, but for one file at a time.
-#' The additional feature is that it will use Robocopy (on Windows) or
-#' rsync on Linux or Mac, if they exist. It will default back to \code{file.copy}
-#' if none of these exists.
-#' This will generally copy a large file faster using \code{Robocopy} on Windows,
-#' and using \code{rsync} on macOS and Linux. In particular, if there is a possibility
-#' that the file already exists, then this function should be very fast as it
-#' will do "update only", i.e., nothing.
+#' The additional feature is that it will use \code{robocopy} (on Windows) or
+#' \code{rsync} on Linux or Mac, if they exist.
+#' It will default back to \code{file.copy} if none of these exists.
+#' If there is a possibility that the file already exists, then this function
+#' should be very fast as it will do "update only", i.e., nothing.
 #'
 #' @param from The source file.
 #'
 #' @param to The new file.
 #'
-#' @param useRobocopy For Windows, this will use a system call to \code{Robocopy}
+#' @param useRobocopy For Windows, this will use a system call to \code{robocopy}
 #'        which appears to be much faster than the internal \code{file.copy} function.
 #'        Uses \code{/MIR} flag. Default \code{TRUE}.
 #'
 #' @param overwrite Passed to \code{file.copy}
 #'
 #' @param delDestination Logical, whether the destination should have any files deleted,
-#' if they don't exist in the source. This is \code{/purge} for RoboCopy and --delete for
+#' if they don't exist in the source. This is \code{/purge} for robocopy and --delete for
 #' rsync.
 #'
 #' @param create Passed to \code{checkPath}.
@@ -744,24 +764,30 @@ copyFile <- function(from = NULL, to = NULL, useRobocopy = TRUE,
 
 #' @rdname cacheHelper
 #' @importFrom fastdigest fastdigest
+#' @importFrom methods slotNames
 #' @importFrom digest digest
 #' @importFrom raster res crs extent
-.digestRaster <- function(object, compareRasterFileLength, algo) {
+.digestRasterLayer <- function(object, length, algo, quick) {
+  # metadata -- only a few items of the long list because one thing (I don't recall)
+  #  doesn't cache consistently
+  sn <- slotNames(object@data)
+  sn <- sn[!(sn %in% c("min", "max", "haveminmax", "names", "isfactor",
+                       "dropped", "nlayers", "fromdisk", "inmemory", "offset", "gain"))]
+  dataSlotsToDigest <- lapply(sn, function(s) slot(object@data, s))
+  dig <- fastdigest(append(list(dim(object), res(object), crs(object),
+                         extent(object)), dataSlotsToDigest)) # don't include object@data -- these are volatile
   if (nzchar(object@file@name)) {
-    dig <- fastdigest(list(dim(object), res(object), crs(object),
-                           extent(object), object@data))
-    # if the Raster is on disk, has the first compareRasterFileLength characters;
-    if (endsWith(basename(object@file@name), suffix = ".grd"))
-      filename <- sub(object@file@name, pattern = ".grd$", replacement = ".gri")
-    else
-      filename <- object@file@name
-    dig <- fastdigest(
-      append(dig, digest::digest(file = filename,
-                                 length = compareRasterFileLength,
-                                 algo = algo)))
-  } else {
-    dig <- fastdigest(object)
+    # if the Raster is on disk, has the first length characters;
+    filename <- if (endsWith(basename(object@file@name), suffix = ".grd")) {
+      sub(object@file@name, pattern = ".grd$", replacement = ".gri")
+    } else {
+      object@file@name
+    }
+    # there is no good reason to use depth = 0, 1, or 2 or more -- but I think 2 is *more* reliable
+    dig2 <- .robustDigest(asPath(filename, 2), length = length, quick = quick, algo = algo)
+    dig <- c(dig, dig2)
   }
+  dig <- fastdigest(dig)
 }
 
 #' Recursive copying of nested environments, and other "hard to copy" objects
@@ -861,10 +887,10 @@ setMethod("Copy",
 ################################################################################
 #' Sort or order any named object with dotted names and underscores first
 #'
-#' Internal use only. This exists so Windows, *nux, Mac machines can have
+#' Internal use only. This exists so Windows, Linux, and Mac machines can have
 #' the same order after a sort. It will put dots and underscores first
-#' (with the sort key based on their second character, see examples. It also
-#' sorts lower case before upper case
+#' (with the sort key based on their second character, see examples.
+#' It also sorts lower case before upper case.
 #'
 #' @param obj  An arbitrary R object for which a \code{names} function
 #'              returns a character vector.
@@ -932,7 +958,7 @@ setMethod("Copy",
   obj
 }
 
-loadFromLocalRepoMem <- memoise::memoise(loadFromLocalRepo)
+# loadFromLocalRepoMem <- memoise::memoise(loadFromLocalRepo)
 
 
 .getOtherFnNamesAndTags <- function(scalls) {

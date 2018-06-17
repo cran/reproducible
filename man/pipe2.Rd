@@ -13,16 +13,18 @@ lhs \%>\% rhs
 \item{rhs}{A function call using the magrittr semantics.}
 }
 \description{
+STILL EXPERIMENTAL. THIS MAY NOT WORK AS ANTICIPATED.
+}
+\details{
 This pipe will likely be deprecated, as it masks
 other pipes in the R ecosystem. This is fine, except to work,
 the reproducible package must be guaranteed to be first
 on the search path, which is almost impossible in any realistic project. Please
 see the \code{\%C\%} function ?pipe
-}
-\details{
+
 A pipe that works with Cache. The code for this is based on a verbatim copy from
-\url{https://github.com/tidyverse/magrittr/blob/master/R/pipe.R} on Sep 8, 2017,
-based on commit 81c2e2410ebb7c560a2b4a8384ef5c20946373c3, with enhancements
+\url{https://github.com/tidyverse/magrittr/blob/master/R/pipe.R} on Sept 8, 2017,
+based on commit \code{81c2e2410ebb7c560a2b4a8384ef5c20946373c3}, with enhancements
 to make it Cache-aware.
 This version is a drop-in replacement for \code{\link[magrittr]{\%>\%}} and will
 work identically when there is no Cache. To use this, simply add \code{\%>\% Cache()}
@@ -35,15 +37,17 @@ pipe chain is evaluated one at a time, in sequence. This will not allow any usef
 type of caching. Here, if there is a call to \code{Cache} in the pipe sequence,
 the entire pipe chain before the call to \code{Cache} will have its arguments
 examined and digested. This digest is compared to the cache repository database.
-If there is an identical pipe sequence in the Cache respository, then it will return
+If there is an identical pipe sequence in the Cache repository, then it will return
 the final result of the entire pipe up to the Cache call. If there is no
 identical copy in the cache repository, then it will evaluate the pipe sequence as per
 normal, caching the return value at the point of the \code{Cache} call
 into the cache repository for later use.
 }
 \examples{
+\dontrun{
 tmpdir <- file.path(tempdir(), "testCache")
 checkPath(tmpdir, create = TRUE)
+try(detach("package:magrittr", unload = TRUE)) # magrittr, if loaded, gives an error below
 a <- rnorm(10, 16) \%>\% mean() \%>\% prod(., 6)
 b <- rnorm(10, 16) \%>\% mean() \%>\% prod(., 6) \%>\% Cache(cacheRepo = tmpdir)
 d <- rnorm(10, 16) \%>\% mean() \%>\% prod(., 6) \%>\% Cache(cacheRepo = tmpdir)
@@ -59,7 +63,7 @@ all.equal(f1, f2) # TRUE because the runif is before the Cache
 all.equal(f3, f4) # different because the runif is after the Cache
 
 unlink(tmpdir, recursive = TRUE)
-
+}
 }
 \seealso{
 pipe

@@ -8,16 +8,22 @@
 \alias{asPath}
 \title{Coerce a character string to a class "Path"}
 \usage{
-asPath(obj)
+asPath(obj, nParentDirs = 0)
 
-\method{asPath}{character}(obj)
+\method{asPath}{character}(obj, nParentDirs = 0)
 }
 \arguments{
 \item{obj}{A character string to convert to a \code{Path}.}
+
+\item{nParentDirs}{A numeric indicating the number of parent directories starting
+from basename(obj) = 0 to keep for the digest}
 }
 \description{
 Allows a user to specify that their character string is indeed a filepath.
 Thus, methods that require only a filepath can be dispatched correctly.
+
+If using \code{as("string", "Path")}, there is no option to pass \code{nParentDirs}.
+So, using \code{asPath} directly (e.g., \code{asPath("string", 0))}) is preferred.
 }
 \details{
 It is often difficult or impossible to know algorithmically whether a
@@ -33,7 +39,7 @@ digested verbatim, i.e., it must be an exact copy for the Cache mechanism
 to detect a candidate for recovery from the cache.
 Paths, are different. While they are character strings, there are many ways to
 write the same path. Examples of identical meaning, but different character strings are:
-path exanding of \code{~} vs. not, double back slash vs. single forward slash,
+path expanding of \code{~} vs. not, double back slash vs. single forward slash,
 relative path vs. absolute path.
 All of these should be assessed for their actual file or directory location,
 NOT their character string. By converting all character string that are actual
