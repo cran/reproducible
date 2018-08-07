@@ -1,6 +1,6 @@
-48c05972149853d301a42695c9257597 *DESCRIPTION
+01118375b54b5c062791897f53b5e326 *DESCRIPTION
 02dc8c6bb51b557510599331e2cf8e98 *NAMESPACE
-65b6f68938e2ca475aaa6974a0ee5a67 *NEWS.md
+273e765b53812e7bf7f30109254b92a1 *NEWS.md
 40174c2abaa1ef103075c6f5fa492bd1 *R/RcppExports.R
 1029c1a8f2a5a6f59cb57ea9c016e33f *R/cache-helpers.R
 e19e08ca8f14484d3090d30044d8b61d *R/cache-tools.R
@@ -27,7 +27,7 @@ cb5e7af7f0121b3eb79b94b83d935dca *README.md
 ead02eff907f149c7ac855cb8fd748a4 *inst/WORDLIST
 99402fcbdae6aa4f874c7160ca6c32d7 *inst/doc/Intro-to-Cache.R
 a8f10d1ecf6af1a2f39bba4d1cc70d34 *inst/doc/Intro-to-Cache.Rmd
-f7996aa0494e3309d34e89a00aa2f0f0 *inst/doc/Intro-to-Cache.html
+0dfdc60ad1c90ba313107a2977927ca9 *inst/doc/Intro-to-Cache.html
 0beca0a7a1defcb1730ed5b762653cd1 *inst/examples/example_Cache.R
 155d1ce2e63a3cd7171aca9e7e174276 *inst/examples/example_assessDataType.R
 cde20f69f6baadbba47f1554eda344dd *inst/examples/example_checkPath.R
@@ -108,7 +108,7 @@ b8f64eb16d77955f418a09ff7b603659 *man/writeOutputs.Rd
 22c1619e69411c92fd520df0a53f8d8d *tests/test-all.R
 5a4ff6f90ccdd12af57b8588434f5c18 *tests/testthat/helper-allEqual.R
 169d1aacfb52d6ff04b78c2e82a1b117 *tests/testthat/test-cache.R
-0afd417ec47d98d5925c18f7628a3800 *tests/testthat/test-cacheArguments.R
+0f15908bb4a96eccd522d8dd23e6b857 *tests/testthat/test-cacheArguments.R
 a203161f0e071bbb5f2d4735d2e65da7 *tests/testthat/test-checkPath.R
 cc6e7f6156b56b0f985ce4236c1a4d26 *tests/testthat/test-checksums.R
 ecf2b141db4c90d3b0e9a061123ae7de *tests/testthat/test-cluster.R
@@ -118,5 +118,5 @@ cd2082aea6c168d6e6f146eb63e548c1 *tests/testthat/test-examples.R
 0a49154131fd8c36f8c43ad8356ad1c1 *tests/testthat/test-gis.R
 2b7225a7c73551896a4160e278eb21f2 *tests/testthat/test-git.R
 331da6114c87fe00a64fded7ebb14b41 *tests/testthat/test-packages.R
-72fef0c61020874be36b2055958010b0 *tests/testthat/test-prepInputs.R
+2b8d2c15f98cabfa9f755570fc01f0ea *tests/testthat/test-prepInputs.R
 a8f10d1ecf6af1a2f39bba4d1cc70d34 *vignettes/Intro-to-Cache.Rmd

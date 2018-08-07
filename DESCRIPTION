@@ -11,8 +11,8 @@ Description: Collection of high-level, robust, machine- and OS-independent tools
     Some features are still under active development.
 URL: http://reproducible.predictiveecology.org,
         https://github.com/PredictiveEcology/reproducible
-Date: 2018-07-30
-Version: 0.2.2
+Date: 2018-08-07
+Version: 0.2.3
 Authors@R: c(
     person("Eliot J B", "McIntire", email = "eliot.mcintire@canada.ca",
     role = c("aut", "cre")),
@@ -44,11 +44,11 @@ Collate: 'RcppExports.R' 'cache-helpers.R' 'cache-tools.R'
         'preProcess.R' 'prepInputs.R' 'reproducible-package.R'
         'search.R' 'zzz.R'
 NeedsCompilation: yes
-Packaged: 2018-07-30 18:15:27 UTC; achubaty
+Packaged: 2018-08-07 17:06:01 UTC; achubaty
 Author: Eliot J B McIntire [aut, cre],
   Alex M Chubaty [aut],
   Her Majesty the Queen in Right of Canada, as represented by the
     Minister of Natural Resources Canada [cph]
 Maintainer: Eliot J B McIntire <eliot.mcintire@canada.ca>
 Repository: CRAN
-Date/Publication: 2018-08-01 08:30:03 UTC
+Date/Publication: 2018-08-07 18:40:02 UTC
