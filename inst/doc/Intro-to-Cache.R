@@ -5,7 +5,7 @@ library(reproducible)
 tmpDir <- file.path(tempdir(), "reproducible_examples", "Cache")
 checkPath(tmpDir, create = TRUE)
 
-ras <- raster(extent(0,1000,0,1000), vals = 1:1e6, res = 1)
+ras <- raster(extent(0, 1000, 0, 1000), vals = 1:1e6, res = 1)
 crs(ras) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +ellps=WGS84"
 
 newCRS <- "+init=epsg:4326 +proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
@@ -27,20 +27,19 @@ all.equal(map1, map3) # TRUE
 
 ## ------------------------------------------------------------------------
 library(raster)
-# magrittr, if loaded, gives an error below
-  try(detach("package:magrittr", unload = TRUE), silent = TRUE)
+library(magrittr)
 
-try(clearCache(tmpDir), silent = TRUE) # just to make sure it is clear
+try(clearCache(tmpDir, ask = FALSE), silent = TRUE) # just to make sure it is clear
 
 ranNumsA <- Cache(rnorm, 10, 16, cacheRepo = tmpDir)
 
 # All same
 ranNumsB <- Cache(rnorm, 10, 16, cacheRepo = tmpDir) # recovers cached copy
-ranNumsC <- rnorm(10, 16) %>% Cache(cacheRepo = tmpDir) # recovers cached copy
+ranNumsC <- Cache(cacheRepo = tmpDir) %C% rnorm(10, 16)  # recovers cached copy
 ranNumsD <- Cache(quote(rnorm(n = 10, 16)), cacheRepo = tmpDir) # recovers cached copy
 
 # Any minor change makes it different
-ranNumsE <- rnorm(10, 6) %>% Cache(cacheRepo = tmpDir) # different
+ranNumsE <- Cache(cacheRepo = tmpDir) %C% rnorm(10, 6) # different
 
 ## ----tags----------------------------------------------------------------
 ranNumsA <- Cache(rnorm, 4, cacheRepo = tmpDir, userTags = "objectName:a")
@@ -50,10 +49,10 @@ showCache(tmpDir, userTags = c("objectName"))
 showCache(tmpDir, userTags = c("^a$")) # regular expression ... "a" exactly
 showCache(tmpDir, userTags = c("runif")) # show only cached objects made during runif call
 
-clearCache(tmpDir, userTags = c("runif")) # remove only cached objects made during runif call
+clearCache(tmpDir, userTags = c("runif"), ask = FALSE) # remove only cached objects made during runif call
 showCache(tmpDir) # only those made during rnorm call
 
-clearCache(tmpDir)
+clearCache(tmpDir, ask = FALSE)
 
 ## ----accessed-tag--------------------------------------------------------
 ranNumsA <- Cache(rnorm, 4, cacheRepo = tmpDir, userTags = "objectName:a")
@@ -69,10 +68,10 @@ onlyRecentlyAccessed <- showCache(tmpDir, userTags = max(wholeCache[tagKey == "a
 # inverse join with 2 data.tables ... using: a[!b]
 # i.e., return all of wholeCache that was not recently accessed
 toRemove <- unique(wholeCache[!onlyRecentlyAccessed], by = "artifact")$artifact
-clearCache(tmpDir, toRemove) # remove ones not recently accessed
+clearCache(tmpDir, toRemove, ask = FALSE) # remove ones not recently accessed
 showCache(tmpDir) # still has more recently accessed
 
-clearCache(tmpDir)
+clearCache(tmpDir, ask = FALSE)
 
 
 ## ----keepCache-----------------------------------------------------------
@@ -81,13 +80,13 @@ ranNumsB <- Cache(runif, 4, cacheRepo = tmpDir, userTags = "objectName:b")
 
 # keep only those cached items from the last 24 hours
 oneDay <- 60 * 60 * 24
-keepCache(tmpDir, after = Sys.time() - oneDay)
+keepCache(tmpDir, after = Sys.time() - oneDay, ask = FALSE)
 
 # Keep all Cache items created with an rnorm() call
-keepCache(tmpDir, userTags = "rnorm")
+keepCache(tmpDir, userTags = "rnorm", ask = FALSE)
 
 # Remove all Cache items that happened within a rnorm() call
-clearCache(tmpDir, userTags = "rnorm")
+clearCache(tmpDir, userTags = "rnorm", ask = FALSE)
 
 showCache(tmpDir) ## empty
 
@@ -107,9 +106,9 @@ showCache(tmpDir, userTags = c("runif", "rnorm")) ## empty
 showCache(tmpDir, userTags = "runif|rnorm")
 
 # keep only objects that are either runif or rnorm ("or" search)
-keepCache(tmpDir, userTags = "runif|rnorm")
+keepCache(tmpDir, userTags = "runif|rnorm", ask = FALSE)
 
-clearCache(tmpDir)
+clearCache(tmpDir, ask = FALSE)
 
 ## ----expensive-computations----------------------------------------------
 ras <- raster(extent(0, 5, 0, 5), res = 1,
@@ -164,7 +163,7 @@ showCache(tmpdir2) # 1 function call
 
 # userTags get appended
 # all items have the outer tag propagate, plus inner ones only have inner ones
-clearCache(tmpdir1)
+clearCache(tmpdir1, ask = FALSE)
 outerTag <- "outerTag"
 innerTag <- "innerTag"
 inner <- function(mean) {

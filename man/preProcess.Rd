@@ -31,7 +31,7 @@ in subsequent calls to
 
 \item{archive}{Optional character string giving the path of an archive
 containing \code{targetFile}, or a vector giving a set of nested archives
-(e.g., \code{c("xxx.tar", "inner.zip")}). If there is/are (an) inner
+(e.g., \code{c("xxx.tar", "inner.zip", "inner.rar")}). If there is/are (an) inner
 archive(s), but they are unknown, the function will try all until it finds
 the \code{targetFile}. See table in \code{\link{preProcess}}.}
 
@@ -52,7 +52,7 @@ search for the file before attempting to download. Default for that option is
 \code{NULL} meaning do not search locally.}
 
 \item{fun}{Function or character string indicating the function to use to load
-\code{targetFile} into an \code{R} object, e.g., in form wtih package name:
+\code{targetFile} into an \code{R} object, e.g., in form with package name:
 \code{"raster::raster"}.}
 
 \item{dlFun}{Optional "download function" name, such as \code{"raster::getData"}, which does
