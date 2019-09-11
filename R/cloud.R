@@ -2,7 +2,7 @@ if (getRversion() >= "3.1.0") {
   utils::globalVariables(c("cacheId", "checksumsFilename", "checksumsID", "id"))
 }
 
-#' Check for presence of checkFolderID (for \code{Cache(useCloud)})
+#' Check for presence of \code{checkFolderID} (for \code{Cache(useCloud)})
 #'
 #' Will check for presence of a \code{cloudFolderID} and make a new one
 #' if one not present on googledrive, with a warning.
@@ -12,16 +12,17 @@ if (getRversion() >= "3.1.0") {
 #' @importFrom googledrive drive_mkdir
 checkAndMakeCloudFolderID <- function(cloudFolderID) {
   if (is.null(cloudFolderID)) {
-    retry(newDir <- drive_mkdir("testFolder"))
+    retry({newDir <- drive_mkdir("testFolder")})
     cloudFolderID = newDir$id
-    warning("No cloudFolderID supplied; if this is the first time using 'useCloud', this cloudFolderID, ",
-            cloudFolderID," should likely be kept and used in all subsequent calls to Cache using 'useCloud = TRUE'.",
-            " Making a new cloud folder and setting options('reproducible.cloudFolderID' = ", cloudFolderID, ")")
+    warning("No cloudFolderID supplied; if this is the first time using 'useCloud',",
+            " this cloudFolderID, ", cloudFolderID,
+            " should likely be kept and used in all subsequent calls to Cache using 'useCloud = TRUE'.", #nolint
+            " Making a new cloud folder and setting options('reproducible.cloudFolderID' = ",
+            cloudFolderID, ")")
     options('reproducible.cloudFolderID' = cloudFolderID)
   }
   return(cloudFolderID)
 }
-
 
 #' Upload to cloud, if necessary
 #'
@@ -49,7 +50,6 @@ cloudUpload <- function(isInRepo, outputHash, gdriveLs, cacheRepo, cloudFolderID
   }
 }
 
-
 #' Download from cloud, if necessary
 #'
 #' Meant for internal use, as there are internal objects as arguments.
@@ -73,17 +73,21 @@ cloudDownload <- function(outputHash, newFileName, gdriveLs, cacheRepo, cloudFol
   output
 }
 
-#' Upload a file to cloud directly from local cacheRepo
+#' Upload a file to cloud directly from local \code{cacheRepo}
 #'
 #' Meant for internal use, as there are internal objects as arguments.
 #'
-#' @param isInCloud A logical indicating whether an outputHash is in the cloud already
-#' @param saved The character string of the saved file's archivist digest value
-#' @param outputToSave Only required if \code{any(rasters) == TRUE}. This is the Raster* object.
-#' @param rasters A logical vector of length >= 1 indicating which elements in outputToSave are Raster* objects
+#' @param isInCloud A logical indicating whether an \code{outputHash} is in the cloud already.
+#' @param saved The character string of the saved file's archivist digest value.
+#' @param outputToSave Only required if \code{any(rasters) == TRUE}. This is the \code{Raster*} object.
+#' @param rasters A logical vector of length >= 1 indicating which elements in \code{outputToSave}
+#'                are \code{Raster*} objects.
 #' @inheritParams cloudUpload
+#'
 #' @importFrom googledrive drive_download
-cloudUploadFromCache <- function(isInCloud, outputHash, saved, cacheRepo, cloudFolderID, outputToSave, rasters) {
+#' @keywords internal
+cloudUploadFromCache <- function(isInCloud, outputHash, saved, cacheRepo, cloudFolderID,
+                                 outputToSave, rasters) {
   if (!any(isInCloud)) {
     cacheIdFileName <- paste0(outputHash,".rda")
     newFileName <- paste0(saved, ".rda")
@@ -94,7 +98,6 @@ cloudUploadFromCache <- function(isInCloud, outputHash, saved, cacheRepo, cloudF
   }
   cloudUploadRasterBackends(obj = outputToSave, cloudFolderID)
 }
-
 
 cloudUploadRasterBackends <- function(obj, cloudFolderID) {
   rasterFilename <- Filenames(obj)
@@ -111,22 +114,23 @@ cloudUploadRasterBackends <- function(obj, cloudFolderID) {
   return(invisible())
 }
 
-
 cloudDownloadRasterBackend <- function(output, cacheRepo, cloudFolderID) {
   rasterFilename <- Filenames(output)
   if (!is.null(rasterFilename) && length(rasterFilename) > 0) {
     cacheRepoRasterDir <- file.path(cacheRepo, "rasters")
     checkPath(cacheRepoRasterDir, create = TRUE)
     simpleFilenames <- file_path_sans_ext(basename(unlist(rasterFilename)))
-    retry(gdriveLs2 <- drive_ls(path = as_id(cloudFolderID),
-                          pattern = paste(collapse = "|", simpleFilenames)))
+    retry({
+      gdriveLs2 <- drive_ls(path = as_id(cloudFolderID),
+                            pattern = paste(collapse = "|", simpleFilenames))
+    })
 
     if (all(simpleFilenames %in% file_path_sans_ext(gdriveLs2$name))) {
       lapply(seq_len(NROW(gdriveLs2)), function(idRowNum) {
         localNewFilename <- file.path(cacheRepoRasterDir, basename(gdriveLs2$name[idRowNum]))
         retry(drive_download(file = as_id(gdriveLs2$id[idRowNum]),
-                       path = localNewFilename, # take first if there are duplicates
-                       overwrite = TRUE))
+                             path = localNewFilename, # take first if there are duplicates
+                             overwrite = TRUE))
 
       })
       if (!all(file.exists(unlist(rasterFilename)))) {
@@ -143,7 +147,6 @@ cloudDownloadRasterBackend <- function(output, cacheRepo, cloudFolderID) {
     }
   }
   output
-
 }
 
 isOrHasRaster <- function(obj) {
@@ -156,5 +159,3 @@ isOrHasRaster <- function(obj) {
   }
   return(rasters)
 }
-
-

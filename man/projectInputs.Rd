@@ -37,7 +37,7 @@ triggered. \code{'AUTO'*} will calculate 90% of the total
 number of cores in the system, while an integer or rounded
 float will be passed as the exact number of cores to be used.}
 
-\item{useGDAL}{Logical, defaults to getOption("reproducible.useGDAL" = TRUE).
+\item{useGDAL}{Logical, defaults to \code{getOption("reproducible.useGDAL" = TRUE)}.
 If \code{TRUE}, then this function will use \code{gdalwarp} only when not
 small enough to fit in memory (i.e., \emph{if the operation fails} the
 \code{raster::canProcessInMemory(x, 3)} test). Using \code{gdalwarp} will
@@ -61,7 +61,7 @@ ow <- setwd(tempdir())
 
 # make a SpatialPolygon
 coords1 <- structure(c(-123.98, -117.1, -80.2, -100, -123.98, 60.9, 67.73, 65.58, 51.79, 60.9),
-                    .Dim = c(5L, 2L))
+                     .Dim = c(5L, 2L))
 Sr1 <- Polygon(coords1)
 Srs1 <- Polygons(list(Sr1), "s1")
 shpEcozone <- SpatialPolygons(list(Srs1), 1L)

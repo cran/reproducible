@@ -81,7 +81,7 @@
 #'
 #' # Fine control of cache elements -- pick out only the large runif object, and remove it
 #' cache1 <- showCache(tmpDir, userTags = c("runif")) # show only cached objects made during runif
-#' toRemove <- cache1[tagKey=="object.size"][as.numeric(tagValue) > 700]$artifact
+#' toRemove <- cache1[tagKey == "object.size"][as.numeric(tagValue) > 700]$artifact
 #' clearCache(tmpDir, userTags = toRemove, ask = FALSE)
 #' cacheAfter <- showCache(tmpDir, userTags = c("runif")) # Only the small one is left
 #'
@@ -176,7 +176,8 @@ setMethod(
       rastersInRepo <- objsDT[grepl(pattern = "class", tagKey) &
                                 grepl(pattern = "Raster", tagValue)] # only Rasters* class
       if (all(!is.na(rastersInRepo$artifact)) && NROW(rastersInRepo) > 0) {
-        rasterObjSizes <- as.numeric(objsDT[artifact %in% rastersInRepo$artifact & tagKey == "object.size"]$tagValue)
+        rasterObjSizes <- as.numeric(objsDT[artifact %in% rastersInRepo$artifact &
+                                              tagKey == "object.size"]$tagValue)
         fileBackedRastersInRepo <- rastersInRepo$artifact[rasterObjSizes < 1e5]
         filesToRemove <- lapply(fileBackedRastersInRepo, function(ras) {
           r <- suppressWarnings(loadFromLocalRepo(ras, repoDir = x, value = TRUE))
@@ -220,15 +221,17 @@ setMethod(
     return(invisible(objsDT))
 })
 
-#' @rdname viewCache
-#' @export
+#' @details
+#' \code{cc(secs)} is just a shortcut for \code{clearCache(repo = Paths$cachePath, after = secs)},
+#' i.e., to remove any cache entries touched in the last \code{secs} seconds.
+#'
 #' @param secs Currently 3 options: the number of seconds to pass to \code{clearCache(after = secs)},
 #'     a \code{POSIXct} time e.g., from \code{Sys.time()}, or missing. If missing,
 #'             the default, then it will delete the most recent entry in the Cache.
 #'
-#' @details
-#' \code{cc(secs)} is just a shortcut for \code{clearCache(repo = Paths$cachePath, after = secs)},
-#' i.e., to remove any cache entries touched in the last \code{secs} seconds.
+#' @export
+#' @rdname viewCache
+#'
 #' @examples
 #' tmpDir <- file.path(tempdir(), "reproducible_examples", "Cache")
 #' try(clearCache(tmpDir, ask = FALSE), silent = TRUE) # just to make sure it is clear
@@ -245,12 +248,12 @@ setMethod(
 #' showCache(x = tmpDir) # all those after thisTime gone, i.e., only 1 left
 #' cc(ask = FALSE, x = tmpDir) # Cache is
 #' cc(ask = FALSE, x = tmpDir) # Cache is already empty
-cc <- function (secs, ...) {
+cc <- function(secs, ...) {
   if (missing(secs)) {
     message("No time provided; removing the most recent entry to the Cache")
-    suppressMessages(theCache <- reproducible::showCache(...))
+    suppressMessages({theCache <- reproducible::showCache(...)})
     if (NROW(theCache) > 0) {
-      accessed <- data.table::setkey(theCache[ tagKey == "accessed"], tagValue)
+      accessed <- data.table::setkey(theCache[tagKey == "accessed"], tagValue)
       clearCache(userTags = tail(accessed, 1)$artifact, ...)
     } else {
       message("Cache already empty")
@@ -264,7 +267,6 @@ cc <- function (secs, ...) {
   }
 
 }
-
 
 #' Examining and modifying the cache
 #'
@@ -486,7 +488,7 @@ setMethod(
   message(preMessage, format(fs, "auto"))
 }
 
-
+#' @keywords internal
 checkFutures <- function() {
   # This takes a long time -- can't use it if
   resol1 <- FALSE
@@ -496,7 +498,6 @@ checkFutures <- function() {
   anyFutureWrite <- length(lsFutureEnv)
 
   if (anyFutureWrite > 0) {
-
     #objsInReproEnv <- ls(.reproEnv)
     #objsInReproEnv <- grep("^future|cloudCheckSums", objsInReproEnv, value = TRUE)
     while (any(!resol1)) {
@@ -528,15 +529,17 @@ checkFutures <- function() {
 #'   If this and \code{cacheRepo} are missing, then it will default to
 #'   \code{getOption('reproducible.cachePath')}
 #' @param cacheId A character vector of cacheId values to use in the cache
-#' @param concatenated Logical. If \code{TRUE}, the returned userTags will
-#'   be concatenated tagKey:tagValue
+#' @param concatenated Logical. If \code{TRUE}, the returned \code{userTags} will
+#'   be concatenated \code{tagKey:tagValue}.
 getUserTags <- function(cacheRepo, shownCache, cacheId, concatenated = TRUE) {
   if (missing(shownCache)) {
     if (missing(cacheRepo)) {
       cacheRepos <- .checkCacheRepo(create = TRUE)
       cacheRepo <- cacheRepos[[1]]
     }
-    suppressMessages(shownCache <- showCache(cacheRepo))
+    suppressMessages({
+      shownCache <- showCache(cacheRepo)
+    })
   }
   arts <- getArtifact(shownCache = shownCache, cacheId = cacheId)
   if (!missing(cacheId)) {
@@ -551,21 +554,22 @@ getUserTags <- function(cacheRepo, shownCache, cacheId, concatenated = TRUE) {
 }
 
 
-#' @rdname cache-helpers
 #' @param artifact Character vector of artifact values in the
 #'   \code{artifact} column of \code{showCache}
 #'
+#' @return \code{getCacheId} returns the \code{cacheId} values for 1 or more artifacts in the cache.
+#'
 #' @export
-#' @return
-#' \code{getCacheId} returns the \code{cacheId} values for 1 or more
-#' artifacts in the cache.
+#' @rdname cache-helpers
 getCacheId <- function(cacheRepo, shownCache, artifact) {
   if (missing(shownCache)) {
     if (missing(cacheRepo)) {
       cacheRepos <- .checkCacheRepo(create = TRUE)
       cacheRepo <- cacheRepos[[1]]
     }
-    suppressMessages(shownCache <- showCache(cacheRepo))
+    suppressMessages({
+      shownCache <- showCache(cacheRepo)
+    })
   }
   if (!missing(artifact)) {
     artifacts <- artifact
@@ -574,23 +578,24 @@ getCacheId <- function(cacheRepo, shownCache, artifact) {
   shownCache[tagKey == "cacheId"]$tagValue
 }
 
-#' @rdname cache-helpers
-#'
-#' @export
 #' @return
 #' \code{getArtifact} returns the \code{artifact} value for 1 or more
 #' entries in the cache, by \code{cacheId}.
+#'
+#' @export
+#' @rdname cache-helpers
 getArtifact <- function(cacheRepo, shownCache, cacheId) {
   if (missing(shownCache)) {
     if (missing(cacheRepo)) {
       cacheRepos <- .checkCacheRepo(create = TRUE)
       cacheRepo <- cacheRepos[[1]]
     }
-    suppressMessages(shownCache <- showCache(cacheRepo))
+    suppressMessages({
+      shownCache <- showCache(cacheRepo)
+    })
   }
   if (!missing(cacheId)) {
     shownCache <- shownCache[tagValue %in% cacheId]
   }
   shownCache[tagKey == "cacheId", artifact]
 }
-

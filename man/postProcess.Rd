@@ -89,7 +89,8 @@ will be taken from \code{rasterToMatch} or none at all.
 If \code{TRUE}, it will be taken from \code{studyArea}. See table
 in details below.}
 
-\item{useCache}{Passed to Cache in various places. Defaults to \code{getOption("reproducible.useCache")}}
+\item{useCache}{Passed to \code{Cache} in various places.
+Defaults to \code{getOption("reproducible.useCache")}.}
 }
 \description{
 The method for spatialObjects (\code{Raster*} and \code{Spatial*}) will
@@ -163,7 +164,7 @@ ow <- setwd(tempdir())
 
 # make a SpatialPolygon
 coords1 <- structure(c(-123.98, -117.1, -80.2, -100, -123.98, 60.9, 67.73, 65.58, 51.79, 60.9),
-                    .Dim = c(5L, 2L))
+                     .Dim = c(5L, 2L))
 Sr1 <- Polygon(coords1)
 Srs1 <- Polygons(list(Sr1), "s1")
 shpEcozone <- SpatialPolygons(list(Srs1), 1L)
@@ -196,7 +197,7 @@ ow <- setwd(tempdir())
 
 # make a SpatialPolygon
 coords1 <- structure(c(-123.98, -117.1, -80.2, -100, -123.98, 60.9, 67.73, 65.58, 51.79, 60.9),
-                    .Dim = c(5L, 2L))
+                     .Dim = c(5L, 2L))
 Sr1 <- Polygon(coords1)
 Srs1 <- Polygons(list(Sr1), "s1")
 shpEcozone <- SpatialPolygons(list(Srs1), 1L)

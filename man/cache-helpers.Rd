@@ -23,15 +23,14 @@ If this and \code{cacheRepo} are missing, then it will default to
 
 \item{cacheId}{A character vector of cacheId values to use in the cache}
 
-\item{concatenated}{Logical. If \code{TRUE}, the returned userTags will
-be concatenated tagKey:tagValue}
+\item{concatenated}{Logical. If \code{TRUE}, the returned \code{userTags} will
+be concatenated \code{tagKey:tagValue}.}
 
 \item{artifact}{Character vector of artifact values in the
 \code{artifact} column of \code{showCache}}
 }
 \value{
-\code{getCacheId} returns the \code{cacheId} values for 1 or more
-artifacts in the cache.
+\code{getCacheId} returns the \code{cacheId} values for 1 or more artifacts in the cache.
 
 \code{getArtifact} returns the \code{artifact} value for 1 or more
 entries in the cache, by \code{cacheId}.
