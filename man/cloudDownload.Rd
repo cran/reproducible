@@ -4,7 +4,15 @@
 \alias{cloudDownload}
 \title{Download from cloud, if necessary}
 \usage{
-cloudDownload(outputHash, newFileName, gdriveLs, cacheRepo, cloudFolderID)
+cloudDownload(
+  outputHash,
+  newFileName,
+  gdriveLs,
+  cacheRepo,
+  cloudFolderID,
+  drv = getOption("reproducible.drv", RSQLite::SQLite()),
+  conn = getOption("reproducible.conn", NULL)
+)
 }
 \arguments{
 \item{outputHash}{The \code{cacheId} of the object to upload}
@@ -16,11 +24,20 @@ cloudDownload(outputHash, newFileName, gdriveLs, cacheRepo, cloudFolderID)
 \item{cacheRepo}{A repository used for storing cached objects.
 This is optional if \code{Cache} is used inside a SpaDES module.}
 
-\item{cloudFolderID}{A googledrive id of a folder, e.g., using \code{drive_mkdir()}.
-If left as \code{NULL}, the function will create a cloud folder with a warning.
-The warning will have the \code{cloudFolderID} that should be used in subsequent calls.
-It will also be added to \code{options("reproducible.cloudFolderID")},
-but this will not persist across sessions.}
+\item{cloudFolderID}{A googledrive dribble of a folder, e.g., using \code{drive_mkdir()}.
+If left as \code{NULL}, the function will create a cloud folder with name from last
+two folder levels of the \code{cacheRepo} path, :
+\code{paste0(basename(dirname(cacheRepo)), "_", basename(cacheRepo))}.
+This \code{cloudFolderID} will be added to \code{options("reproducible.cloudFolderID")},
+but this will not persist across sessions. If this is a character string, it will
+treat this as a folder name to create or use on GoogleDrive.}
+
+\item{drv}{an object that inherits from \linkS4class{DBIDriver},
+or an existing \linkS4class{DBIConnection}
+object (in order to clone an existing connection).}
+
+\item{conn}{A \linkS4class{DBIConnection} object, as returned by
+\code{\link[DBI:dbConnect]{dbConnect()}}.}
 }
 \description{
 Meant for internal use, as there are internal objects as arguments.

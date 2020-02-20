@@ -29,7 +29,9 @@ Cache(
   useCache = getOption("reproducible.useCache", TRUE),
   useCloud = FALSE,
   cloudFolderID = getOption("reproducible.cloudFolderID", NULL),
-  showSimilar = getOption("reproducible.showSimilar", FALSE)
+  showSimilar = getOption("reproducible.showSimilar", FALSE),
+  drv = getOption("reproducible.drv", RSQLite::SQLite()),
+  conn = getOption("reproducible.conn", NULL)
 )
 
 \S4method{Cache}{ANY}(
@@ -55,7 +57,9 @@ Cache(
   useCache = getOption("reproducible.useCache", TRUE),
   useCloud = FALSE,
   cloudFolderID = getOption("reproducible.cloudFolderID", NULL),
-  showSimilar = getOption("reproducible.showSimilar", FALSE)
+  showSimilar = getOption("reproducible.showSimilar", FALSE),
+  drv = getOption("reproducible.drv", RSQLite::SQLite()),
+  conn = getOption("reproducible.conn", NULL)
 )
 
 lhs \%<\% rhs
@@ -64,9 +68,9 @@ lhs \%<\% rhs
 \item{FUN}{Either a function or an unevaluated function call (e.g., using
 \code{quote}.}
 
-\item{...}{Arguments of \code{FUN} function .}
+\item{...}{Arguments passed to \code{FUN}}
 
-\item{notOlderThan}{load an artifact from the database only if it was created after notOlderThan.}
+\item{notOlderThan}{A time. Load an object from the Cache if it was created after this.}
 
 \item{.objects}{Character vector of objects to be digested. This is only applicable
 if there is a list, environment (or similar) named objects
@@ -95,7 +99,9 @@ which is set to \code{Inf}.}
 
 \item{compareRasterFileLength}{Being deprecated; use \code{length}.}
 
-\item{userTags}{A character vector with Tags. These Tags will be added to the repository along with the artifact.}
+\item{userTags}{A character vector with descriptions of the Cache function call. These
+will be added to the Cache so that this entry in the Cache can be found using
+\code{userTags} e.g., via \code{\link{showCache}}}
 
 \item{digestPathContent}{Being deprecated. Use \code{quick}.}
 
@@ -160,23 +166,15 @@ the object will be identical each time; this may be useful in operational code.}
 
 \item{useCache}{Logical, numeric or \code{"overwrite"} or \code{"devMode"}. See details.}
 
-\item{useCloud}{Logical. If \code{TRUE}, then this Cache call will download
-(if local copy doesn't exist,
-but cloud copy does exist), upload (local copy does or doesn't exist and
-cloud copy doesn't exist), or
-will not download nor upload if object exists in both. If \code{TRUE} will be at
-least 1 second slower than setting this to \code{FALSE}, and likely even slower as the
-cloud folder gets large. If a user wishes to keep "high-level" control, set this to
-\code{getOption("reproducible.useCloud", FALSE)} or
-\code{getOption("reproducible.useCloud", TRUE)} (if the default behaviour should
-be \code{FALSE} or \code{TRUE}, respectively) so it can be turned on and off with
-this option. NOTE: \emph{This argument will not be passed into inner/nested Cache calls.})}
+\item{useCloud}{Logical. See Details.}
 
-\item{cloudFolderID}{A googledrive id of a folder, e.g., using \code{drive_mkdir()}.
-If left as \code{NULL}, the function will create a cloud folder with a warning.
-The warning will have the \code{cloudFolderID} that should be used in subsequent calls.
-It will also be added to \code{options("reproducible.cloudFolderID")},
-but this will not persist across sessions.}
+\item{cloudFolderID}{A googledrive dribble of a folder, e.g., using \code{drive_mkdir()}.
+If left as \code{NULL}, the function will create a cloud folder with name from last
+two folder levels of the \code{cacheRepo} path, :
+\code{paste0(basename(dirname(cacheRepo)), "_", basename(cacheRepo))}.
+This \code{cloudFolderID} will be added to \code{options("reproducible.cloudFolderID")},
+but this will not persist across sessions. If this is a character string, it will
+treat this as a folder name to create or use on GoogleDrive.}
 
 \item{showSimilar}{A logical or numeric. Useful for debugging.
 If \code{TRUE} or \code{1}, then if the Cache
@@ -185,12 +183,19 @@ the next most similar archive, and indicate which argument(s) is/are different.
 If a number larger than \code{1}, then it will report the N most similar archived
 objects.}
 
+\item{drv}{an object that inherits from \linkS4class{DBIDriver},
+or an existing \linkS4class{DBIConnection}
+object (in order to clone an existing connection).}
+
+\item{conn}{A \linkS4class{DBIConnection} object, as returned by
+\code{\link[DBI:dbConnect]{dbConnect()}}.}
+
 \item{lhs}{A name to assign to.}
 
 \item{rhs}{A function call}
 }
 \value{
-As with \code{\link[archivist]{cache}}, returns the value of the
+As with \code{archivist::cache}, returns the value of the
 function call or the cached version (i.e., the result from a previous call
 to this same cached function with identical arguments).
 }
@@ -200,7 +205,7 @@ Still experimental and may change. This form cannot pass any arguments to
 it is a clean alternative for simple cases.
 }
 \details{
-Caching R objects using \code{\link[archivist]{cache}} has five important limitations:
+Caching R objects using \code{archivist::cache} has five important limitations:
 \enumerate{
   \item the \code{archivist} package detects different environments as different;
   \item it also does not detect S4 methods correctly due to method inheritance;
@@ -343,6 +348,36 @@ default to the behaviour of \code{useCache = TRUE} with a message. This means
 that \code{"devMode"} is most useful if used from the start of a project.
 }
 
+\section{\code{useCloud}}{
+
+This is a way to store all or some of the local Cache in the cloud.
+Currently, the only cloud option is Google Drive, via \code{googledrive}
+package. For this to work, the user must be or be able to be authenticated
+with \code{googledrive::drive_auth}. The principle behind this
+\code{useCloud} is that it will be a full or partial mirror of a local Cache.
+It is not intended to be used independently from a local Cache. To share
+objects that are in the Cloud with another person, it requires 2 steps. 1)
+share the \code{cloudFolderID$id}, which can be retrieved by
+\code{getOption("reproducible.cloudFolderID")$id} after at least one Cache
+call has been made. 2) The other user must then set their
+\code{cacheFolderID} in a
+\code{Cache\(..., reproducible.cloudFolderID = \"the ID here\"\)} call or
+set their option manually
+\code{options\(\"reproducible.cloudFolderID\" = \"the ID here\"\)}.
+
+If \code{TRUE}, then this Cache call will download
+  (if local copy doesn't exist, but cloud copy does exist), upload
+  (local copy does or doesn't exist and
+  cloud copy doesn't exist), or
+  will not download nor upload if object exists in both. If \code{TRUE} will be at
+  least 1 second slower than setting this to \code{FALSE}, and likely even slower as the
+  cloud folder gets large. If a user wishes to keep "high-level" control, set this to
+  \code{getOption("reproducible.useCloud", FALSE)} or
+  \code{getOption("reproducible.useCloud", TRUE)} (if the default behaviour should
+  be \code{FALSE} or \code{TRUE}, respectively) so it can be turned on and off with
+  this option. NOTE: \emph{This argument will not be passed into inner/nested Cache calls.})
+}
+
 \section{\code{sideEffect}}{
 
 If \code{sideEffect} is not \code{FALSE}, then metadata about any files that
@@ -382,7 +417,7 @@ opt <- options("reproducible.useCache" = "devMode")
 clearCache(tmpDir, ask = FALSE)
 centralTendency <- function(x)
   mean(x)
-funnyData <- c(1,1,1,1,10)
+funnyData <- c(1, 1, 1, 1, 10)
 uniqueUserTags <- c("thisIsUnique", "reallyUnique")
 ranNumsB <- Cache(centralTendency, funnyData, cacheRepo = tmpDir,
                   userTags = uniqueUserTags) # sets new value to Cache
@@ -405,6 +440,21 @@ options(opt)
 
 # For more in depth uses, see vignette
 \dontrun{
+  # To use Postgres, set environment variables with the required credentials
+  if (requireNamespace("RPostgres")) {
+    Sys.setenv(PGHOST = "server.url")
+    Sys.setenv(PGPORT = 5432)
+    Sys.setenv(PGDATABASE = "mydatabase")
+    Sys.setenv(PGUSER = "mydbuser")
+    Sys.setenv(PGPASSWORD = "mysecurepassword")
+
+    conn <- DBI::dbConnect(RPostgres::Postgres())
+    options("reproducible.conn" = conn)
+
+    # Will use postgres for cache data table, and tempdir() for saved R objects
+    Cache(rnorm, 1, cacheRepo = tempdir())
+  }
+
   browseVignettes(package = "reproducible")
 }
 # Equivalent
@@ -413,7 +463,7 @@ b \%<\% rnorm(1)
 
 }
 \seealso{
-\code{\link[archivist]{cache}}, \code{\link{.robustDigest}}
+\code{archivist::cache}, \code{\link{.robustDigest}}
 }
 \author{
 Eliot McIntire

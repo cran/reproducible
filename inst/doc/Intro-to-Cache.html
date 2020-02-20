@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 
 <head>
 
 <meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
@@ -303,7 +302,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 
 <h1 class="title toc-ignore">Introduction to Cache</h1>
 <h4 class="author">Eliot J. B. McIntire</h4>
-<h4 class="date">November 18 2019</h4>
+<h4 class="date">February 19 2020</h4>
 
 
 <div id="TOC">
@@ -334,7 +333,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <p>As part of a reproducible workflow, caching of function calls, code chunks, and other elements of a project is a critical component. The objective of a reproducible workflow is is likely that an entire work flow from raw data to publication, decision support, report writing, presentation building etc., could be built and be reproducible anywhere, on any computer, operating system, with any starting conditions, on demand. The <code>reproducible::Cache</code> function is built to work with any R function.</p>
 <div id="differences-with-other-approaches" class="section level2">
 <h2><span class="header-section-number">1.1</span> Differences with other approaches</h2>
-<p><code>Cache</code> uses 2 key the <code>archivist</code> functions <code>saveToLocalRepo</code> and <code>loadFromLocalRepo</code>, but does not use <code>archivist::cache</code>. Similar to <code>archivist::cache</code>, there is some reliance on <code>digest::digest</code> to determine whether the arguments are identical in subsequent iterations. It also but does <em>many</em> things that make standard caching with <code>digest::digest</code> don’t work reliably between systems. For these, the function <code>.robustDigest</code> is introduced to make caching transferable between systems. This is relevant for file paths, environments, parallel clusters, functions (which are contained within an environment), and many others (e.g., see <code>?.robustDigest</code> for methods). <code>Cache</code> also adds important elements like automated tagging and the option to retrieve disk-cached values via stashed objects in memory using <code>memoise::memoise</code>. This means that running <code>Cache</code> 1, 2, and 3 times on the same function will get progressively faster. This can be extremely useful for web apps built with, say <code>shiny</code>.</p>
+<p><code>Cache</code> users <code>DBI</code> as a backend, with key functions, <code>dbReadTable</code>, <code>dbRemoveTable</code>, <code>dbSendQuery</code>, <code>dbSendStatement</code>, <code>dbCreateTable</code> and <code>dbAppendTable</code>. These can all be accessed via <code>Cache</code>, <code>showCache</code>, <code>clearCache</code>, and <code>keepCache</code>. It is optimized for speed of transactions, using <code>fastdigest::fastdigest</code> on R memory objects and <code>digest::digest</code> on files. The main function is superficially similar to <code>archivist::cache</code>, which uses <code>digest::digest</code> in all cases to determine whether the arguments are identical in subsequent iterations. It also but does <em>many</em> things that make standard caching with <code>digest::digest</code> don’t work reliably between systems. For these, the function <code>.robustDigest</code> is introduced to make caching transferable between systems. This is relevant for file paths, environments, parallel clusters, functions (which are contained within an environment), and many others (e.g., see <code>?.robustDigest</code> for methods). <code>Cache</code> also adds important elements like automated tagging and the option to retrieve disk-cached values via stashed objects in memory using <code>memoise::memoise</code>. This means that running <code>Cache</code> 1, 2, and 3 times on the same function will get progressively faster. This can be extremely useful for web apps built with, say <code>shiny</code>.</p>
 </div>
 <div id="function-level-caching" class="section level2">
 <h2><span class="header-section-number">1.2</span> Function-level caching</h2>
@@ -347,7 +346,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <a class="sourceLine" id="cb3-2" title="2"></a>
 <a class="sourceLine" id="cb3-3" title="3">tmpDir &lt;-<span class="st"> </span><span class="kw">file.path</span>(<span class="kw">tempdir</span>(), <span class="st">&quot;reproducible_examples&quot;</span>, <span class="st">&quot;Cache&quot;</span>)</a>
 <a class="sourceLine" id="cb3-4" title="4"><span class="kw">checkPath</span>(tmpDir, <span class="dt">create =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
-<pre><code>## [1] &quot;C:/Users/emcintir.L-VIC-A023744/AppData/Local/Temp/RtmpwvOhxA/reproducible_examples/Cache&quot;</code></pre>
+<pre><code>## [1] &quot;C:/Users/EMCINT~1.L-V/AppData/Local/Temp/RtmpI5BCs4/reproducible_examples/Cache&quot;</code></pre>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1">ras &lt;-<span class="st"> </span><span class="kw">raster</span>(<span class="kw">extent</span>(<span class="dv">0</span>, <span class="dv">1000</span>, <span class="dv">0</span>, <span class="dv">1000</span>), <span class="dt">vals =</span> <span class="dv">1</span><span class="op">:</span><span class="fl">1e6</span>, <span class="dt">res =</span> <span class="dv">1</span>)</a>
 <a class="sourceLine" id="cb5-2" title="2"><span class="kw">crs</span>(ras) &lt;-<span class="st"> &quot;+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +ellps=WGS84&quot;</span></a>
 <a class="sourceLine" id="cb5-3" title="3"></a>
@@ -355,25 +354,29 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <a class="sourceLine" id="cb5-5" title="5"><span class="co"># No Cache</span></a>
 <a class="sourceLine" id="cb5-6" title="6"><span class="kw">system.time</span>(map1 &lt;-<span class="st"> </span><span class="kw">projectRaster</span>(ras, <span class="dt">crs =</span> newCRS))</a></code></pre></div>
 <pre><code>##    user  system elapsed 
-##    1.93    0.14    2.08</code></pre>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1"><span class="co"># With Cache -- a little slower the first time because saving to disk</span></a>
-<a class="sourceLine" id="cb7-2" title="2"><span class="kw">system.time</span>(map1 &lt;-<span class="st"> </span><span class="kw">Cache</span>(projectRaster, ras, <span class="dt">crs =</span> newCRS, <span class="dt">cacheRepo =</span> tmpDir,</a>
-<a class="sourceLine" id="cb7-3" title="3">                         <span class="dt">notOlderThan =</span> <span class="kw">Sys.time</span>()))</a></code></pre></div>
+##    1.86    0.23    2.11</code></pre>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1"><span class="co"># Try with memoise for this example -- for many simple cases, memoising will not be faster</span></a>
+<a class="sourceLine" id="cb7-2" title="2">opts &lt;-<span class="st"> </span><span class="kw">options</span>(<span class="st">&quot;reproducible.useMemoise&quot;</span> =<span class="st"> </span><span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb7-3" title="3"><span class="co"># With Cache -- a little slower the first time because saving to disk</span></a>
+<a class="sourceLine" id="cb7-4" title="4"><span class="kw">system.time</span>(map1 &lt;-<span class="st"> </span><span class="kw">Cache</span>(projectRaster, ras, <span class="dt">crs =</span> newCRS, <span class="dt">cacheRepo =</span> tmpDir,</a>
+<a class="sourceLine" id="cb7-5" title="5">                         <span class="dt">notOlderThan =</span> <span class="kw">Sys.time</span>()))</a></code></pre></div>
 <pre><code>##    user  system elapsed 
-##    2.26    0.28    2.57</code></pre>
+##    2.70    0.55    3.41</code></pre>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1"><span class="co"># vastly faster the second time</span></a>
 <a class="sourceLine" id="cb9-2" title="2"><span class="kw">system.time</span>(map2 &lt;-<span class="st"> </span><span class="kw">Cache</span>(projectRaster, ras, <span class="dt">crs =</span> newCRS, <span class="dt">cacheRepo =</span> tmpDir))</a></code></pre></div>
-<pre><code>##   ...(Object to retrieve is large: 6.5 Mb)</code></pre>
+<pre><code>##   ...(Object to retrieve (8e07ebc7bbe758ad.rds) is large: 6.5 Mb)</code></pre>
 <pre><code>##   loading cached result from previous projectRaster call, adding to memoised copy</code></pre>
 <pre><code>##    user  system elapsed 
-##    0.08    0.03    0.13</code></pre>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" title="1"><span class="co"># even faster the third time</span></a>
+##    0.28    0.06    0.37</code></pre>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" title="1"><span class="co"># may be faster the third time because of memoise; but this example is too simple to show</span></a>
 <a class="sourceLine" id="cb13-2" title="2"><span class="kw">system.time</span>(map3 &lt;-<span class="st"> </span><span class="kw">Cache</span>(projectRaster, ras, <span class="dt">crs =</span> newCRS, <span class="dt">cacheRepo =</span> tmpDir))</a></code></pre></div>
-<pre><code>##   ...(Object to retrieve is large: 6.5 Mb)</code></pre>
+<pre><code>##   ...(Object to retrieve (8e07ebc7bbe758ad.rds) is large: 6.5 Mb)</code></pre>
 <pre><code>##   loading memoised result from previous projectRaster call.</code></pre>
 <pre><code>##    user  system elapsed 
-##    0.01    0.06    0.08</code></pre>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">all.equal</span>(map1, map2) <span class="co"># TRUE</span></a></code></pre></div>
+##    0.26    0.05    0.33</code></pre>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">options</span>(opts)</a>
+<a class="sourceLine" id="cb17-2" title="2"></a>
+<a class="sourceLine" id="cb17-3" title="3"><span class="kw">all.equal</span>(map1, map2) <span class="co"># TRUE</span></a></code></pre></div>
 <pre><code>## [1] TRUE</code></pre>
 <div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" title="1"><span class="kw">all.equal</span>(map1, map3) <span class="co"># TRUE</span></a></code></pre></div>
 <pre><code>## [1] TRUE</code></pre>
@@ -395,11 +398,11 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <a class="sourceLine" id="cb24-4" title="4"></a>
 <a class="sourceLine" id="cb24-5" title="5"><span class="co"># All same</span></a>
 <a class="sourceLine" id="cb24-6" title="6">ranNumsB &lt;-<span class="st"> </span><span class="kw">Cache</span>(rnorm, <span class="dv">10</span>, <span class="dv">16</span>, <span class="dt">cacheRepo =</span> tmpDir) <span class="co"># recovers cached copy</span></a></code></pre></div>
-<pre><code>##   loading cached result from previous rnorm call, adding to memoised copy</code></pre>
+<pre><code>##   loading cached result from previous rnorm call.</code></pre>
 <div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb26-1" title="1">ranNumsC &lt;-<span class="st"> </span><span class="kw">Cache</span>(<span class="dt">cacheRepo =</span> tmpDir) <span class="op">%C%</span><span class="st"> </span><span class="kw">rnorm</span>(<span class="dv">10</span>, <span class="dv">16</span>)  <span class="co"># recovers cached copy</span></a></code></pre></div>
-<pre><code>##   loading memoised result from previous &#39;rnorm&#39; pipe sequence call.</code></pre>
+<pre><code>##   loading cached result from previous &#39;rnorm&#39; pipe sequence call.</code></pre>
 <div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb28-1" title="1">ranNumsD &lt;-<span class="st"> </span><span class="kw">Cache</span>(<span class="kw">quote</span>(<span class="kw">rnorm</span>(<span class="dt">n =</span> <span class="dv">10</span>, <span class="dv">16</span>)), <span class="dt">cacheRepo =</span> tmpDir) <span class="co"># recovers cached copy</span></a></code></pre></div>
-<pre><code>##   loading memoised result from previous rnorm call.</code></pre>
+<pre><code>##   loading cached result from previous rnorm call.</code></pre>
 <div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb30-1" title="1"><span class="co"># Any minor change makes it different</span></a>
 <a class="sourceLine" id="cb30-2" title="2">ranNumsE &lt;-<span class="st"> </span><span class="kw">Cache</span>(<span class="dt">cacheRepo =</span> tmpDir) <span class="op">%C%</span><span class="st"> </span><span class="kw">rnorm</span>(<span class="dv">10</span>, <span class="dv">6</span>) <span class="co"># different</span></a></code></pre></div>
 </div>
@@ -411,344 +414,168 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <a class="sourceLine" id="cb31-3" title="3"></a>
 <a class="sourceLine" id="cb31-4" title="4"><span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="kw">c</span>(<span class="st">&quot;objectName&quot;</span>))</a></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters): 1 Kb</code></pre>
+<pre><code>##   Total (including Rasters): 504 bytes</code></pre>
 <pre><code>##   Selected objects (not including Rasters): 504 bytes</code></pre>
-<pre><code>##                             artifact         tagKey
-##  1: 2d19b658e0a7ada02abe87f8ea5640f7         format
-##  2: 2d19b658e0a7ada02abe87f8ea5640f7           name
-##  3: 2d19b658e0a7ada02abe87f8ea5640f7          class
-##  4: 2d19b658e0a7ada02abe87f8ea5640f7           date
-##  5: 2d19b658e0a7ada02abe87f8ea5640f7        cacheId
-##  6: 2d19b658e0a7ada02abe87f8ea5640f7     objectName
-##  7: 2d19b658e0a7ada02abe87f8ea5640f7       function
-##  8: 2d19b658e0a7ada02abe87f8ea5640f7    object.size
-##  9: 2d19b658e0a7ada02abe87f8ea5640f7       accessed
-## 10: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 11: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 12: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 13: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 14: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 15: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 16: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 17: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 18: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 19: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 20: 2d19b658e0a7ada02abe87f8ea5640f7      preDigest
-## 21: 2d19b658e0a7ada02abe87f8ea5640f7      preDigest
-## 22: c0c85ca54055013b9377ed859355928a         format
-## 23: c0c85ca54055013b9377ed859355928a           name
-## 24: c0c85ca54055013b9377ed859355928a          class
-## 25: c0c85ca54055013b9377ed859355928a           date
-## 26: c0c85ca54055013b9377ed859355928a        cacheId
-## 27: c0c85ca54055013b9377ed859355928a     objectName
-## 28: c0c85ca54055013b9377ed859355928a       function
-## 29: c0c85ca54055013b9377ed859355928a    object.size
-## 30: c0c85ca54055013b9377ed859355928a       accessed
-## 31: c0c85ca54055013b9377ed859355928a otherFunctions
-## 32: c0c85ca54055013b9377ed859355928a otherFunctions
-## 33: c0c85ca54055013b9377ed859355928a otherFunctions
-## 34: c0c85ca54055013b9377ed859355928a otherFunctions
-## 35: c0c85ca54055013b9377ed859355928a otherFunctions
-## 36: c0c85ca54055013b9377ed859355928a otherFunctions
-## 37: c0c85ca54055013b9377ed859355928a otherFunctions
-## 38: c0c85ca54055013b9377ed859355928a otherFunctions
-## 39: c0c85ca54055013b9377ed859355928a otherFunctions
-## 40: c0c85ca54055013b9377ed859355928a otherFunctions
-## 41: c0c85ca54055013b9377ed859355928a      preDigest
-## 42: c0c85ca54055013b9377ed859355928a      preDigest
-##                             artifact         tagKey
-##                             tagValue         createdDate
-##  1:                              rda 2019-11-18 06:58:21
-##  2: 2d19b658e0a7ada02abe87f8ea5640f7 2019-11-18 06:58:21
-##  3:                          numeric 2019-11-18 06:58:21
-##  4:              2019-11-18 06:58:21 2019-11-18 06:58:21
-##  5:                 3aef38d1fc02aee5 2019-11-18 06:58:21
-##  6:                                b 2019-11-18 06:58:21
-##  7:                            runif 2019-11-18 06:58:21
-##  8:                             1008 2019-11-18 06:58:21
-##  9:              2019-11-18 06:58:21 2019-11-18 06:58:21
-## 10:                 vweave_rmarkdown 2019-11-18 06:58:21
-## 11:                     process_file 2019-11-18 06:58:21
-## 12:                    process_group 2019-11-18 06:58:21
-## 13:              process_group.block 2019-11-18 06:58:21
-## 14:                       call_block 2019-11-18 06:58:21
-## 15:                       block_exec 2019-11-18 06:58:21
-## 16:                           in_dir 2019-11-18 06:58:21
-## 17:                        timing_fn 2019-11-18 06:58:21
-## 18:                           handle 2019-11-18 06:58:21
-## 19:                      withVisible 2019-11-18 06:58:21
-## 20:               n:7eef4eae85fd9229 2019-11-18 06:58:21
-## 21:            .FUN:881ec847b7161f3c 2019-11-18 06:58:21
-## 22:                              rda 2019-11-18 06:58:20
-## 23: c0c85ca54055013b9377ed859355928a 2019-11-18 06:58:20
-## 24:                          numeric 2019-11-18 06:58:20
-## 25:              2019-11-18 06:58:20 2019-11-18 06:58:20
-## 26:                 f7bee22047b8d0c1 2019-11-18 06:58:20
-## 27:                                a 2019-11-18 06:58:20
-## 28:                            rnorm 2019-11-18 06:58:20
-## 29:                             1008 2019-11-18 06:58:20
-## 30:              2019-11-18 06:58:20 2019-11-18 06:58:20
-## 31:                 vweave_rmarkdown 2019-11-18 06:58:20
-## 32:                     process_file 2019-11-18 06:58:20
-## 33:                    process_group 2019-11-18 06:58:20
-## 34:              process_group.block 2019-11-18 06:58:20
-## 35:                       call_block 2019-11-18 06:58:20
-## 36:                       block_exec 2019-11-18 06:58:20
-## 37:                           in_dir 2019-11-18 06:58:20
-## 38:                        timing_fn 2019-11-18 06:58:21
-## 39:                           handle 2019-11-18 06:58:21
-## 40:                      withVisible 2019-11-18 06:58:21
-## 41:               n:7eef4eae85fd9229 2019-11-18 06:58:21
-## 42:            .FUN:4f604aa46882b368 2019-11-18 06:58:21
-##                             tagValue         createdDate</code></pre>
+<pre><code>##              cacheId         tagKey              tagValue         createdDate
+##  1: 3aef38d1fc02aee5     objectName                     b 2020-02-19 17:02:22
+##  2: 3aef38d1fc02aee5       function                 runif 2020-02-19 17:02:22
+##  3: 3aef38d1fc02aee5          class               numeric 2020-02-19 17:02:22
+##  4: 3aef38d1fc02aee5    object.size                  1008 2020-02-19 17:02:22
+##  5: 3aef38d1fc02aee5       accessed   2020-02-19 17:02:22 2020-02-19 17:02:22
+##  6: 3aef38d1fc02aee5        inCloud                 FALSE 2020-02-19 17:02:22
+##  7: 3aef38d1fc02aee5 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:22
+##  8: 3aef38d1fc02aee5 otherFunctions          process_file 2020-02-19 17:02:22
+##  9: 3aef38d1fc02aee5 otherFunctions         process_group 2020-02-19 17:02:22
+## 10: 3aef38d1fc02aee5 otherFunctions   process_group.block 2020-02-19 17:02:22
+## 11: 3aef38d1fc02aee5 otherFunctions            call_block 2020-02-19 17:02:22
+## 12: 3aef38d1fc02aee5 otherFunctions            block_exec 2020-02-19 17:02:22
+## 13: 3aef38d1fc02aee5 otherFunctions                in_dir 2020-02-19 17:02:22
+## 14: 3aef38d1fc02aee5 otherFunctions             timing_fn 2020-02-19 17:02:22
+## 15: 3aef38d1fc02aee5 otherFunctions                handle 2020-02-19 17:02:22
+## 16: 3aef38d1fc02aee5 otherFunctions           withVisible 2020-02-19 17:02:22
+## 17: 3aef38d1fc02aee5      preDigest    n:7eef4eae85fd9229 2020-02-19 17:02:22
+## 18: 3aef38d1fc02aee5      preDigest .FUN:881ec847b7161f3c 2020-02-19 17:02:22
+## 19: 3aef38d1fc02aee5      file.size                   170 2020-02-19 17:02:22
+## 20: f7bee22047b8d0c1     objectName                     a 2020-02-19 17:02:22
+## 21: f7bee22047b8d0c1       function                 rnorm 2020-02-19 17:02:22
+## 22: f7bee22047b8d0c1          class               numeric 2020-02-19 17:02:22
+## 23: f7bee22047b8d0c1    object.size                  1008 2020-02-19 17:02:22
+## 24: f7bee22047b8d0c1       accessed   2020-02-19 17:02:22 2020-02-19 17:02:22
+## 25: f7bee22047b8d0c1        inCloud                 FALSE 2020-02-19 17:02:22
+## 26: f7bee22047b8d0c1 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:22
+## 27: f7bee22047b8d0c1 otherFunctions          process_file 2020-02-19 17:02:22
+## 28: f7bee22047b8d0c1 otherFunctions         process_group 2020-02-19 17:02:22
+## 29: f7bee22047b8d0c1 otherFunctions   process_group.block 2020-02-19 17:02:22
+## 30: f7bee22047b8d0c1 otherFunctions            call_block 2020-02-19 17:02:22
+## 31: f7bee22047b8d0c1 otherFunctions            block_exec 2020-02-19 17:02:22
+## 32: f7bee22047b8d0c1 otherFunctions                in_dir 2020-02-19 17:02:22
+## 33: f7bee22047b8d0c1 otherFunctions             timing_fn 2020-02-19 17:02:22
+## 34: f7bee22047b8d0c1 otherFunctions                handle 2020-02-19 17:02:22
+## 35: f7bee22047b8d0c1 otherFunctions           withVisible 2020-02-19 17:02:22
+## 36: f7bee22047b8d0c1      preDigest    n:7eef4eae85fd9229 2020-02-19 17:02:22
+## 37: f7bee22047b8d0c1      preDigest .FUN:4f604aa46882b368 2020-02-19 17:02:22
+## 38: f7bee22047b8d0c1      file.size                   174 2020-02-19 17:02:22
+##              cacheId         tagKey              tagValue         createdDate</code></pre>
 <div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb36-1" title="1"><span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="kw">c</span>(<span class="st">&quot;^a$&quot;</span>)) <span class="co"># regular expression ... &quot;a&quot; exactly</span></a></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters): 1 Kb</code></pre>
+<pre><code>##   Total (including Rasters): 252 bytes</code></pre>
 <pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
-<pre><code>##                             artifact         tagKey
-##  1: c0c85ca54055013b9377ed859355928a         format
-##  2: c0c85ca54055013b9377ed859355928a           name
-##  3: c0c85ca54055013b9377ed859355928a          class
-##  4: c0c85ca54055013b9377ed859355928a           date
-##  5: c0c85ca54055013b9377ed859355928a        cacheId
-##  6: c0c85ca54055013b9377ed859355928a     objectName
-##  7: c0c85ca54055013b9377ed859355928a       function
-##  8: c0c85ca54055013b9377ed859355928a    object.size
-##  9: c0c85ca54055013b9377ed859355928a       accessed
-## 10: c0c85ca54055013b9377ed859355928a otherFunctions
-## 11: c0c85ca54055013b9377ed859355928a otherFunctions
-## 12: c0c85ca54055013b9377ed859355928a otherFunctions
-## 13: c0c85ca54055013b9377ed859355928a otherFunctions
-## 14: c0c85ca54055013b9377ed859355928a otherFunctions
-## 15: c0c85ca54055013b9377ed859355928a otherFunctions
-## 16: c0c85ca54055013b9377ed859355928a otherFunctions
-## 17: c0c85ca54055013b9377ed859355928a otherFunctions
-## 18: c0c85ca54055013b9377ed859355928a otherFunctions
-## 19: c0c85ca54055013b9377ed859355928a otherFunctions
-## 20: c0c85ca54055013b9377ed859355928a      preDigest
-## 21: c0c85ca54055013b9377ed859355928a      preDigest
-##                             artifact         tagKey
-##                             tagValue         createdDate
-##  1:                              rda 2019-11-18 06:58:20
-##  2: c0c85ca54055013b9377ed859355928a 2019-11-18 06:58:20
-##  3:                          numeric 2019-11-18 06:58:20
-##  4:              2019-11-18 06:58:20 2019-11-18 06:58:20
-##  5:                 f7bee22047b8d0c1 2019-11-18 06:58:20
-##  6:                                a 2019-11-18 06:58:20
-##  7:                            rnorm 2019-11-18 06:58:20
-##  8:                             1008 2019-11-18 06:58:20
-##  9:              2019-11-18 06:58:20 2019-11-18 06:58:20
-## 10:                 vweave_rmarkdown 2019-11-18 06:58:20
-## 11:                     process_file 2019-11-18 06:58:20
-## 12:                    process_group 2019-11-18 06:58:20
-## 13:              process_group.block 2019-11-18 06:58:20
-## 14:                       call_block 2019-11-18 06:58:20
-## 15:                       block_exec 2019-11-18 06:58:20
-## 16:                           in_dir 2019-11-18 06:58:20
-## 17:                        timing_fn 2019-11-18 06:58:21
-## 18:                           handle 2019-11-18 06:58:21
-## 19:                      withVisible 2019-11-18 06:58:21
-## 20:               n:7eef4eae85fd9229 2019-11-18 06:58:21
-## 21:            .FUN:4f604aa46882b368 2019-11-18 06:58:21
-##                             tagValue         createdDate</code></pre>
+<pre><code>##              cacheId         tagKey              tagValue         createdDate
+##  1: f7bee22047b8d0c1     objectName                     a 2020-02-19 17:02:22
+##  2: f7bee22047b8d0c1       function                 rnorm 2020-02-19 17:02:22
+##  3: f7bee22047b8d0c1          class               numeric 2020-02-19 17:02:22
+##  4: f7bee22047b8d0c1    object.size                  1008 2020-02-19 17:02:22
+##  5: f7bee22047b8d0c1       accessed   2020-02-19 17:02:22 2020-02-19 17:02:22
+##  6: f7bee22047b8d0c1        inCloud                 FALSE 2020-02-19 17:02:22
+##  7: f7bee22047b8d0c1 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:22
+##  8: f7bee22047b8d0c1 otherFunctions          process_file 2020-02-19 17:02:22
+##  9: f7bee22047b8d0c1 otherFunctions         process_group 2020-02-19 17:02:22
+## 10: f7bee22047b8d0c1 otherFunctions   process_group.block 2020-02-19 17:02:22
+## 11: f7bee22047b8d0c1 otherFunctions            call_block 2020-02-19 17:02:22
+## 12: f7bee22047b8d0c1 otherFunctions            block_exec 2020-02-19 17:02:22
+## 13: f7bee22047b8d0c1 otherFunctions                in_dir 2020-02-19 17:02:22
+## 14: f7bee22047b8d0c1 otherFunctions             timing_fn 2020-02-19 17:02:22
+## 15: f7bee22047b8d0c1 otherFunctions                handle 2020-02-19 17:02:22
+## 16: f7bee22047b8d0c1 otherFunctions           withVisible 2020-02-19 17:02:22
+## 17: f7bee22047b8d0c1      preDigest    n:7eef4eae85fd9229 2020-02-19 17:02:22
+## 18: f7bee22047b8d0c1      preDigest .FUN:4f604aa46882b368 2020-02-19 17:02:22
+## 19: f7bee22047b8d0c1      file.size                   174 2020-02-19 17:02:22</code></pre>
 <div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb41-1" title="1"><span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="kw">c</span>(<span class="st">&quot;runif&quot;</span>)) <span class="co"># show only cached objects made during runif call</span></a></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters): 1 Kb</code></pre>
+<pre><code>##   Total (including Rasters): 252 bytes</code></pre>
 <pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
-<pre><code>##                             artifact         tagKey
-##  1: 2d19b658e0a7ada02abe87f8ea5640f7         format
-##  2: 2d19b658e0a7ada02abe87f8ea5640f7           name
-##  3: 2d19b658e0a7ada02abe87f8ea5640f7          class
-##  4: 2d19b658e0a7ada02abe87f8ea5640f7           date
-##  5: 2d19b658e0a7ada02abe87f8ea5640f7        cacheId
-##  6: 2d19b658e0a7ada02abe87f8ea5640f7     objectName
-##  7: 2d19b658e0a7ada02abe87f8ea5640f7       function
-##  8: 2d19b658e0a7ada02abe87f8ea5640f7    object.size
-##  9: 2d19b658e0a7ada02abe87f8ea5640f7       accessed
-## 10: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 11: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 12: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 13: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 14: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 15: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 16: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 17: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 18: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 19: 2d19b658e0a7ada02abe87f8ea5640f7 otherFunctions
-## 20: 2d19b658e0a7ada02abe87f8ea5640f7      preDigest
-## 21: 2d19b658e0a7ada02abe87f8ea5640f7      preDigest
-##                             artifact         tagKey
-##                             tagValue         createdDate
-##  1:                              rda 2019-11-18 06:58:21
-##  2: 2d19b658e0a7ada02abe87f8ea5640f7 2019-11-18 06:58:21
-##  3:                          numeric 2019-11-18 06:58:21
-##  4:              2019-11-18 06:58:21 2019-11-18 06:58:21
-##  5:                 3aef38d1fc02aee5 2019-11-18 06:58:21
-##  6:                                b 2019-11-18 06:58:21
-##  7:                            runif 2019-11-18 06:58:21
-##  8:                             1008 2019-11-18 06:58:21
-##  9:              2019-11-18 06:58:21 2019-11-18 06:58:21
-## 10:                 vweave_rmarkdown 2019-11-18 06:58:21
-## 11:                     process_file 2019-11-18 06:58:21
-## 12:                    process_group 2019-11-18 06:58:21
-## 13:              process_group.block 2019-11-18 06:58:21
-## 14:                       call_block 2019-11-18 06:58:21
-## 15:                       block_exec 2019-11-18 06:58:21
-## 16:                           in_dir 2019-11-18 06:58:21
-## 17:                        timing_fn 2019-11-18 06:58:21
-## 18:                           handle 2019-11-18 06:58:21
-## 19:                      withVisible 2019-11-18 06:58:21
-## 20:               n:7eef4eae85fd9229 2019-11-18 06:58:21
-## 21:            .FUN:881ec847b7161f3c 2019-11-18 06:58:21
-##                             tagValue         createdDate</code></pre>
+<pre><code>##              cacheId         tagKey              tagValue         createdDate
+##  1: 3aef38d1fc02aee5     objectName                     b 2020-02-19 17:02:22
+##  2: 3aef38d1fc02aee5       function                 runif 2020-02-19 17:02:22
+##  3: 3aef38d1fc02aee5          class               numeric 2020-02-19 17:02:22
+##  4: 3aef38d1fc02aee5    object.size                  1008 2020-02-19 17:02:22
+##  5: 3aef38d1fc02aee5       accessed   2020-02-19 17:02:22 2020-02-19 17:02:22
+##  6: 3aef38d1fc02aee5        inCloud                 FALSE 2020-02-19 17:02:22
+##  7: 3aef38d1fc02aee5 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:22
+##  8: 3aef38d1fc02aee5 otherFunctions          process_file 2020-02-19 17:02:22
+##  9: 3aef38d1fc02aee5 otherFunctions         process_group 2020-02-19 17:02:22
+## 10: 3aef38d1fc02aee5 otherFunctions   process_group.block 2020-02-19 17:02:22
+## 11: 3aef38d1fc02aee5 otherFunctions            call_block 2020-02-19 17:02:22
+## 12: 3aef38d1fc02aee5 otherFunctions            block_exec 2020-02-19 17:02:22
+## 13: 3aef38d1fc02aee5 otherFunctions                in_dir 2020-02-19 17:02:22
+## 14: 3aef38d1fc02aee5 otherFunctions             timing_fn 2020-02-19 17:02:22
+## 15: 3aef38d1fc02aee5 otherFunctions                handle 2020-02-19 17:02:22
+## 16: 3aef38d1fc02aee5 otherFunctions           withVisible 2020-02-19 17:02:22
+## 17: 3aef38d1fc02aee5      preDigest    n:7eef4eae85fd9229 2020-02-19 17:02:22
+## 18: 3aef38d1fc02aee5      preDigest .FUN:881ec847b7161f3c 2020-02-19 17:02:22
+## 19: 3aef38d1fc02aee5      file.size                   170 2020-02-19 17:02:22</code></pre>
 <div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb46-1" title="1"><span class="kw">clearCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="kw">c</span>(<span class="st">&quot;runif&quot;</span>), <span class="dt">ask =</span> <span class="ot">FALSE</span>) <span class="co"># remove only cached objects made during runif call</span></a></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters): 1 Kb</code></pre>
+<pre><code>##   Total (including Rasters): 252 bytes</code></pre>
 <pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
 <div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb50-1" title="1"><span class="kw">showCache</span>(tmpDir) <span class="co"># only those made during rnorm call</span></a></code></pre></div>
 <pre><code>## Cache size:</code></pre>
 <pre><code>##   Total (including Rasters): 804 bytes</code></pre>
 <pre><code>##   Selected objects (not including Rasters): 804 bytes</code></pre>
-<pre><code>##                             artifact         tagKey
-##  1: 4c74e7ec26a06e224abc4d8497839bf3         format
-##  2: 4c74e7ec26a06e224abc4d8497839bf3           name
-##  3: 4c74e7ec26a06e224abc4d8497839bf3          class
-##  4: 4c74e7ec26a06e224abc4d8497839bf3           date
-##  5: 4c74e7ec26a06e224abc4d8497839bf3        cacheId
-##  6: 4c74e7ec26a06e224abc4d8497839bf3       function
-##  7: 4c74e7ec26a06e224abc4d8497839bf3    object.size
-##  8: 4c74e7ec26a06e224abc4d8497839bf3       accessed
-##  9: 4c74e7ec26a06e224abc4d8497839bf3 otherFunctions
-## 10: 4c74e7ec26a06e224abc4d8497839bf3 otherFunctions
-## 11: 4c74e7ec26a06e224abc4d8497839bf3 otherFunctions
-## 12: 4c74e7ec26a06e224abc4d8497839bf3 otherFunctions
-## 13: 4c74e7ec26a06e224abc4d8497839bf3 otherFunctions
-## 14: 4c74e7ec26a06e224abc4d8497839bf3 otherFunctions
-## 15: 4c74e7ec26a06e224abc4d8497839bf3 otherFunctions
-## 16: 4c74e7ec26a06e224abc4d8497839bf3 otherFunctions
-## 17: 4c74e7ec26a06e224abc4d8497839bf3 otherFunctions
-## 18: 4c74e7ec26a06e224abc4d8497839bf3 otherFunctions
-## 19: 4c74e7ec26a06e224abc4d8497839bf3      preDigest
-## 20: 4c74e7ec26a06e224abc4d8497839bf3      preDigest
-## 21: 4c74e7ec26a06e224abc4d8497839bf3      preDigest
-## 22: 4c74e7ec26a06e224abc4d8497839bf3       accessed
-## 23: 4c74e7ec26a06e224abc4d8497839bf3       accessed
-## 24: 4c74e7ec26a06e224abc4d8497839bf3       accessed
-## 25: 77359758c247829664ec20c0eecbf22e         format
-## 26: 77359758c247829664ec20c0eecbf22e           name
-## 27: 77359758c247829664ec20c0eecbf22e          class
-## 28: 77359758c247829664ec20c0eecbf22e           date
-## 29: 77359758c247829664ec20c0eecbf22e        cacheId
-## 30: 77359758c247829664ec20c0eecbf22e       function
-## 31: 77359758c247829664ec20c0eecbf22e    object.size
-## 32: 77359758c247829664ec20c0eecbf22e       accessed
-## 33: 77359758c247829664ec20c0eecbf22e otherFunctions
-## 34: 77359758c247829664ec20c0eecbf22e otherFunctions
-## 35: 77359758c247829664ec20c0eecbf22e otherFunctions
-## 36: 77359758c247829664ec20c0eecbf22e otherFunctions
-## 37: 77359758c247829664ec20c0eecbf22e otherFunctions
-## 38: 77359758c247829664ec20c0eecbf22e otherFunctions
-## 39: 77359758c247829664ec20c0eecbf22e otherFunctions
-## 40: 77359758c247829664ec20c0eecbf22e otherFunctions
-## 41: 77359758c247829664ec20c0eecbf22e otherFunctions
-## 42: 77359758c247829664ec20c0eecbf22e otherFunctions
-## 43: 77359758c247829664ec20c0eecbf22e otherFunctions
-## 44: 77359758c247829664ec20c0eecbf22e otherFunctions
-## 45: 77359758c247829664ec20c0eecbf22e      preDigest
-## 46: 77359758c247829664ec20c0eecbf22e      preDigest
-## 47: 77359758c247829664ec20c0eecbf22e      preDigest
-## 48: c0c85ca54055013b9377ed859355928a         format
-## 49: c0c85ca54055013b9377ed859355928a           name
-## 50: c0c85ca54055013b9377ed859355928a          class
-## 51: c0c85ca54055013b9377ed859355928a           date
-## 52: c0c85ca54055013b9377ed859355928a        cacheId
-## 53: c0c85ca54055013b9377ed859355928a     objectName
-## 54: c0c85ca54055013b9377ed859355928a       function
-## 55: c0c85ca54055013b9377ed859355928a    object.size
-## 56: c0c85ca54055013b9377ed859355928a       accessed
-## 57: c0c85ca54055013b9377ed859355928a otherFunctions
-## 58: c0c85ca54055013b9377ed859355928a otherFunctions
-## 59: c0c85ca54055013b9377ed859355928a otherFunctions
-## 60: c0c85ca54055013b9377ed859355928a otherFunctions
-## 61: c0c85ca54055013b9377ed859355928a otherFunctions
-## 62: c0c85ca54055013b9377ed859355928a otherFunctions
-## 63: c0c85ca54055013b9377ed859355928a otherFunctions
-## 64: c0c85ca54055013b9377ed859355928a otherFunctions
-## 65: c0c85ca54055013b9377ed859355928a otherFunctions
-## 66: c0c85ca54055013b9377ed859355928a otherFunctions
-## 67: c0c85ca54055013b9377ed859355928a      preDigest
-## 68: c0c85ca54055013b9377ed859355928a      preDigest
-##                             artifact         tagKey
-##                             tagValue         createdDate
-##  1:                              rda 2019-11-18 06:58:20
-##  2: 4c74e7ec26a06e224abc4d8497839bf3 2019-11-18 06:58:20
-##  3:                          numeric 2019-11-18 06:58:20
-##  4:              2019-11-18 06:58:20 2019-11-18 06:58:20
-##  5:                 f11fb1a2880f8060 2019-11-18 06:58:20
-##  6:                            rnorm 2019-11-18 06:58:20
-##  7:                             1104 2019-11-18 06:58:20
-##  8:              2019-11-18 06:58:20 2019-11-18 06:58:20
-##  9:                 vweave_rmarkdown 2019-11-18 06:58:20
-## 10:                     process_file 2019-11-18 06:58:20
-## 11:                    process_group 2019-11-18 06:58:20
-## 12:              process_group.block 2019-11-18 06:58:20
-## 13:                       call_block 2019-11-18 06:58:20
-## 14:                       block_exec 2019-11-18 06:58:20
-## 15:                           in_dir 2019-11-18 06:58:20
-## 16:                        timing_fn 2019-11-18 06:58:20
-## 17:                           handle 2019-11-18 06:58:20
-## 18:                      withVisible 2019-11-18 06:58:20
-## 19:               n:c5775c3b366fb719 2019-11-18 06:58:20
-## 20:            mean:15620f138033a66c 2019-11-18 06:58:20
-## 21:            .FUN:4f604aa46882b368 2019-11-18 06:58:20
-## 22:              2019-11-18 06:58:20 2019-11-18 06:58:20
-## 23:              2019-11-18 06:58:20 2019-11-18 06:58:20
-## 24:              2019-11-18 06:58:20 2019-11-18 06:58:20
-## 25:                              rda 2019-11-18 06:58:20
-## 26: 77359758c247829664ec20c0eecbf22e 2019-11-18 06:58:20
-## 27:                          numeric 2019-11-18 06:58:20
-## 28:              2019-11-18 06:58:20 2019-11-18 06:58:20
-## 29:                 c16f0e2c57596069 2019-11-18 06:58:20
-## 30:              rnorm pipe sequence 2019-11-18 06:58:20
-## 31:                             1104 2019-11-18 06:58:20
-## 32:              2019-11-18 06:58:20 2019-11-18 06:58:20
-## 33:                 vweave_rmarkdown 2019-11-18 06:58:20
-## 34:                     process_file 2019-11-18 06:58:20
-## 35:                    process_group 2019-11-18 06:58:20
-## 36:              process_group.block 2019-11-18 06:58:20
-## 37:                       call_block 2019-11-18 06:58:20
-## 38:                       block_exec 2019-11-18 06:58:20
-## 39:                           in_dir 2019-11-18 06:58:20
-## 40:                        timing_fn 2019-11-18 06:58:20
-## 41:                           handle 2019-11-18 06:58:20
-## 42:                      withVisible 2019-11-18 06:58:20
-## 43:                              %C% 2019-11-18 06:58:20
-## 44:                          do.call 2019-11-18 06:58:20
-## 45:               n:c5775c3b366fb719 2019-11-18 06:58:20
-## 46:            mean:152602b8ff81e5bb 2019-11-18 06:58:20
-## 47:            .FUN:4f604aa46882b368 2019-11-18 06:58:20
-## 48:                              rda 2019-11-18 06:58:20
-## 49: c0c85ca54055013b9377ed859355928a 2019-11-18 06:58:20
-## 50:                          numeric 2019-11-18 06:58:20
-## 51:              2019-11-18 06:58:20 2019-11-18 06:58:20
-## 52:                 f7bee22047b8d0c1 2019-11-18 06:58:20
-## 53:                                a 2019-11-18 06:58:20
-## 54:                            rnorm 2019-11-18 06:58:20
-## 55:                             1008 2019-11-18 06:58:20
-## 56:              2019-11-18 06:58:20 2019-11-18 06:58:20
-## 57:                 vweave_rmarkdown 2019-11-18 06:58:20
-## 58:                     process_file 2019-11-18 06:58:20
-## 59:                    process_group 2019-11-18 06:58:20
-## 60:              process_group.block 2019-11-18 06:58:20
-## 61:                       call_block 2019-11-18 06:58:20
-## 62:                       block_exec 2019-11-18 06:58:20
-## 63:                           in_dir 2019-11-18 06:58:20
-## 64:                        timing_fn 2019-11-18 06:58:21
-## 65:                           handle 2019-11-18 06:58:21
-## 66:                      withVisible 2019-11-18 06:58:21
-## 67:               n:7eef4eae85fd9229 2019-11-18 06:58:21
-## 68:            .FUN:4f604aa46882b368 2019-11-18 06:58:21
-##                             tagValue         createdDate</code></pre>
+<pre><code>##              cacheId         tagKey              tagValue         createdDate
+##  1: f11fb1a2880f8060       function                 rnorm 2020-02-19 17:02:21
+##  2: f11fb1a2880f8060          class               numeric 2020-02-19 17:02:21
+##  3: f11fb1a2880f8060    object.size                  1104 2020-02-19 17:02:21
+##  4: f11fb1a2880f8060       accessed   2020-02-19 17:02:21 2020-02-19 17:02:21
+##  5: f11fb1a2880f8060        inCloud                 FALSE 2020-02-19 17:02:21
+##  6: f11fb1a2880f8060 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:21
+##  7: f11fb1a2880f8060 otherFunctions          process_file 2020-02-19 17:02:21
+##  8: f11fb1a2880f8060 otherFunctions         process_group 2020-02-19 17:02:21
+##  9: f11fb1a2880f8060 otherFunctions   process_group.block 2020-02-19 17:02:21
+## 10: f11fb1a2880f8060 otherFunctions            call_block 2020-02-19 17:02:21
+## 11: f11fb1a2880f8060 otherFunctions            block_exec 2020-02-19 17:02:21
+## 12: f11fb1a2880f8060 otherFunctions                in_dir 2020-02-19 17:02:21
+## 13: f11fb1a2880f8060 otherFunctions             timing_fn 2020-02-19 17:02:21
+## 14: f11fb1a2880f8060 otherFunctions                handle 2020-02-19 17:02:21
+## 15: f11fb1a2880f8060 otherFunctions           withVisible 2020-02-19 17:02:21
+## 16: f11fb1a2880f8060      preDigest    n:c5775c3b366fb719 2020-02-19 17:02:21
+## 17: f11fb1a2880f8060      preDigest mean:15620f138033a66c 2020-02-19 17:02:21
+## 18: f11fb1a2880f8060      preDigest .FUN:4f604aa46882b368 2020-02-19 17:02:21
+## 19: f11fb1a2880f8060      file.size                   224 2020-02-19 17:02:21
+## 20: f11fb1a2880f8060       accessed   2020-02-19 17:02:21 2020-02-19 17:02:21
+## 21: f11fb1a2880f8060       accessed   2020-02-19 17:02:21 2020-02-19 17:02:21
+## 22: f11fb1a2880f8060       accessed   2020-02-19 17:02:21 2020-02-19 17:02:21
+## 23: c16f0e2c57596069       function &#39;rnorm&#39; pipe sequence 2020-02-19 17:02:21
+## 24: c16f0e2c57596069          class               numeric 2020-02-19 17:02:21
+## 25: c16f0e2c57596069    object.size                  1104 2020-02-19 17:02:21
+## 26: c16f0e2c57596069       accessed   2020-02-19 17:02:21 2020-02-19 17:02:21
+## 27: c16f0e2c57596069        inCloud                 FALSE 2020-02-19 17:02:21
+## 28: c16f0e2c57596069 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:21
+## 29: c16f0e2c57596069 otherFunctions          process_file 2020-02-19 17:02:21
+## 30: c16f0e2c57596069 otherFunctions         process_group 2020-02-19 17:02:21
+## 31: c16f0e2c57596069 otherFunctions   process_group.block 2020-02-19 17:02:21
+## 32: c16f0e2c57596069 otherFunctions            call_block 2020-02-19 17:02:21
+## 33: c16f0e2c57596069 otherFunctions            block_exec 2020-02-19 17:02:21
+## 34: c16f0e2c57596069 otherFunctions                in_dir 2020-02-19 17:02:21
+## 35: c16f0e2c57596069 otherFunctions             timing_fn 2020-02-19 17:02:21
+## 36: c16f0e2c57596069 otherFunctions                handle 2020-02-19 17:02:21
+## 37: c16f0e2c57596069 otherFunctions           withVisible 2020-02-19 17:02:21
+## 38: c16f0e2c57596069 otherFunctions                   %C% 2020-02-19 17:02:21
+## 39: c16f0e2c57596069 otherFunctions               do.call 2020-02-19 17:02:21
+## 40: c16f0e2c57596069      preDigest    n:c5775c3b366fb719 2020-02-19 17:02:21
+## 41: c16f0e2c57596069      preDigest mean:152602b8ff81e5bb 2020-02-19 17:02:21
+## 42: c16f0e2c57596069      preDigest .FUN:4f604aa46882b368 2020-02-19 17:02:21
+## 43: c16f0e2c57596069      file.size                   225 2020-02-19 17:02:21
+## 44: f7bee22047b8d0c1     objectName                     a 2020-02-19 17:02:22
+## 45: f7bee22047b8d0c1       function                 rnorm 2020-02-19 17:02:22
+## 46: f7bee22047b8d0c1          class               numeric 2020-02-19 17:02:22
+## 47: f7bee22047b8d0c1    object.size                  1008 2020-02-19 17:02:22
+## 48: f7bee22047b8d0c1       accessed   2020-02-19 17:02:22 2020-02-19 17:02:22
+## 49: f7bee22047b8d0c1        inCloud                 FALSE 2020-02-19 17:02:22
+## 50: f7bee22047b8d0c1 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:22
+## 51: f7bee22047b8d0c1 otherFunctions          process_file 2020-02-19 17:02:22
+## 52: f7bee22047b8d0c1 otherFunctions         process_group 2020-02-19 17:02:22
+## 53: f7bee22047b8d0c1 otherFunctions   process_group.block 2020-02-19 17:02:22
+## 54: f7bee22047b8d0c1 otherFunctions            call_block 2020-02-19 17:02:22
+## 55: f7bee22047b8d0c1 otherFunctions            block_exec 2020-02-19 17:02:22
+## 56: f7bee22047b8d0c1 otherFunctions                in_dir 2020-02-19 17:02:22
+## 57: f7bee22047b8d0c1 otherFunctions             timing_fn 2020-02-19 17:02:22
+## 58: f7bee22047b8d0c1 otherFunctions                handle 2020-02-19 17:02:22
+## 59: f7bee22047b8d0c1 otherFunctions           withVisible 2020-02-19 17:02:22
+## 60: f7bee22047b8d0c1      preDigest    n:7eef4eae85fd9229 2020-02-19 17:02:22
+## 61: f7bee22047b8d0c1      preDigest .FUN:4f604aa46882b368 2020-02-19 17:02:22
+## 62: f7bee22047b8d0c1      file.size                   174 2020-02-19 17:02:22
+##              cacheId         tagKey              tagValue         createdDate</code></pre>
 <div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb55-1" title="1"><span class="kw">clearCache</span>(tmpDir, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
 </div>
 <div id="example-2-using-the-accessed-tag" class="section level2">
@@ -757,8 +584,9 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <a class="sourceLine" id="cb56-2" title="2">ranNumsB &lt;-<span class="st"> </span><span class="kw">Cache</span>(runif, <span class="dv">4</span>, <span class="dt">cacheRepo =</span> tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;objectName:b&quot;</span>)</a>
 <a class="sourceLine" id="cb56-3" title="3"></a>
 <a class="sourceLine" id="cb56-4" title="4"><span class="co"># access it again, from Cache</span></a>
-<a class="sourceLine" id="cb56-5" title="5">ranNumsA &lt;-<span class="st"> </span><span class="kw">Cache</span>(rnorm, <span class="dv">4</span>, <span class="dt">cacheRepo =</span> tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;objectName:a&quot;</span>)</a></code></pre></div>
-<pre><code>##   loading cached result from previous rnorm call, adding to memoised copy</code></pre>
+<a class="sourceLine" id="cb56-5" title="5"><span class="kw">Sys.sleep</span>(<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb56-6" title="6">ranNumsA &lt;-<span class="st"> </span><span class="kw">Cache</span>(rnorm, <span class="dv">4</span>, <span class="dt">cacheRepo =</span> tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;objectName:a&quot;</span>)</a></code></pre></div>
+<pre><code>##   loading cached result from previous rnorm call.</code></pre>
 <div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb58-1" title="1">wholeCache &lt;-<span class="st"> </span><span class="kw">showCache</span>(tmpDir)</a></code></pre></div>
 <pre><code>## Cache size:</code></pre>
 <pre><code>##   Total (including Rasters): 504 bytes</code></pre>
@@ -766,529 +594,368 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <div class="sourceCode" id="cb62"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb62-1" title="1"><span class="co"># keep only items accessed &quot;recently&quot; (i.e., only objectName:a)</span></a>
 <a class="sourceLine" id="cb62-2" title="2">onlyRecentlyAccessed &lt;-<span class="st"> </span><span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="kw">max</span>(wholeCache[tagKey <span class="op">==</span><span class="st"> &quot;accessed&quot;</span>]<span class="op">$</span>tagValue))</a></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters): 504 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters): 504 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 252 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
 <div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb66-1" title="1"><span class="co"># inverse join with 2 data.tables ... using: a[!b]</span></a>
 <a class="sourceLine" id="cb66-2" title="2"><span class="co"># i.e., return all of wholeCache that was not recently accessed</span></a>
-<a class="sourceLine" id="cb66-3" title="3">toRemove &lt;-<span class="st"> </span><span class="kw">unique</span>(wholeCache[<span class="op">!</span>onlyRecentlyAccessed], <span class="dt">by =</span> <span class="st">&quot;artifact&quot;</span>)<span class="op">$</span>artifact</a>
-<a class="sourceLine" id="cb66-4" title="4"><span class="kw">clearCache</span>(tmpDir, toRemove, <span class="dt">ask =</span> <span class="ot">FALSE</span>) <span class="co"># remove ones not recently accessed</span></a></code></pre></div>
-<pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters): 504 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters): 504 bytes</code></pre>
-<div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb70-1" title="1"><span class="kw">showCache</span>(tmpDir) <span class="co"># still has more recently accessed</span></a></code></pre></div>
-<pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters): 0 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters): 0 bytes</code></pre>
-<pre><code>## Empty data.table (0 rows and 3 cols): md5hash,name,createdDate</code></pre>
-<div class="sourceCode" id="cb75"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb75-1" title="1"><span class="kw">clearCache</span>(tmpDir, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
-</div>
-<div id="example-3-using-keepcache" class="section level2">
-<h2><span class="header-section-number">1.6</span> Example 3: using keepCache</h2>
-<div class="sourceCode" id="cb76"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb76-1" title="1">ranNumsA &lt;-<span class="st"> </span><span class="kw">Cache</span>(rnorm, <span class="dv">4</span>, <span class="dt">cacheRepo =</span> tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;objectName:a&quot;</span>)</a>
-<a class="sourceLine" id="cb76-2" title="2">ranNumsB &lt;-<span class="st"> </span><span class="kw">Cache</span>(runif, <span class="dv">4</span>, <span class="dt">cacheRepo =</span> tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;objectName:b&quot;</span>)</a>
-<a class="sourceLine" id="cb76-3" title="3"></a>
-<a class="sourceLine" id="cb76-4" title="4"><span class="co"># keep only those cached items from the last 24 hours</span></a>
-<a class="sourceLine" id="cb76-5" title="5">oneDay &lt;-<span class="st"> </span><span class="dv">60</span> <span class="op">*</span><span class="st"> </span><span class="dv">60</span> <span class="op">*</span><span class="st"> </span><span class="dv">24</span></a>
-<a class="sourceLine" id="cb76-6" title="6"><span class="kw">keepCache</span>(tmpDir, <span class="dt">after =</span> <span class="kw">Sys.time</span>() <span class="op">-</span><span class="st"> </span>oneDay, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
-<pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters): 504 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters): 504 bytes</code></pre>
-<pre><code>##                             artifact         tagKey
-##  1: 0b0c4f2cad84630f12497c0d05c107a9         format
-##  2: 0b0c4f2cad84630f12497c0d05c107a9           name
-##  3: 0b0c4f2cad84630f12497c0d05c107a9          class
-##  4: 0b0c4f2cad84630f12497c0d05c107a9           date
-##  5: 0b0c4f2cad84630f12497c0d05c107a9        cacheId
-##  6: 0b0c4f2cad84630f12497c0d05c107a9     objectName
-##  7: 0b0c4f2cad84630f12497c0d05c107a9       function
-##  8: 0b0c4f2cad84630f12497c0d05c107a9    object.size
-##  9: 0b0c4f2cad84630f12497c0d05c107a9       accessed
-## 10: 0b0c4f2cad84630f12497c0d05c107a9 otherFunctions
-## 11: 0b0c4f2cad84630f12497c0d05c107a9 otherFunctions
-## 12: 0b0c4f2cad84630f12497c0d05c107a9 otherFunctions
-## 13: 0b0c4f2cad84630f12497c0d05c107a9 otherFunctions
-## 14: 0b0c4f2cad84630f12497c0d05c107a9 otherFunctions
-## 15: 0b0c4f2cad84630f12497c0d05c107a9 otherFunctions
-## 16: 0b0c4f2cad84630f12497c0d05c107a9 otherFunctions
-## 17: 0b0c4f2cad84630f12497c0d05c107a9 otherFunctions
-## 18: 0b0c4f2cad84630f12497c0d05c107a9 otherFunctions
-## 19: 0b0c4f2cad84630f12497c0d05c107a9 otherFunctions
-## 20: 0b0c4f2cad84630f12497c0d05c107a9      preDigest
-## 21: 0b0c4f2cad84630f12497c0d05c107a9      preDigest
-## 22: 623adedd3ce9c482c1ba68613776e7ba         format
-## 23: 623adedd3ce9c482c1ba68613776e7ba           name
-## 24: 623adedd3ce9c482c1ba68613776e7ba          class
-## 25: 623adedd3ce9c482c1ba68613776e7ba           date
-## 26: 623adedd3ce9c482c1ba68613776e7ba        cacheId
-## 27: 623adedd3ce9c482c1ba68613776e7ba     objectName
-## 28: 623adedd3ce9c482c1ba68613776e7ba       function
-## 29: 623adedd3ce9c482c1ba68613776e7ba    object.size
-## 30: 623adedd3ce9c482c1ba68613776e7ba       accessed
-## 31: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 32: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 33: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 34: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 35: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 36: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 37: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 38: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 39: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 40: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 41: 623adedd3ce9c482c1ba68613776e7ba      preDigest
-## 42: 623adedd3ce9c482c1ba68613776e7ba      preDigest
-##                             artifact         tagKey
-##                             tagValue         createdDate
-##  1:                              rda 2019-11-18 06:58:22
-##  2: 0b0c4f2cad84630f12497c0d05c107a9 2019-11-18 06:58:22
-##  3:                          numeric 2019-11-18 06:58:22
-##  4:              2019-11-18 06:58:22 2019-11-18 06:58:22
-##  5:                 3aef38d1fc02aee5 2019-11-18 06:58:22
-##  6:                                b 2019-11-18 06:58:22
-##  7:                            runif 2019-11-18 06:58:22
-##  8:                             1008 2019-11-18 06:58:22
-##  9:              2019-11-18 06:58:22 2019-11-18 06:58:22
-## 10:                 vweave_rmarkdown 2019-11-18 06:58:22
-## 11:                     process_file 2019-11-18 06:58:22
-## 12:                    process_group 2019-11-18 06:58:22
-## 13:              process_group.block 2019-11-18 06:58:22
-## 14:                       call_block 2019-11-18 06:58:22
-## 15:                       block_exec 2019-11-18 06:58:22
-## 16:                           in_dir 2019-11-18 06:58:22
-## 17:                        timing_fn 2019-11-18 06:58:22
-## 18:                           handle 2019-11-18 06:58:22
-## 19:                      withVisible 2019-11-18 06:58:22
-## 20:               n:7eef4eae85fd9229 2019-11-18 06:58:22
-## 21:            .FUN:881ec847b7161f3c 2019-11-18 06:58:22
-## 22:                              rda 2019-11-18 06:58:22
-## 23: 623adedd3ce9c482c1ba68613776e7ba 2019-11-18 06:58:22
-## 24:                          numeric 2019-11-18 06:58:22
-## 25:              2019-11-18 06:58:22 2019-11-18 06:58:22
-## 26:                 f7bee22047b8d0c1 2019-11-18 06:58:22
-## 27:                                a 2019-11-18 06:58:22
-## 28:                            rnorm 2019-11-18 06:58:22
-## 29:                             1008 2019-11-18 06:58:22
-## 30:              2019-11-18 06:58:21 2019-11-18 06:58:22
-## 31:                 vweave_rmarkdown 2019-11-18 06:58:22
-## 32:                     process_file 2019-11-18 06:58:22
-## 33:                    process_group 2019-11-18 06:58:22
-## 34:              process_group.block 2019-11-18 06:58:22
-## 35:                       call_block 2019-11-18 06:58:22
-## 36:                       block_exec 2019-11-18 06:58:22
-## 37:                           in_dir 2019-11-18 06:58:22
-## 38:                        timing_fn 2019-11-18 06:58:22
-## 39:                           handle 2019-11-18 06:58:22
-## 40:                      withVisible 2019-11-18 06:58:22
-## 41:               n:7eef4eae85fd9229 2019-11-18 06:58:22
-## 42:            .FUN:4f604aa46882b368 2019-11-18 06:58:22
-##                             tagValue         createdDate</code></pre>
-<div class="sourceCode" id="cb81"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb81-1" title="1"><span class="co"># Keep all Cache items created with an rnorm() call</span></a>
-<a class="sourceLine" id="cb81-2" title="2"><span class="kw">keepCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;rnorm&quot;</span>, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
-<pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters): 504 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
-<pre><code>##                             artifact         tagKey
-##  1: 623adedd3ce9c482c1ba68613776e7ba         format
-##  2: 623adedd3ce9c482c1ba68613776e7ba           name
-##  3: 623adedd3ce9c482c1ba68613776e7ba          class
-##  4: 623adedd3ce9c482c1ba68613776e7ba           date
-##  5: 623adedd3ce9c482c1ba68613776e7ba        cacheId
-##  6: 623adedd3ce9c482c1ba68613776e7ba     objectName
-##  7: 623adedd3ce9c482c1ba68613776e7ba       function
-##  8: 623adedd3ce9c482c1ba68613776e7ba    object.size
-##  9: 623adedd3ce9c482c1ba68613776e7ba       accessed
-## 10: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 11: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 12: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 13: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 14: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 15: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 16: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 17: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 18: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 19: 623adedd3ce9c482c1ba68613776e7ba otherFunctions
-## 20: 623adedd3ce9c482c1ba68613776e7ba      preDigest
-## 21: 623adedd3ce9c482c1ba68613776e7ba      preDigest
-##                             artifact         tagKey
-##                             tagValue         createdDate
-##  1:                              rda 2019-11-18 06:58:22
-##  2: 623adedd3ce9c482c1ba68613776e7ba 2019-11-18 06:58:22
-##  3:                          numeric 2019-11-18 06:58:22
-##  4:              2019-11-18 06:58:22 2019-11-18 06:58:22
-##  5:                 f7bee22047b8d0c1 2019-11-18 06:58:22
-##  6:                                a 2019-11-18 06:58:22
-##  7:                            rnorm 2019-11-18 06:58:22
-##  8:                             1008 2019-11-18 06:58:22
-##  9:              2019-11-18 06:58:21 2019-11-18 06:58:22
-## 10:                 vweave_rmarkdown 2019-11-18 06:58:22
-## 11:                     process_file 2019-11-18 06:58:22
-## 12:                    process_group 2019-11-18 06:58:22
-## 13:              process_group.block 2019-11-18 06:58:22
-## 14:                       call_block 2019-11-18 06:58:22
-## 15:                       block_exec 2019-11-18 06:58:22
-## 16:                           in_dir 2019-11-18 06:58:22
-## 17:                        timing_fn 2019-11-18 06:58:22
-## 18:                           handle 2019-11-18 06:58:22
-## 19:                      withVisible 2019-11-18 06:58:22
-## 20:               n:7eef4eae85fd9229 2019-11-18 06:58:22
-## 21:            .FUN:4f604aa46882b368 2019-11-18 06:58:22
-##                             tagValue         createdDate</code></pre>
-<div class="sourceCode" id="cb86"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb86-1" title="1"><span class="co"># Remove all Cache items that happened within a rnorm() call</span></a>
-<a class="sourceLine" id="cb86-2" title="2"><span class="kw">clearCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;rnorm&quot;</span>, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb66-3" title="3"><span class="co">#   Note: the two different ways to access -- old way with &quot;artifact&quot; will be deprecated</span></a>
+<a class="sourceLine" id="cb66-4" title="4">toRemove &lt;-<span class="st"> </span><span class="kw">unique</span>(wholeCache[<span class="op">!</span>onlyRecentlyAccessed, <span class="dt">on =</span> <span class="st">&quot;cacheId&quot;</span>], <span class="dt">by =</span> <span class="st">&quot;cacheId&quot;</span>)<span class="op">$</span>cacheId</a>
+<a class="sourceLine" id="cb66-5" title="5"><span class="kw">clearCache</span>(tmpDir, toRemove, <span class="dt">ask =</span> <span class="ot">FALSE</span>) <span class="co"># remove ones not recently accessed</span></a></code></pre></div>
 <pre><code>## Cache size:</code></pre>
 <pre><code>##   Total (including Rasters): 252 bytes</code></pre>
 <pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
-<div class="sourceCode" id="cb90"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb90-1" title="1"><span class="kw">showCache</span>(tmpDir) <span class="co">## empty</span></a></code></pre></div>
+<div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb70-1" title="1"><span class="kw">showCache</span>(tmpDir) <span class="co"># still has more recently accessed</span></a></code></pre></div>
+<pre><code>## Cache size:</code></pre>
+<pre><code>##   Total (including Rasters): 252 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
+<pre><code>##              cacheId         tagKey              tagValue         createdDate
+##  1: f7bee22047b8d0c1     objectName                     a 2020-02-19 17:02:23
+##  2: f7bee22047b8d0c1       function                 rnorm 2020-02-19 17:02:23
+##  3: f7bee22047b8d0c1          class               numeric 2020-02-19 17:02:23
+##  4: f7bee22047b8d0c1    object.size                  1008 2020-02-19 17:02:23
+##  5: f7bee22047b8d0c1       accessed   2020-02-19 17:02:23 2020-02-19 17:02:23
+##  6: f7bee22047b8d0c1        inCloud                 FALSE 2020-02-19 17:02:23
+##  7: f7bee22047b8d0c1 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:23
+##  8: f7bee22047b8d0c1 otherFunctions          process_file 2020-02-19 17:02:23
+##  9: f7bee22047b8d0c1 otherFunctions         process_group 2020-02-19 17:02:23
+## 10: f7bee22047b8d0c1 otherFunctions   process_group.block 2020-02-19 17:02:23
+## 11: f7bee22047b8d0c1 otherFunctions            call_block 2020-02-19 17:02:23
+## 12: f7bee22047b8d0c1 otherFunctions            block_exec 2020-02-19 17:02:23
+## 13: f7bee22047b8d0c1 otherFunctions                in_dir 2020-02-19 17:02:23
+## 14: f7bee22047b8d0c1 otherFunctions             timing_fn 2020-02-19 17:02:23
+## 15: f7bee22047b8d0c1 otherFunctions                handle 2020-02-19 17:02:23
+## 16: f7bee22047b8d0c1 otherFunctions           withVisible 2020-02-19 17:02:23
+## 17: f7bee22047b8d0c1      preDigest    n:7eef4eae85fd9229 2020-02-19 17:02:23
+## 18: f7bee22047b8d0c1      preDigest .FUN:4f604aa46882b368 2020-02-19 17:02:23
+## 19: f7bee22047b8d0c1      file.size                   175 2020-02-19 17:02:23
+## 20: f7bee22047b8d0c1       accessed   2020-02-19 17:02:24 2020-02-19 17:02:24</code></pre>
+</div>
+<div id="example-3-using-keepcache" class="section level2">
+<h2><span class="header-section-number">1.6</span> Example 3: using keepCache</h2>
+<div class="sourceCode" id="cb75"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb75-1" title="1">ranNumsA &lt;-<span class="st"> </span><span class="kw">Cache</span>(rnorm, <span class="dv">4</span>, <span class="dt">cacheRepo =</span> tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;objectName:a&quot;</span>)</a></code></pre></div>
+<pre><code>##   loading cached result from previous rnorm call.</code></pre>
+<div class="sourceCode" id="cb77"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb77-1" title="1">ranNumsB &lt;-<span class="st"> </span><span class="kw">Cache</span>(runif, <span class="dv">4</span>, <span class="dt">cacheRepo =</span> tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;objectName:b&quot;</span>)</a>
+<a class="sourceLine" id="cb77-2" title="2"></a>
+<a class="sourceLine" id="cb77-3" title="3"><span class="co"># keep only those cached items from the last 24 hours</span></a>
+<a class="sourceLine" id="cb77-4" title="4">oneDay &lt;-<span class="st"> </span><span class="dv">60</span> <span class="op">*</span><span class="st"> </span><span class="dv">60</span> <span class="op">*</span><span class="st"> </span><span class="dv">24</span></a>
+<a class="sourceLine" id="cb77-5" title="5"><span class="kw">keepCache</span>(tmpDir, <span class="dt">after =</span> <span class="kw">Sys.time</span>() <span class="op">-</span><span class="st"> </span>oneDay, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<pre><code>## Cache size:</code></pre>
+<pre><code>##   Total (including Rasters): 504 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 504 bytes</code></pre>
+<pre><code>##              cacheId         tagKey              tagValue         createdDate
+##  1: f7bee22047b8d0c1     objectName                     a 2020-02-19 17:02:23
+##  2: f7bee22047b8d0c1       function                 rnorm 2020-02-19 17:02:23
+##  3: f7bee22047b8d0c1          class               numeric 2020-02-19 17:02:23
+##  4: f7bee22047b8d0c1    object.size                  1008 2020-02-19 17:02:23
+##  5: f7bee22047b8d0c1       accessed   2020-02-19 17:02:23 2020-02-19 17:02:23
+##  6: f7bee22047b8d0c1        inCloud                 FALSE 2020-02-19 17:02:23
+##  7: f7bee22047b8d0c1 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:23
+##  8: f7bee22047b8d0c1 otherFunctions          process_file 2020-02-19 17:02:23
+##  9: f7bee22047b8d0c1 otherFunctions         process_group 2020-02-19 17:02:23
+## 10: f7bee22047b8d0c1 otherFunctions   process_group.block 2020-02-19 17:02:23
+## 11: f7bee22047b8d0c1 otherFunctions            call_block 2020-02-19 17:02:23
+## 12: f7bee22047b8d0c1 otherFunctions            block_exec 2020-02-19 17:02:23
+## 13: f7bee22047b8d0c1 otherFunctions                in_dir 2020-02-19 17:02:23
+## 14: f7bee22047b8d0c1 otherFunctions             timing_fn 2020-02-19 17:02:23
+## 15: f7bee22047b8d0c1 otherFunctions                handle 2020-02-19 17:02:23
+## 16: f7bee22047b8d0c1 otherFunctions           withVisible 2020-02-19 17:02:23
+## 17: f7bee22047b8d0c1      preDigest    n:7eef4eae85fd9229 2020-02-19 17:02:23
+## 18: f7bee22047b8d0c1      preDigest .FUN:4f604aa46882b368 2020-02-19 17:02:23
+## 19: f7bee22047b8d0c1      file.size                   175 2020-02-19 17:02:23
+## 20: f7bee22047b8d0c1       accessed   2020-02-19 17:02:24 2020-02-19 17:02:24
+## 21: f7bee22047b8d0c1       accessed   2020-02-19 17:02:25 2020-02-19 17:02:25
+## 22: 3aef38d1fc02aee5     objectName                     b 2020-02-19 17:02:25
+## 23: 3aef38d1fc02aee5       function                 runif 2020-02-19 17:02:25
+## 24: 3aef38d1fc02aee5          class               numeric 2020-02-19 17:02:25
+## 25: 3aef38d1fc02aee5    object.size                  1008 2020-02-19 17:02:25
+## 26: 3aef38d1fc02aee5       accessed   2020-02-19 17:02:25 2020-02-19 17:02:25
+## 27: 3aef38d1fc02aee5        inCloud                 FALSE 2020-02-19 17:02:25
+## 28: 3aef38d1fc02aee5 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:25
+## 29: 3aef38d1fc02aee5 otherFunctions          process_file 2020-02-19 17:02:25
+## 30: 3aef38d1fc02aee5 otherFunctions         process_group 2020-02-19 17:02:25
+## 31: 3aef38d1fc02aee5 otherFunctions   process_group.block 2020-02-19 17:02:25
+## 32: 3aef38d1fc02aee5 otherFunctions            call_block 2020-02-19 17:02:25
+## 33: 3aef38d1fc02aee5 otherFunctions            block_exec 2020-02-19 17:02:25
+## 34: 3aef38d1fc02aee5 otherFunctions                in_dir 2020-02-19 17:02:25
+## 35: 3aef38d1fc02aee5 otherFunctions             timing_fn 2020-02-19 17:02:25
+## 36: 3aef38d1fc02aee5 otherFunctions                handle 2020-02-19 17:02:25
+## 37: 3aef38d1fc02aee5 otherFunctions           withVisible 2020-02-19 17:02:25
+## 38: 3aef38d1fc02aee5      preDigest    n:7eef4eae85fd9229 2020-02-19 17:02:25
+## 39: 3aef38d1fc02aee5      preDigest .FUN:881ec847b7161f3c 2020-02-19 17:02:25
+## 40: 3aef38d1fc02aee5      file.size                   171 2020-02-19 17:02:25
+##              cacheId         tagKey              tagValue         createdDate</code></pre>
+<div class="sourceCode" id="cb82"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb82-1" title="1"><span class="co"># Keep all Cache items created with an rnorm() call</span></a>
+<a class="sourceLine" id="cb82-2" title="2"><span class="kw">keepCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;rnorm&quot;</span>, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<pre><code>## Cache size:</code></pre>
+<pre><code>##   Total (including Rasters): 252 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
+<pre><code>##              cacheId         tagKey              tagValue         createdDate
+##  1: f7bee22047b8d0c1     objectName                     a 2020-02-19 17:02:23
+##  2: f7bee22047b8d0c1       function                 rnorm 2020-02-19 17:02:23
+##  3: f7bee22047b8d0c1          class               numeric 2020-02-19 17:02:23
+##  4: f7bee22047b8d0c1    object.size                  1008 2020-02-19 17:02:23
+##  5: f7bee22047b8d0c1       accessed   2020-02-19 17:02:23 2020-02-19 17:02:23
+##  6: f7bee22047b8d0c1        inCloud                 FALSE 2020-02-19 17:02:23
+##  7: f7bee22047b8d0c1 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:23
+##  8: f7bee22047b8d0c1 otherFunctions          process_file 2020-02-19 17:02:23
+##  9: f7bee22047b8d0c1 otherFunctions         process_group 2020-02-19 17:02:23
+## 10: f7bee22047b8d0c1 otherFunctions   process_group.block 2020-02-19 17:02:23
+## 11: f7bee22047b8d0c1 otherFunctions            call_block 2020-02-19 17:02:23
+## 12: f7bee22047b8d0c1 otherFunctions            block_exec 2020-02-19 17:02:23
+## 13: f7bee22047b8d0c1 otherFunctions                in_dir 2020-02-19 17:02:23
+## 14: f7bee22047b8d0c1 otherFunctions             timing_fn 2020-02-19 17:02:23
+## 15: f7bee22047b8d0c1 otherFunctions                handle 2020-02-19 17:02:23
+## 16: f7bee22047b8d0c1 otherFunctions           withVisible 2020-02-19 17:02:23
+## 17: f7bee22047b8d0c1      preDigest    n:7eef4eae85fd9229 2020-02-19 17:02:23
+## 18: f7bee22047b8d0c1      preDigest .FUN:4f604aa46882b368 2020-02-19 17:02:23
+## 19: f7bee22047b8d0c1      file.size                   175 2020-02-19 17:02:23
+## 20: f7bee22047b8d0c1       accessed   2020-02-19 17:02:24 2020-02-19 17:02:24
+## 21: f7bee22047b8d0c1       accessed   2020-02-19 17:02:25 2020-02-19 17:02:25
+##              cacheId         tagKey              tagValue         createdDate</code></pre>
+<div class="sourceCode" id="cb87"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb87-1" title="1"><span class="co"># Remove all Cache items that happened within a rnorm() call</span></a>
+<a class="sourceLine" id="cb87-2" title="2"><span class="kw">clearCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;rnorm&quot;</span>, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<pre><code>## Cache size:</code></pre>
+<pre><code>##   Total (including Rasters): 252 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
+<div class="sourceCode" id="cb91"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb91-1" title="1"><span class="kw">showCache</span>(tmpDir) <span class="co">## empty</span></a></code></pre></div>
 <pre><code>## Cache size:</code></pre>
 <pre><code>##   Total (including Rasters): 0 bytes</code></pre>
 <pre><code>##   Selected objects (not including Rasters): 0 bytes</code></pre>
-<pre><code>## Empty data.table (0 rows and 3 cols): md5hash,name,createdDate</code></pre>
+<pre><code>## Empty data.table (0 rows and 4 cols): cacheId,tagKey,tagValue,createdDate</code></pre>
+<div class="sourceCode" id="cb96"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb96-1" title="1"><span class="co"># Also, can set a time before caching happens and remove based on this</span></a>
+<a class="sourceLine" id="cb96-2" title="2"><span class="co">#  --&gt; a useful, simple way to control Cache</span></a>
+<a class="sourceLine" id="cb96-3" title="3">ranNumsA &lt;-<span class="st"> </span><span class="kw">Cache</span>(rnorm, <span class="dv">4</span>, <span class="dt">cacheRepo =</span> tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;objectName:a&quot;</span>)</a>
+<a class="sourceLine" id="cb96-4" title="4">startTime &lt;-<span class="st"> </span><span class="kw">Sys.time</span>()</a>
+<a class="sourceLine" id="cb96-5" title="5"><span class="kw">Sys.sleep</span>(<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb96-6" title="6">ranNumsB &lt;-<span class="st"> </span><span class="kw">Cache</span>(rnorm, <span class="dv">5</span>, <span class="dt">cacheRepo =</span> tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;objectName:b&quot;</span>)</a>
+<a class="sourceLine" id="cb96-7" title="7"><span class="kw">keepCache</span>(tmpDir, <span class="dt">after =</span> startTime, <span class="dt">ask =</span> <span class="ot">FALSE</span>) <span class="co"># keep only those newer than startTime</span></a></code></pre></div>
+<pre><code>## Cache size:</code></pre>
+<pre><code>##   Total (including Rasters): 256 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 256 bytes</code></pre>
+<pre><code>##              cacheId         tagKey              tagValue         createdDate
+##  1: 142b4176fe87d51d     objectName                     b 2020-02-19 17:02:26
+##  2: 142b4176fe87d51d       function                 rnorm 2020-02-19 17:02:26
+##  3: 142b4176fe87d51d          class               numeric 2020-02-19 17:02:26
+##  4: 142b4176fe87d51d    object.size                  1024 2020-02-19 17:02:26
+##  5: 142b4176fe87d51d       accessed   2020-02-19 17:02:26 2020-02-19 17:02:26
+##  6: 142b4176fe87d51d        inCloud                 FALSE 2020-02-19 17:02:26
+##  7: 142b4176fe87d51d otherFunctions      vweave_rmarkdown 2020-02-19 17:02:26
+##  8: 142b4176fe87d51d otherFunctions          process_file 2020-02-19 17:02:26
+##  9: 142b4176fe87d51d otherFunctions         process_group 2020-02-19 17:02:26
+## 10: 142b4176fe87d51d otherFunctions   process_group.block 2020-02-19 17:02:26
+## 11: 142b4176fe87d51d otherFunctions            call_block 2020-02-19 17:02:26
+## 12: 142b4176fe87d51d otherFunctions            block_exec 2020-02-19 17:02:26
+## 13: 142b4176fe87d51d otherFunctions                in_dir 2020-02-19 17:02:26
+## 14: 142b4176fe87d51d otherFunctions             timing_fn 2020-02-19 17:02:26
+## 15: 142b4176fe87d51d otherFunctions                handle 2020-02-19 17:02:26
+## 16: 142b4176fe87d51d otherFunctions           withVisible 2020-02-19 17:02:26
+## 17: 142b4176fe87d51d      preDigest    n:a4f076b3db622faf 2020-02-19 17:02:26
+## 18: 142b4176fe87d51d      preDigest .FUN:4f604aa46882b368 2020-02-19 17:02:26
+## 19: 142b4176fe87d51d      file.size                   185 2020-02-19 17:02:26</code></pre>
+<div class="sourceCode" id="cb101"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb101-1" title="1"><span class="kw">clearCache</span>(tmpDir, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
 </div>
 <div id="example-4-searching-for-multiple-objects-in-the-cache" class="section level2">
 <h2><span class="header-section-number">1.7</span> Example 4: searching for multiple objects in the cache</h2>
-<div class="sourceCode" id="cb95"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb95-1" title="1"><span class="co"># default userTags is &quot;and&quot; matching; for &quot;or&quot; matching use |</span></a>
-<a class="sourceLine" id="cb95-2" title="2">ranNumsA &lt;-<span class="st"> </span><span class="kw">Cache</span>(runif, <span class="dv">4</span>, <span class="dt">cacheRepo =</span> tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;objectName:a&quot;</span>)</a>
-<a class="sourceLine" id="cb95-3" title="3">ranNumsB &lt;-<span class="st"> </span><span class="kw">Cache</span>(rnorm, <span class="dv">4</span>, <span class="dt">cacheRepo =</span> tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;objectName:b&quot;</span>)</a>
-<a class="sourceLine" id="cb95-4" title="4"></a>
-<a class="sourceLine" id="cb95-5" title="5"><span class="co"># show all objects (runif and rnorm in this case)</span></a>
-<a class="sourceLine" id="cb95-6" title="6"><span class="kw">showCache</span>(tmpDir)</a></code></pre></div>
+<div class="sourceCode" id="cb102"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb102-1" title="1"><span class="co"># default userTags is &quot;and&quot; matching; for &quot;or&quot; matching use |</span></a>
+<a class="sourceLine" id="cb102-2" title="2">ranNumsA &lt;-<span class="st"> </span><span class="kw">Cache</span>(runif, <span class="dv">4</span>, <span class="dt">cacheRepo =</span> tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;objectName:a&quot;</span>)</a>
+<a class="sourceLine" id="cb102-3" title="3">ranNumsB &lt;-<span class="st"> </span><span class="kw">Cache</span>(rnorm, <span class="dv">4</span>, <span class="dt">cacheRepo =</span> tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;objectName:b&quot;</span>)</a>
+<a class="sourceLine" id="cb102-4" title="4"></a>
+<a class="sourceLine" id="cb102-5" title="5"><span class="co"># show all objects (runif and rnorm in this case)</span></a>
+<a class="sourceLine" id="cb102-6" title="6"><span class="kw">showCache</span>(tmpDir)</a></code></pre></div>
 <pre><code>## Cache size:</code></pre>
 <pre><code>##   Total (including Rasters): 504 bytes</code></pre>
 <pre><code>##   Selected objects (not including Rasters): 504 bytes</code></pre>
-<pre><code>##                             artifact         tagKey
-##  1: 106559c99d270496c331b4e50a597135         format
-##  2: 106559c99d270496c331b4e50a597135           name
-##  3: 106559c99d270496c331b4e50a597135          class
-##  4: 106559c99d270496c331b4e50a597135           date
-##  5: 106559c99d270496c331b4e50a597135        cacheId
-##  6: 106559c99d270496c331b4e50a597135     objectName
-##  7: 106559c99d270496c331b4e50a597135       function
-##  8: 106559c99d270496c331b4e50a597135    object.size
-##  9: 106559c99d270496c331b4e50a597135       accessed
-## 10: 106559c99d270496c331b4e50a597135 otherFunctions
-## 11: 106559c99d270496c331b4e50a597135 otherFunctions
-## 12: 106559c99d270496c331b4e50a597135 otherFunctions
-## 13: 106559c99d270496c331b4e50a597135 otherFunctions
-## 14: 106559c99d270496c331b4e50a597135 otherFunctions
-## 15: 106559c99d270496c331b4e50a597135 otherFunctions
-## 16: 106559c99d270496c331b4e50a597135 otherFunctions
-## 17: 106559c99d270496c331b4e50a597135 otherFunctions
-## 18: 106559c99d270496c331b4e50a597135 otherFunctions
-## 19: 106559c99d270496c331b4e50a597135 otherFunctions
-## 20: 106559c99d270496c331b4e50a597135      preDigest
-## 21: 106559c99d270496c331b4e50a597135      preDigest
-## 22: 95eb7b563db3ed7ccbdcb4bae23f00f7         format
-## 23: 95eb7b563db3ed7ccbdcb4bae23f00f7           name
-## 24: 95eb7b563db3ed7ccbdcb4bae23f00f7          class
-## 25: 95eb7b563db3ed7ccbdcb4bae23f00f7           date
-## 26: 95eb7b563db3ed7ccbdcb4bae23f00f7        cacheId
-## 27: 95eb7b563db3ed7ccbdcb4bae23f00f7     objectName
-## 28: 95eb7b563db3ed7ccbdcb4bae23f00f7       function
-## 29: 95eb7b563db3ed7ccbdcb4bae23f00f7    object.size
-## 30: 95eb7b563db3ed7ccbdcb4bae23f00f7       accessed
-## 31: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 32: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 33: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 34: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 35: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 36: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 37: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 38: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 39: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 40: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 41: 95eb7b563db3ed7ccbdcb4bae23f00f7      preDigest
-## 42: 95eb7b563db3ed7ccbdcb4bae23f00f7      preDigest
-##                             artifact         tagKey
-##                             tagValue         createdDate
-##  1:                              rda 2019-11-18 06:58:22
-##  2: 106559c99d270496c331b4e50a597135 2019-11-18 06:58:22
-##  3:                          numeric 2019-11-18 06:58:22
-##  4:              2019-11-18 06:58:22 2019-11-18 06:58:22
-##  5:                 f7bee22047b8d0c1 2019-11-18 06:58:22
-##  6:                                b 2019-11-18 06:58:22
-##  7:                            rnorm 2019-11-18 06:58:22
-##  8:                             1008 2019-11-18 06:58:22
-##  9:              2019-11-18 06:58:22 2019-11-18 06:58:22
-## 10:                 vweave_rmarkdown 2019-11-18 06:58:22
-## 11:                     process_file 2019-11-18 06:58:22
-## 12:                    process_group 2019-11-18 06:58:22
-## 13:              process_group.block 2019-11-18 06:58:22
-## 14:                       call_block 2019-11-18 06:58:22
-## 15:                       block_exec 2019-11-18 06:58:22
-## 16:                           in_dir 2019-11-18 06:58:22
-## 17:                        timing_fn 2019-11-18 06:58:22
-## 18:                           handle 2019-11-18 06:58:22
-## 19:                      withVisible 2019-11-18 06:58:22
-## 20:               n:7eef4eae85fd9229 2019-11-18 06:58:22
-## 21:            .FUN:4f604aa46882b368 2019-11-18 06:58:22
-## 22:                              rda 2019-11-18 06:58:22
-## 23: 95eb7b563db3ed7ccbdcb4bae23f00f7 2019-11-18 06:58:22
-## 24:                          numeric 2019-11-18 06:58:22
-## 25:              2019-11-18 06:58:22 2019-11-18 06:58:22
-## 26:                 3aef38d1fc02aee5 2019-11-18 06:58:22
-## 27:                                a 2019-11-18 06:58:22
-## 28:                            runif 2019-11-18 06:58:22
-## 29:                             1008 2019-11-18 06:58:22
-## 30:              2019-11-18 06:58:22 2019-11-18 06:58:22
-## 31:                 vweave_rmarkdown 2019-11-18 06:58:22
-## 32:                     process_file 2019-11-18 06:58:22
-## 33:                    process_group 2019-11-18 06:58:22
-## 34:              process_group.block 2019-11-18 06:58:22
-## 35:                       call_block 2019-11-18 06:58:22
-## 36:                       block_exec 2019-11-18 06:58:22
-## 37:                           in_dir 2019-11-18 06:58:22
-## 38:                        timing_fn 2019-11-18 06:58:22
-## 39:                           handle 2019-11-18 06:58:22
-## 40:                      withVisible 2019-11-18 06:58:22
-## 41:               n:7eef4eae85fd9229 2019-11-18 06:58:22
-## 42:            .FUN:881ec847b7161f3c 2019-11-18 06:58:22
-##                             tagValue         createdDate</code></pre>
-<div class="sourceCode" id="cb100"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb100-1" title="1"><span class="co"># show objects that are both runif and rnorm</span></a>
-<a class="sourceLine" id="cb100-2" title="2"><span class="co"># (i.e., none in this case, because objecs are either or, not both)</span></a>
-<a class="sourceLine" id="cb100-3" title="3"><span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="kw">c</span>(<span class="st">&quot;runif&quot;</span>, <span class="st">&quot;rnorm&quot;</span>)) <span class="co">## empty</span></a></code></pre></div>
+<pre><code>##              cacheId         tagKey              tagValue         createdDate
+##  1: 3aef38d1fc02aee5     objectName                     a 2020-02-19 17:02:27
+##  2: 3aef38d1fc02aee5       function                 runif 2020-02-19 17:02:27
+##  3: 3aef38d1fc02aee5          class               numeric 2020-02-19 17:02:27
+##  4: 3aef38d1fc02aee5    object.size                  1008 2020-02-19 17:02:27
+##  5: 3aef38d1fc02aee5       accessed   2020-02-19 17:02:27 2020-02-19 17:02:27
+##  6: 3aef38d1fc02aee5        inCloud                 FALSE 2020-02-19 17:02:27
+##  7: 3aef38d1fc02aee5 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:27
+##  8: 3aef38d1fc02aee5 otherFunctions          process_file 2020-02-19 17:02:27
+##  9: 3aef38d1fc02aee5 otherFunctions         process_group 2020-02-19 17:02:27
+## 10: 3aef38d1fc02aee5 otherFunctions   process_group.block 2020-02-19 17:02:27
+## 11: 3aef38d1fc02aee5 otherFunctions            call_block 2020-02-19 17:02:27
+## 12: 3aef38d1fc02aee5 otherFunctions            block_exec 2020-02-19 17:02:27
+## 13: 3aef38d1fc02aee5 otherFunctions                in_dir 2020-02-19 17:02:27
+## 14: 3aef38d1fc02aee5 otherFunctions             timing_fn 2020-02-19 17:02:27
+## 15: 3aef38d1fc02aee5 otherFunctions                handle 2020-02-19 17:02:27
+## 16: 3aef38d1fc02aee5 otherFunctions           withVisible 2020-02-19 17:02:27
+## 17: 3aef38d1fc02aee5      preDigest    n:7eef4eae85fd9229 2020-02-19 17:02:27
+## 18: 3aef38d1fc02aee5      preDigest .FUN:881ec847b7161f3c 2020-02-19 17:02:27
+## 19: 3aef38d1fc02aee5      file.size                   169 2020-02-19 17:02:27
+## 20: f7bee22047b8d0c1     objectName                     b 2020-02-19 17:02:27
+## 21: f7bee22047b8d0c1       function                 rnorm 2020-02-19 17:02:27
+## 22: f7bee22047b8d0c1          class               numeric 2020-02-19 17:02:27
+## 23: f7bee22047b8d0c1    object.size                  1008 2020-02-19 17:02:27
+## 24: f7bee22047b8d0c1       accessed   2020-02-19 17:02:27 2020-02-19 17:02:27
+## 25: f7bee22047b8d0c1        inCloud                 FALSE 2020-02-19 17:02:27
+## 26: f7bee22047b8d0c1 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:27
+## 27: f7bee22047b8d0c1 otherFunctions          process_file 2020-02-19 17:02:27
+## 28: f7bee22047b8d0c1 otherFunctions         process_group 2020-02-19 17:02:27
+## 29: f7bee22047b8d0c1 otherFunctions   process_group.block 2020-02-19 17:02:27
+## 30: f7bee22047b8d0c1 otherFunctions            call_block 2020-02-19 17:02:27
+## 31: f7bee22047b8d0c1 otherFunctions            block_exec 2020-02-19 17:02:27
+## 32: f7bee22047b8d0c1 otherFunctions                in_dir 2020-02-19 17:02:27
+## 33: f7bee22047b8d0c1 otherFunctions             timing_fn 2020-02-19 17:02:27
+## 34: f7bee22047b8d0c1 otherFunctions                handle 2020-02-19 17:02:27
+## 35: f7bee22047b8d0c1 otherFunctions           withVisible 2020-02-19 17:02:27
+## 36: f7bee22047b8d0c1      preDigest    n:7eef4eae85fd9229 2020-02-19 17:02:27
+## 37: f7bee22047b8d0c1      preDigest .FUN:4f604aa46882b368 2020-02-19 17:02:27
+## 38: f7bee22047b8d0c1      file.size                   175 2020-02-19 17:02:27
+##              cacheId         tagKey              tagValue         createdDate</code></pre>
+<div class="sourceCode" id="cb107"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb107-1" title="1"><span class="co"># show objects that are both runif and rnorm</span></a>
+<a class="sourceLine" id="cb107-2" title="2"><span class="co"># (i.e., none in this case, because objecs are either or, not both)</span></a>
+<a class="sourceLine" id="cb107-3" title="3"><span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="kw">c</span>(<span class="st">&quot;runif&quot;</span>, <span class="st">&quot;rnorm&quot;</span>)) <span class="co">## empty</span></a></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters): 504 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 0 bytes</code></pre>
 <pre><code>##   Selected objects (not including Rasters): 0 bytes</code></pre>
-<pre><code>## Empty data.table (0 rows and 4 cols): artifact,tagKey,tagValue,createdDate</code></pre>
-<div class="sourceCode" id="cb105"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb105-1" title="1"><span class="co"># show objects that are either runif or rnorm (&quot;or&quot; search)</span></a>
-<a class="sourceLine" id="cb105-2" title="2"><span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;runif|rnorm&quot;</span>)</a></code></pre></div>
+<pre><code>## Empty data.table (0 rows and 4 cols): cacheId,tagKey,tagValue,createdDate</code></pre>
+<div class="sourceCode" id="cb112"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb112-1" title="1"><span class="co"># show objects that are either runif or rnorm (&quot;or&quot; search)</span></a>
+<a class="sourceLine" id="cb112-2" title="2"><span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;runif|rnorm&quot;</span>)</a></code></pre></div>
 <pre><code>## Cache size:</code></pre>
 <pre><code>##   Total (including Rasters): 504 bytes</code></pre>
 <pre><code>##   Selected objects (not including Rasters): 504 bytes</code></pre>
-<pre><code>##                             artifact         tagKey
-##  1: 106559c99d270496c331b4e50a597135         format
-##  2: 106559c99d270496c331b4e50a597135           name
-##  3: 106559c99d270496c331b4e50a597135          class
-##  4: 106559c99d270496c331b4e50a597135           date
-##  5: 106559c99d270496c331b4e50a597135        cacheId
-##  6: 106559c99d270496c331b4e50a597135     objectName
-##  7: 106559c99d270496c331b4e50a597135       function
-##  8: 106559c99d270496c331b4e50a597135    object.size
-##  9: 106559c99d270496c331b4e50a597135       accessed
-## 10: 106559c99d270496c331b4e50a597135 otherFunctions
-## 11: 106559c99d270496c331b4e50a597135 otherFunctions
-## 12: 106559c99d270496c331b4e50a597135 otherFunctions
-## 13: 106559c99d270496c331b4e50a597135 otherFunctions
-## 14: 106559c99d270496c331b4e50a597135 otherFunctions
-## 15: 106559c99d270496c331b4e50a597135 otherFunctions
-## 16: 106559c99d270496c331b4e50a597135 otherFunctions
-## 17: 106559c99d270496c331b4e50a597135 otherFunctions
-## 18: 106559c99d270496c331b4e50a597135 otherFunctions
-## 19: 106559c99d270496c331b4e50a597135 otherFunctions
-## 20: 106559c99d270496c331b4e50a597135      preDigest
-## 21: 106559c99d270496c331b4e50a597135      preDigest
-## 22: 95eb7b563db3ed7ccbdcb4bae23f00f7         format
-## 23: 95eb7b563db3ed7ccbdcb4bae23f00f7           name
-## 24: 95eb7b563db3ed7ccbdcb4bae23f00f7          class
-## 25: 95eb7b563db3ed7ccbdcb4bae23f00f7           date
-## 26: 95eb7b563db3ed7ccbdcb4bae23f00f7        cacheId
-## 27: 95eb7b563db3ed7ccbdcb4bae23f00f7     objectName
-## 28: 95eb7b563db3ed7ccbdcb4bae23f00f7       function
-## 29: 95eb7b563db3ed7ccbdcb4bae23f00f7    object.size
-## 30: 95eb7b563db3ed7ccbdcb4bae23f00f7       accessed
-## 31: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 32: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 33: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 34: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 35: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 36: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 37: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 38: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 39: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 40: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 41: 95eb7b563db3ed7ccbdcb4bae23f00f7      preDigest
-## 42: 95eb7b563db3ed7ccbdcb4bae23f00f7      preDigest
-##                             artifact         tagKey
-##                             tagValue         createdDate
-##  1:                              rda 2019-11-18 06:58:22
-##  2: 106559c99d270496c331b4e50a597135 2019-11-18 06:58:22
-##  3:                          numeric 2019-11-18 06:58:22
-##  4:              2019-11-18 06:58:22 2019-11-18 06:58:22
-##  5:                 f7bee22047b8d0c1 2019-11-18 06:58:22
-##  6:                                b 2019-11-18 06:58:22
-##  7:                            rnorm 2019-11-18 06:58:22
-##  8:                             1008 2019-11-18 06:58:22
-##  9:              2019-11-18 06:58:22 2019-11-18 06:58:22
-## 10:                 vweave_rmarkdown 2019-11-18 06:58:22
-## 11:                     process_file 2019-11-18 06:58:22
-## 12:                    process_group 2019-11-18 06:58:22
-## 13:              process_group.block 2019-11-18 06:58:22
-## 14:                       call_block 2019-11-18 06:58:22
-## 15:                       block_exec 2019-11-18 06:58:22
-## 16:                           in_dir 2019-11-18 06:58:22
-## 17:                        timing_fn 2019-11-18 06:58:22
-## 18:                           handle 2019-11-18 06:58:22
-## 19:                      withVisible 2019-11-18 06:58:22
-## 20:               n:7eef4eae85fd9229 2019-11-18 06:58:22
-## 21:            .FUN:4f604aa46882b368 2019-11-18 06:58:22
-## 22:                              rda 2019-11-18 06:58:22
-## 23: 95eb7b563db3ed7ccbdcb4bae23f00f7 2019-11-18 06:58:22
-## 24:                          numeric 2019-11-18 06:58:22
-## 25:              2019-11-18 06:58:22 2019-11-18 06:58:22
-## 26:                 3aef38d1fc02aee5 2019-11-18 06:58:22
-## 27:                                a 2019-11-18 06:58:22
-## 28:                            runif 2019-11-18 06:58:22
-## 29:                             1008 2019-11-18 06:58:22
-## 30:              2019-11-18 06:58:22 2019-11-18 06:58:22
-## 31:                 vweave_rmarkdown 2019-11-18 06:58:22
-## 32:                     process_file 2019-11-18 06:58:22
-## 33:                    process_group 2019-11-18 06:58:22
-## 34:              process_group.block 2019-11-18 06:58:22
-## 35:                       call_block 2019-11-18 06:58:22
-## 36:                       block_exec 2019-11-18 06:58:22
-## 37:                           in_dir 2019-11-18 06:58:22
-## 38:                        timing_fn 2019-11-18 06:58:22
-## 39:                           handle 2019-11-18 06:58:22
-## 40:                      withVisible 2019-11-18 06:58:22
-## 41:               n:7eef4eae85fd9229 2019-11-18 06:58:22
-## 42:            .FUN:881ec847b7161f3c 2019-11-18 06:58:22
-##                             tagValue         createdDate</code></pre>
-<div class="sourceCode" id="cb110"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb110-1" title="1"><span class="co"># keep only objects that are either runif or rnorm (&quot;or&quot; search)</span></a>
-<a class="sourceLine" id="cb110-2" title="2"><span class="kw">keepCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;runif|rnorm&quot;</span>, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<pre><code>##              cacheId         tagKey              tagValue         createdDate
+##  1: 3aef38d1fc02aee5     objectName                     a 2020-02-19 17:02:27
+##  2: 3aef38d1fc02aee5       function                 runif 2020-02-19 17:02:27
+##  3: 3aef38d1fc02aee5          class               numeric 2020-02-19 17:02:27
+##  4: 3aef38d1fc02aee5    object.size                  1008 2020-02-19 17:02:27
+##  5: 3aef38d1fc02aee5       accessed   2020-02-19 17:02:27 2020-02-19 17:02:27
+##  6: 3aef38d1fc02aee5        inCloud                 FALSE 2020-02-19 17:02:27
+##  7: 3aef38d1fc02aee5 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:27
+##  8: 3aef38d1fc02aee5 otherFunctions          process_file 2020-02-19 17:02:27
+##  9: 3aef38d1fc02aee5 otherFunctions         process_group 2020-02-19 17:02:27
+## 10: 3aef38d1fc02aee5 otherFunctions   process_group.block 2020-02-19 17:02:27
+## 11: 3aef38d1fc02aee5 otherFunctions            call_block 2020-02-19 17:02:27
+## 12: 3aef38d1fc02aee5 otherFunctions            block_exec 2020-02-19 17:02:27
+## 13: 3aef38d1fc02aee5 otherFunctions                in_dir 2020-02-19 17:02:27
+## 14: 3aef38d1fc02aee5 otherFunctions             timing_fn 2020-02-19 17:02:27
+## 15: 3aef38d1fc02aee5 otherFunctions                handle 2020-02-19 17:02:27
+## 16: 3aef38d1fc02aee5 otherFunctions           withVisible 2020-02-19 17:02:27
+## 17: 3aef38d1fc02aee5      preDigest    n:7eef4eae85fd9229 2020-02-19 17:02:27
+## 18: 3aef38d1fc02aee5      preDigest .FUN:881ec847b7161f3c 2020-02-19 17:02:27
+## 19: 3aef38d1fc02aee5      file.size                   169 2020-02-19 17:02:27
+## 20: f7bee22047b8d0c1     objectName                     b 2020-02-19 17:02:27
+## 21: f7bee22047b8d0c1       function                 rnorm 2020-02-19 17:02:27
+## 22: f7bee22047b8d0c1          class               numeric 2020-02-19 17:02:27
+## 23: f7bee22047b8d0c1    object.size                  1008 2020-02-19 17:02:27
+## 24: f7bee22047b8d0c1       accessed   2020-02-19 17:02:27 2020-02-19 17:02:27
+## 25: f7bee22047b8d0c1        inCloud                 FALSE 2020-02-19 17:02:27
+## 26: f7bee22047b8d0c1 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:27
+## 27: f7bee22047b8d0c1 otherFunctions          process_file 2020-02-19 17:02:27
+## 28: f7bee22047b8d0c1 otherFunctions         process_group 2020-02-19 17:02:27
+## 29: f7bee22047b8d0c1 otherFunctions   process_group.block 2020-02-19 17:02:27
+## 30: f7bee22047b8d0c1 otherFunctions            call_block 2020-02-19 17:02:27
+## 31: f7bee22047b8d0c1 otherFunctions            block_exec 2020-02-19 17:02:27
+## 32: f7bee22047b8d0c1 otherFunctions                in_dir 2020-02-19 17:02:27
+## 33: f7bee22047b8d0c1 otherFunctions             timing_fn 2020-02-19 17:02:27
+## 34: f7bee22047b8d0c1 otherFunctions                handle 2020-02-19 17:02:27
+## 35: f7bee22047b8d0c1 otherFunctions           withVisible 2020-02-19 17:02:27
+## 36: f7bee22047b8d0c1      preDigest    n:7eef4eae85fd9229 2020-02-19 17:02:27
+## 37: f7bee22047b8d0c1      preDigest .FUN:4f604aa46882b368 2020-02-19 17:02:27
+## 38: f7bee22047b8d0c1      file.size                   175 2020-02-19 17:02:27
+##              cacheId         tagKey              tagValue         createdDate</code></pre>
+<div class="sourceCode" id="cb117"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb117-1" title="1"><span class="co"># keep only objects that are either runif or rnorm (&quot;or&quot; search)</span></a>
+<a class="sourceLine" id="cb117-2" title="2"><span class="kw">keepCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;runif|rnorm&quot;</span>, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
 <pre><code>## Cache size:</code></pre>
 <pre><code>##   Total (including Rasters): 504 bytes</code></pre>
 <pre><code>##   Selected objects (not including Rasters): 504 bytes</code></pre>
-<pre><code>##                             artifact         tagKey
-##  1: 106559c99d270496c331b4e50a597135         format
-##  2: 106559c99d270496c331b4e50a597135           name
-##  3: 106559c99d270496c331b4e50a597135          class
-##  4: 106559c99d270496c331b4e50a597135           date
-##  5: 106559c99d270496c331b4e50a597135        cacheId
-##  6: 106559c99d270496c331b4e50a597135     objectName
-##  7: 106559c99d270496c331b4e50a597135       function
-##  8: 106559c99d270496c331b4e50a597135    object.size
-##  9: 106559c99d270496c331b4e50a597135       accessed
-## 10: 106559c99d270496c331b4e50a597135 otherFunctions
-## 11: 106559c99d270496c331b4e50a597135 otherFunctions
-## 12: 106559c99d270496c331b4e50a597135 otherFunctions
-## 13: 106559c99d270496c331b4e50a597135 otherFunctions
-## 14: 106559c99d270496c331b4e50a597135 otherFunctions
-## 15: 106559c99d270496c331b4e50a597135 otherFunctions
-## 16: 106559c99d270496c331b4e50a597135 otherFunctions
-## 17: 106559c99d270496c331b4e50a597135 otherFunctions
-## 18: 106559c99d270496c331b4e50a597135 otherFunctions
-## 19: 106559c99d270496c331b4e50a597135 otherFunctions
-## 20: 106559c99d270496c331b4e50a597135      preDigest
-## 21: 106559c99d270496c331b4e50a597135      preDigest
-## 22: 95eb7b563db3ed7ccbdcb4bae23f00f7         format
-## 23: 95eb7b563db3ed7ccbdcb4bae23f00f7           name
-## 24: 95eb7b563db3ed7ccbdcb4bae23f00f7          class
-## 25: 95eb7b563db3ed7ccbdcb4bae23f00f7           date
-## 26: 95eb7b563db3ed7ccbdcb4bae23f00f7        cacheId
-## 27: 95eb7b563db3ed7ccbdcb4bae23f00f7     objectName
-## 28: 95eb7b563db3ed7ccbdcb4bae23f00f7       function
-## 29: 95eb7b563db3ed7ccbdcb4bae23f00f7    object.size
-## 30: 95eb7b563db3ed7ccbdcb4bae23f00f7       accessed
-## 31: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 32: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 33: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 34: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 35: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 36: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 37: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 38: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 39: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 40: 95eb7b563db3ed7ccbdcb4bae23f00f7 otherFunctions
-## 41: 95eb7b563db3ed7ccbdcb4bae23f00f7      preDigest
-## 42: 95eb7b563db3ed7ccbdcb4bae23f00f7      preDigest
-##                             artifact         tagKey
-##                             tagValue         createdDate
-##  1:                              rda 2019-11-18 06:58:22
-##  2: 106559c99d270496c331b4e50a597135 2019-11-18 06:58:22
-##  3:                          numeric 2019-11-18 06:58:22
-##  4:              2019-11-18 06:58:22 2019-11-18 06:58:22
-##  5:                 f7bee22047b8d0c1 2019-11-18 06:58:22
-##  6:                                b 2019-11-18 06:58:22
-##  7:                            rnorm 2019-11-18 06:58:22
-##  8:                             1008 2019-11-18 06:58:22
-##  9:              2019-11-18 06:58:22 2019-11-18 06:58:22
-## 10:                 vweave_rmarkdown 2019-11-18 06:58:22
-## 11:                     process_file 2019-11-18 06:58:22
-## 12:                    process_group 2019-11-18 06:58:22
-## 13:              process_group.block 2019-11-18 06:58:22
-## 14:                       call_block 2019-11-18 06:58:22
-## 15:                       block_exec 2019-11-18 06:58:22
-## 16:                           in_dir 2019-11-18 06:58:22
-## 17:                        timing_fn 2019-11-18 06:58:22
-## 18:                           handle 2019-11-18 06:58:22
-## 19:                      withVisible 2019-11-18 06:58:22
-## 20:               n:7eef4eae85fd9229 2019-11-18 06:58:22
-## 21:            .FUN:4f604aa46882b368 2019-11-18 06:58:22
-## 22:                              rda 2019-11-18 06:58:22
-## 23: 95eb7b563db3ed7ccbdcb4bae23f00f7 2019-11-18 06:58:22
-## 24:                          numeric 2019-11-18 06:58:22
-## 25:              2019-11-18 06:58:22 2019-11-18 06:58:22
-## 26:                 3aef38d1fc02aee5 2019-11-18 06:58:22
-## 27:                                a 2019-11-18 06:58:22
-## 28:                            runif 2019-11-18 06:58:22
-## 29:                             1008 2019-11-18 06:58:22
-## 30:              2019-11-18 06:58:22 2019-11-18 06:58:22
-## 31:                 vweave_rmarkdown 2019-11-18 06:58:22
-## 32:                     process_file 2019-11-18 06:58:22
-## 33:                    process_group 2019-11-18 06:58:22
-## 34:              process_group.block 2019-11-18 06:58:22
-## 35:                       call_block 2019-11-18 06:58:22
-## 36:                       block_exec 2019-11-18 06:58:22
-## 37:                           in_dir 2019-11-18 06:58:22
-## 38:                        timing_fn 2019-11-18 06:58:22
-## 39:                           handle 2019-11-18 06:58:22
-## 40:                      withVisible 2019-11-18 06:58:22
-## 41:               n:7eef4eae85fd9229 2019-11-18 06:58:22
-## 42:            .FUN:881ec847b7161f3c 2019-11-18 06:58:22
-##                             tagValue         createdDate</code></pre>
-<div class="sourceCode" id="cb115"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb115-1" title="1"><span class="kw">clearCache</span>(tmpDir, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<pre><code>##              cacheId         tagKey              tagValue         createdDate
+##  1: 3aef38d1fc02aee5     objectName                     a 2020-02-19 17:02:27
+##  2: 3aef38d1fc02aee5       function                 runif 2020-02-19 17:02:27
+##  3: 3aef38d1fc02aee5          class               numeric 2020-02-19 17:02:27
+##  4: 3aef38d1fc02aee5    object.size                  1008 2020-02-19 17:02:27
+##  5: 3aef38d1fc02aee5       accessed   2020-02-19 17:02:27 2020-02-19 17:02:27
+##  6: 3aef38d1fc02aee5        inCloud                 FALSE 2020-02-19 17:02:27
+##  7: 3aef38d1fc02aee5 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:27
+##  8: 3aef38d1fc02aee5 otherFunctions          process_file 2020-02-19 17:02:27
+##  9: 3aef38d1fc02aee5 otherFunctions         process_group 2020-02-19 17:02:27
+## 10: 3aef38d1fc02aee5 otherFunctions   process_group.block 2020-02-19 17:02:27
+## 11: 3aef38d1fc02aee5 otherFunctions            call_block 2020-02-19 17:02:27
+## 12: 3aef38d1fc02aee5 otherFunctions            block_exec 2020-02-19 17:02:27
+## 13: 3aef38d1fc02aee5 otherFunctions                in_dir 2020-02-19 17:02:27
+## 14: 3aef38d1fc02aee5 otherFunctions             timing_fn 2020-02-19 17:02:27
+## 15: 3aef38d1fc02aee5 otherFunctions                handle 2020-02-19 17:02:27
+## 16: 3aef38d1fc02aee5 otherFunctions           withVisible 2020-02-19 17:02:27
+## 17: 3aef38d1fc02aee5      preDigest    n:7eef4eae85fd9229 2020-02-19 17:02:27
+## 18: 3aef38d1fc02aee5      preDigest .FUN:881ec847b7161f3c 2020-02-19 17:02:27
+## 19: 3aef38d1fc02aee5      file.size                   169 2020-02-19 17:02:27
+## 20: f7bee22047b8d0c1     objectName                     b 2020-02-19 17:02:27
+## 21: f7bee22047b8d0c1       function                 rnorm 2020-02-19 17:02:27
+## 22: f7bee22047b8d0c1          class               numeric 2020-02-19 17:02:27
+## 23: f7bee22047b8d0c1    object.size                  1008 2020-02-19 17:02:27
+## 24: f7bee22047b8d0c1       accessed   2020-02-19 17:02:27 2020-02-19 17:02:27
+## 25: f7bee22047b8d0c1        inCloud                 FALSE 2020-02-19 17:02:27
+## 26: f7bee22047b8d0c1 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:27
+## 27: f7bee22047b8d0c1 otherFunctions          process_file 2020-02-19 17:02:27
+## 28: f7bee22047b8d0c1 otherFunctions         process_group 2020-02-19 17:02:27
+## 29: f7bee22047b8d0c1 otherFunctions   process_group.block 2020-02-19 17:02:27
+## 30: f7bee22047b8d0c1 otherFunctions            call_block 2020-02-19 17:02:27
+## 31: f7bee22047b8d0c1 otherFunctions            block_exec 2020-02-19 17:02:27
+## 32: f7bee22047b8d0c1 otherFunctions                in_dir 2020-02-19 17:02:27
+## 33: f7bee22047b8d0c1 otherFunctions             timing_fn 2020-02-19 17:02:27
+## 34: f7bee22047b8d0c1 otherFunctions                handle 2020-02-19 17:02:27
+## 35: f7bee22047b8d0c1 otherFunctions           withVisible 2020-02-19 17:02:27
+## 36: f7bee22047b8d0c1      preDigest    n:7eef4eae85fd9229 2020-02-19 17:02:27
+## 37: f7bee22047b8d0c1      preDigest .FUN:4f604aa46882b368 2020-02-19 17:02:27
+## 38: f7bee22047b8d0c1      file.size                   175 2020-02-19 17:02:27
+##              cacheId         tagKey              tagValue         createdDate</code></pre>
+<div class="sourceCode" id="cb122"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb122-1" title="1"><span class="kw">clearCache</span>(tmpDir, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
 </div>
 <div id="example-5-using-caching-to-speed-up-rerunning-expensive-computations" class="section level2">
 <h2><span class="header-section-number">1.8</span> Example 5: using caching to speed up rerunning expensive computations</h2>
-<div class="sourceCode" id="cb116"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb116-1" title="1">ras &lt;-<span class="st"> </span><span class="kw">raster</span>(<span class="kw">extent</span>(<span class="dv">0</span>, <span class="dv">5</span>, <span class="dv">0</span>, <span class="dv">5</span>), <span class="dt">res =</span> <span class="dv">1</span>,</a>
-<a class="sourceLine" id="cb116-2" title="2">              <span class="dt">vals =</span> <span class="kw">sample</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>, <span class="dt">replace =</span> <span class="ot">TRUE</span>, <span class="dt">size =</span> <span class="dv">25</span>),</a>
-<a class="sourceLine" id="cb116-3" title="3">              <span class="dt">crs =</span> <span class="st">&quot;+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +ellps=WGS84&quot;</span>)</a>
-<a class="sourceLine" id="cb116-4" title="4"></a>
-<a class="sourceLine" id="cb116-5" title="5"><span class="co"># A slow operation, like GIS operation</span></a>
-<a class="sourceLine" id="cb116-6" title="6">notCached &lt;-<span class="st"> </span><span class="kw">suppressWarnings</span>(</a>
-<a class="sourceLine" id="cb116-7" title="7">  <span class="co"># project raster generates warnings when run non-interactively</span></a>
-<a class="sourceLine" id="cb116-8" title="8">  <span class="kw">projectRaster</span>(ras, <span class="dt">crs =</span> <span class="kw">crs</span>(ras), <span class="dt">res =</span> <span class="dv">5</span>, <span class="dt">cacheRepo =</span> tmpDir)</a>
-<a class="sourceLine" id="cb116-9" title="9">)</a>
-<a class="sourceLine" id="cb116-10" title="10"></a>
-<a class="sourceLine" id="cb116-11" title="11">cached &lt;-<span class="st"> </span><span class="kw">suppressWarnings</span>(</a>
-<a class="sourceLine" id="cb116-12" title="12">  <span class="co"># project raster generates warnings when run non-interactively</span></a>
-<a class="sourceLine" id="cb116-13" title="13">  <span class="co"># using quote works also</span></a>
-<a class="sourceLine" id="cb116-14" title="14">  <span class="kw">Cache</span>(projectRaster, ras, <span class="dt">crs =</span> <span class="kw">crs</span>(ras), <span class="dt">res =</span> <span class="dv">5</span>, <span class="dt">cacheRepo =</span> tmpDir)</a>
-<a class="sourceLine" id="cb116-15" title="15">)</a>
-<a class="sourceLine" id="cb116-16" title="16"></a>
-<a class="sourceLine" id="cb116-17" title="17"><span class="co"># second time is much faster</span></a>
-<a class="sourceLine" id="cb116-18" title="18">reRun &lt;-<span class="st"> </span><span class="kw">suppressWarnings</span>(</a>
-<a class="sourceLine" id="cb116-19" title="19">  <span class="co"># project raster generates warnings when run non-interactively</span></a>
-<a class="sourceLine" id="cb116-20" title="20">  <span class="kw">Cache</span>(projectRaster, ras, <span class="dt">crs =</span> <span class="kw">crs</span>(ras), <span class="dt">res =</span> <span class="dv">5</span>, <span class="dt">cacheRepo =</span> tmpDir)</a>
-<a class="sourceLine" id="cb116-21" title="21">)</a></code></pre></div>
-<pre><code>##   loading cached result from previous projectRaster call, adding to memoised copy</code></pre>
-<div class="sourceCode" id="cb118"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb118-1" title="1"><span class="co"># recovered cached version is same as non-cached version</span></a>
-<a class="sourceLine" id="cb118-2" title="2"><span class="kw">all.equal</span>(notCached, reRun) <span class="co">## TRUE</span></a></code></pre></div>
+<div class="sourceCode" id="cb123"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb123-1" title="1">ras &lt;-<span class="st"> </span><span class="kw">raster</span>(<span class="kw">extent</span>(<span class="dv">0</span>, <span class="dv">5</span>, <span class="dv">0</span>, <span class="dv">5</span>), <span class="dt">res =</span> <span class="dv">1</span>,</a>
+<a class="sourceLine" id="cb123-2" title="2">              <span class="dt">vals =</span> <span class="kw">sample</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>, <span class="dt">replace =</span> <span class="ot">TRUE</span>, <span class="dt">size =</span> <span class="dv">25</span>),</a>
+<a class="sourceLine" id="cb123-3" title="3">              <span class="dt">crs =</span> <span class="st">&quot;+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +ellps=WGS84&quot;</span>)</a>
+<a class="sourceLine" id="cb123-4" title="4"></a>
+<a class="sourceLine" id="cb123-5" title="5"><span class="co"># A slow operation, like GIS operation</span></a>
+<a class="sourceLine" id="cb123-6" title="6">notCached &lt;-<span class="st"> </span><span class="kw">suppressWarnings</span>(</a>
+<a class="sourceLine" id="cb123-7" title="7">  <span class="co"># project raster generates warnings when run non-interactively</span></a>
+<a class="sourceLine" id="cb123-8" title="8">  <span class="kw">projectRaster</span>(ras, <span class="dt">crs =</span> <span class="kw">crs</span>(ras), <span class="dt">res =</span> <span class="dv">5</span>, <span class="dt">cacheRepo =</span> tmpDir)</a>
+<a class="sourceLine" id="cb123-9" title="9">)</a>
+<a class="sourceLine" id="cb123-10" title="10"></a>
+<a class="sourceLine" id="cb123-11" title="11">cached &lt;-<span class="st"> </span><span class="kw">suppressWarnings</span>(</a>
+<a class="sourceLine" id="cb123-12" title="12">  <span class="co"># project raster generates warnings when run non-interactively</span></a>
+<a class="sourceLine" id="cb123-13" title="13">  <span class="co"># using quote works also</span></a>
+<a class="sourceLine" id="cb123-14" title="14">  <span class="kw">Cache</span>(projectRaster, ras, <span class="dt">crs =</span> <span class="kw">crs</span>(ras), <span class="dt">res =</span> <span class="dv">5</span>, <span class="dt">cacheRepo =</span> tmpDir)</a>
+<a class="sourceLine" id="cb123-15" title="15">)</a>
+<a class="sourceLine" id="cb123-16" title="16"></a>
+<a class="sourceLine" id="cb123-17" title="17"><span class="co"># second time is much faster</span></a>
+<a class="sourceLine" id="cb123-18" title="18">reRun &lt;-<span class="st"> </span><span class="kw">suppressWarnings</span>(</a>
+<a class="sourceLine" id="cb123-19" title="19">  <span class="co"># project raster generates warnings when run non-interactively</span></a>
+<a class="sourceLine" id="cb123-20" title="20">  <span class="kw">Cache</span>(projectRaster, ras, <span class="dt">crs =</span> <span class="kw">crs</span>(ras), <span class="dt">res =</span> <span class="dv">5</span>, <span class="dt">cacheRepo =</span> tmpDir)</a>
+<a class="sourceLine" id="cb123-21" title="21">)</a></code></pre></div>
+<pre><code>##   loading cached result from previous projectRaster call.</code></pre>
+<div class="sourceCode" id="cb125"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb125-1" title="1"><span class="co"># recovered cached version is same as non-cached version</span></a>
+<a class="sourceLine" id="cb125-2" title="2"><span class="kw">all.equal</span>(notCached, reRun) <span class="co">## TRUE</span></a></code></pre></div>
 <pre><code>## [1] TRUE</code></pre>
 </div>
 <div id="nested-caching" class="section level2">
 <h2><span class="header-section-number">1.9</span> Nested Caching</h2>
 <p>Nested caching, which is when Caching of a function occurs inside an outer function, which is itself cached. This is a critical element to working within a reproducible work flow. It is not enough during development to cache flat code chunks, as there will be many levels of “slow” functions. Ideally, at all points in a development cycle, it should be possible to get to any line of code starting from the very initial steps, running through everything up to that point, in less that 1 second. If the workflow can be kept very fast like this, then there is a guarantee that it will work at any point.</p>
-<div class="sourceCode" id="cb120"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb120-1" title="1"><span class="co">##########################</span></a>
-<a class="sourceLine" id="cb120-2" title="2"><span class="co">## Nested Caching</span></a>
-<a class="sourceLine" id="cb120-3" title="3"><span class="co"># Make 2 functions</span></a>
-<a class="sourceLine" id="cb120-4" title="4">inner &lt;-<span class="st"> </span><span class="cf">function</span>(mean) {</a>
-<a class="sourceLine" id="cb120-5" title="5">  d &lt;-<span class="st"> </span><span class="dv">1</span></a>
-<a class="sourceLine" id="cb120-6" title="6">  <span class="kw">Cache</span>(rnorm, <span class="dt">n =</span> <span class="dv">3</span>, <span class="dt">mean =</span> mean)</a>
-<a class="sourceLine" id="cb120-7" title="7">}</a>
-<a class="sourceLine" id="cb120-8" title="8">outer &lt;-<span class="st"> </span><span class="cf">function</span>(n) {</a>
-<a class="sourceLine" id="cb120-9" title="9">  <span class="kw">Cache</span>(inner, <span class="fl">0.1</span>, <span class="dt">cacheRepo =</span> tmpdir2)</a>
-<a class="sourceLine" id="cb120-10" title="10">}</a>
-<a class="sourceLine" id="cb120-11" title="11"></a>
-<a class="sourceLine" id="cb120-12" title="12"><span class="co"># make 2 different cache paths</span></a>
-<a class="sourceLine" id="cb120-13" title="13">tmpdir1 &lt;-<span class="st"> </span><span class="kw">file.path</span>(<span class="kw">tempdir</span>(), <span class="st">&quot;first&quot;</span>)</a>
-<a class="sourceLine" id="cb120-14" title="14">tmpdir2 &lt;-<span class="st"> </span><span class="kw">file.path</span>(<span class="kw">tempdir</span>(), <span class="st">&quot;second&quot;</span>)</a>
-<a class="sourceLine" id="cb120-15" title="15"></a>
-<a class="sourceLine" id="cb120-16" title="16"><span class="co"># Run the Cache ... notOlderThan propagates to all 3 Cache calls,</span></a>
-<a class="sourceLine" id="cb120-17" title="17"><span class="co">#   but cacheRepo is tmpdir1 in top level Cache and all nested</span></a>
-<a class="sourceLine" id="cb120-18" title="18"><span class="co">#   Cache calls, unless individually overridden ... here inner</span></a>
-<a class="sourceLine" id="cb120-19" title="19"><span class="co">#   uses tmpdir2 repository</span></a>
-<a class="sourceLine" id="cb120-20" title="20"><span class="kw">Cache</span>(outer, <span class="dt">n =</span> <span class="dv">2</span>, <span class="dt">cacheRepo =</span> tmpdir1, <span class="dt">notOlderThan =</span> <span class="kw">Sys.time</span>())</a></code></pre></div>
-<pre><code>## [1] -0.7060652 -1.3127788 -0.3790895
+<div class="sourceCode" id="cb127"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb127-1" title="1"><span class="co">##########################</span></a>
+<a class="sourceLine" id="cb127-2" title="2"><span class="co">## Nested Caching</span></a>
+<a class="sourceLine" id="cb127-3" title="3"><span class="co"># Make 2 functions</span></a>
+<a class="sourceLine" id="cb127-4" title="4">inner &lt;-<span class="st"> </span><span class="cf">function</span>(mean) {</a>
+<a class="sourceLine" id="cb127-5" title="5">  d &lt;-<span class="st"> </span><span class="dv">1</span></a>
+<a class="sourceLine" id="cb127-6" title="6">  <span class="kw">Cache</span>(rnorm, <span class="dt">n =</span> <span class="dv">3</span>, <span class="dt">mean =</span> mean)</a>
+<a class="sourceLine" id="cb127-7" title="7">}</a>
+<a class="sourceLine" id="cb127-8" title="8">outer &lt;-<span class="st"> </span><span class="cf">function</span>(n) {</a>
+<a class="sourceLine" id="cb127-9" title="9">  <span class="kw">Cache</span>(inner, <span class="fl">0.1</span>, <span class="dt">cacheRepo =</span> tmpdir2)</a>
+<a class="sourceLine" id="cb127-10" title="10">}</a>
+<a class="sourceLine" id="cb127-11" title="11"></a>
+<a class="sourceLine" id="cb127-12" title="12"><span class="co"># make 2 different cache paths</span></a>
+<a class="sourceLine" id="cb127-13" title="13">tmpdir1 &lt;-<span class="st"> </span><span class="kw">file.path</span>(<span class="kw">tempdir</span>(), <span class="st">&quot;first&quot;</span>)</a>
+<a class="sourceLine" id="cb127-14" title="14">tmpdir2 &lt;-<span class="st"> </span><span class="kw">file.path</span>(<span class="kw">tempdir</span>(), <span class="st">&quot;second&quot;</span>)</a>
+<a class="sourceLine" id="cb127-15" title="15"></a>
+<a class="sourceLine" id="cb127-16" title="16"><span class="co"># Run the Cache ... notOlderThan propagates to all 3 Cache calls,</span></a>
+<a class="sourceLine" id="cb127-17" title="17"><span class="co">#   but cacheRepo is tmpdir1 in top level Cache and all nested</span></a>
+<a class="sourceLine" id="cb127-18" title="18"><span class="co">#   Cache calls, unless individually overridden ... here inner</span></a>
+<a class="sourceLine" id="cb127-19" title="19"><span class="co">#   uses tmpdir2 repository</span></a>
+<a class="sourceLine" id="cb127-20" title="20"><span class="kw">Cache</span>(outer, <span class="dt">n =</span> <span class="dv">2</span>, <span class="dt">cacheRepo =</span> tmpdir1, <span class="dt">notOlderThan =</span> <span class="kw">Sys.time</span>())</a></code></pre></div>
+<pre><code>## [1]  0.6824337  1.2243838 -0.7529345
 ## attr(,&quot;.Cache&quot;)
 ## attr(,&quot;.Cache&quot;)$newCache
 ## [1] TRUE
@@ -1297,300 +964,157 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 ## [1] &quot;cacheId:a7af5367c13aba8f&quot;
 ## attr(,&quot;call&quot;)
 ## [1] &quot;&quot;</code></pre>
-<div class="sourceCode" id="cb122"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb122-1" title="1"><span class="kw">showCache</span>(tmpdir1) <span class="co"># 2 function calls</span></a></code></pre></div>
+<div class="sourceCode" id="cb129"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb129-1" title="1"><span class="kw">showCache</span>(tmpdir1) <span class="co"># 2 function calls</span></a></code></pre></div>
 <pre><code>## Cache size:</code></pre>
 <pre><code>##   Total (including Rasters): 504 bytes</code></pre>
 <pre><code>##   Selected objects (not including Rasters): 504 bytes</code></pre>
-<pre><code>##                             artifact         tagKey
-##  1: 168921ebe4d5ca61a7210618a190e512         format
-##  2: 168921ebe4d5ca61a7210618a190e512           name
-##  3: 168921ebe4d5ca61a7210618a190e512          class
-##  4: 168921ebe4d5ca61a7210618a190e512           date
-##  5: 168921ebe4d5ca61a7210618a190e512        cacheId
-##  6: 168921ebe4d5ca61a7210618a190e512       function
-##  7: 168921ebe4d5ca61a7210618a190e512    object.size
-##  8: 168921ebe4d5ca61a7210618a190e512       accessed
-##  9: 168921ebe4d5ca61a7210618a190e512 otherFunctions
-## 10: 168921ebe4d5ca61a7210618a190e512 otherFunctions
-## 11: 168921ebe4d5ca61a7210618a190e512 otherFunctions
-## 12: 168921ebe4d5ca61a7210618a190e512 otherFunctions
-## 13: 168921ebe4d5ca61a7210618a190e512 otherFunctions
-## 14: 168921ebe4d5ca61a7210618a190e512 otherFunctions
-## 15: 168921ebe4d5ca61a7210618a190e512 otherFunctions
-## 16: 168921ebe4d5ca61a7210618a190e512 otherFunctions
-## 17: 168921ebe4d5ca61a7210618a190e512 otherFunctions
-## 18: 168921ebe4d5ca61a7210618a190e512 otherFunctions
-## 19: 168921ebe4d5ca61a7210618a190e512      preDigest
-## 20: 168921ebe4d5ca61a7210618a190e512      preDigest
-## 21: 168921ebe4d5ca61a7210618a190e512      preDigest
-## 22: a441ef97515c69501a6c23e15d93d169         format
-## 23: a441ef97515c69501a6c23e15d93d169           name
-## 24: a441ef97515c69501a6c23e15d93d169          class
-## 25: a441ef97515c69501a6c23e15d93d169           date
-## 26: a441ef97515c69501a6c23e15d93d169        cacheId
-## 27: a441ef97515c69501a6c23e15d93d169       function
-## 28: a441ef97515c69501a6c23e15d93d169    object.size
-## 29: a441ef97515c69501a6c23e15d93d169       accessed
-## 30: a441ef97515c69501a6c23e15d93d169 otherFunctions
-## 31: a441ef97515c69501a6c23e15d93d169 otherFunctions
-## 32: a441ef97515c69501a6c23e15d93d169 otherFunctions
-## 33: a441ef97515c69501a6c23e15d93d169 otherFunctions
-## 34: a441ef97515c69501a6c23e15d93d169 otherFunctions
-## 35: a441ef97515c69501a6c23e15d93d169 otherFunctions
-## 36: a441ef97515c69501a6c23e15d93d169 otherFunctions
-## 37: a441ef97515c69501a6c23e15d93d169 otherFunctions
-## 38: a441ef97515c69501a6c23e15d93d169 otherFunctions
-## 39: a441ef97515c69501a6c23e15d93d169 otherFunctions
-## 40: a441ef97515c69501a6c23e15d93d169      preDigest
-## 41: a441ef97515c69501a6c23e15d93d169      preDigest
-##                             artifact         tagKey
-##                             tagValue         createdDate
-##  1:                              rda 2019-11-18 06:58:23
-##  2: 168921ebe4d5ca61a7210618a190e512 2019-11-18 06:58:23
-##  3:                          numeric 2019-11-18 06:58:23
-##  4:              2019-11-18 06:58:23 2019-11-18 06:58:23
-##  5:                 4ac2b7c0f42d1e46 2019-11-18 06:58:23
-##  6:                            rnorm 2019-11-18 06:58:23
-##  7:                             1008 2019-11-18 06:58:23
-##  8:              2019-11-18 06:58:23 2019-11-18 06:58:23
-##  9:                 vweave_rmarkdown 2019-11-18 06:58:23
-## 10:                     process_file 2019-11-18 06:58:23
-## 11:                    process_group 2019-11-18 06:58:23
-## 12:              process_group.block 2019-11-18 06:58:23
-## 13:                       call_block 2019-11-18 06:58:23
-## 14:                       block_exec 2019-11-18 06:58:23
-## 15:                           in_dir 2019-11-18 06:58:23
-## 16:                        timing_fn 2019-11-18 06:58:23
-## 17:                           handle 2019-11-18 06:58:23
-## 18:                      withVisible 2019-11-18 06:58:23
-## 19:               n:7f12988bd88a0fb8 2019-11-18 06:58:23
-## 20:            mean:22413394efd9f6a3 2019-11-18 06:58:23
-## 21:            .FUN:4f604aa46882b368 2019-11-18 06:58:23
-## 22:                              rda 2019-11-18 06:58:23
-## 23: a441ef97515c69501a6c23e15d93d169 2019-11-18 06:58:23
-## 24:                          numeric 2019-11-18 06:58:23
-## 25:              2019-11-18 06:58:23 2019-11-18 06:58:23
-## 26:                 a7af5367c13aba8f 2019-11-18 06:58:23
-## 27:                            outer 2019-11-18 06:58:23
-## 28:                             1008 2019-11-18 06:58:23
-## 29:              2019-11-18 06:58:23 2019-11-18 06:58:23
-## 30:                 vweave_rmarkdown 2019-11-18 06:58:23
-## 31:                     process_file 2019-11-18 06:58:23
-## 32:                    process_group 2019-11-18 06:58:23
-## 33:              process_group.block 2019-11-18 06:58:23
-## 34:                       call_block 2019-11-18 06:58:23
-## 35:                       block_exec 2019-11-18 06:58:23
-## 36:                           in_dir 2019-11-18 06:58:23
-## 37:                        timing_fn 2019-11-18 06:58:23
-## 38:                           handle 2019-11-18 06:58:23
-## 39:                      withVisible 2019-11-18 06:58:23
-## 40:               n:82dc709f2b91918a 2019-11-18 06:58:23
-## 41:            .FUN:892a6afc47a63a90 2019-11-18 06:58:23
-##                             tagValue         createdDate</code></pre>
-<div class="sourceCode" id="cb127"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb127-1" title="1"><span class="kw">showCache</span>(tmpdir2) <span class="co"># 1 function call</span></a></code></pre></div>
+<pre><code>##              cacheId         tagKey              tagValue         createdDate
+##  1: 4ac2b7c0f42d1e46       function                 rnorm 2020-02-19 17:02:28
+##  2: 4ac2b7c0f42d1e46          class               numeric 2020-02-19 17:02:28
+##  3: 4ac2b7c0f42d1e46    object.size                  1008 2020-02-19 17:02:28
+##  4: 4ac2b7c0f42d1e46       accessed   2020-02-19 17:02:28 2020-02-19 17:02:28
+##  5: 4ac2b7c0f42d1e46        inCloud                 FALSE 2020-02-19 17:02:28
+##  6: 4ac2b7c0f42d1e46 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:28
+##  7: 4ac2b7c0f42d1e46 otherFunctions          process_file 2020-02-19 17:02:28
+##  8: 4ac2b7c0f42d1e46 otherFunctions         process_group 2020-02-19 17:02:28
+##  9: 4ac2b7c0f42d1e46 otherFunctions   process_group.block 2020-02-19 17:02:28
+## 10: 4ac2b7c0f42d1e46 otherFunctions            call_block 2020-02-19 17:02:28
+## 11: 4ac2b7c0f42d1e46 otherFunctions            block_exec 2020-02-19 17:02:28
+## 12: 4ac2b7c0f42d1e46 otherFunctions                in_dir 2020-02-19 17:02:28
+## 13: 4ac2b7c0f42d1e46 otherFunctions             timing_fn 2020-02-19 17:02:28
+## 14: 4ac2b7c0f42d1e46 otherFunctions                handle 2020-02-19 17:02:28
+## 15: 4ac2b7c0f42d1e46 otherFunctions           withVisible 2020-02-19 17:02:28
+## 16: 4ac2b7c0f42d1e46      preDigest    n:7f12988bd88a0fb8 2020-02-19 17:02:28
+## 17: 4ac2b7c0f42d1e46      preDigest mean:22413394efd9f6a3 2020-02-19 17:02:28
+## 18: 4ac2b7c0f42d1e46      preDigest .FUN:4f604aa46882b368 2020-02-19 17:02:28
+## 19: 4ac2b7c0f42d1e46      file.size                   166 2020-02-19 17:02:28
+## 20: a7af5367c13aba8f       function                 outer 2020-02-19 17:02:29
+## 21: a7af5367c13aba8f          class               numeric 2020-02-19 17:02:29
+## 22: a7af5367c13aba8f    object.size                  1008 2020-02-19 17:02:29
+## 23: a7af5367c13aba8f       accessed   2020-02-19 17:02:29 2020-02-19 17:02:29
+## 24: a7af5367c13aba8f        inCloud                 FALSE 2020-02-19 17:02:29
+## 25: a7af5367c13aba8f otherFunctions      vweave_rmarkdown 2020-02-19 17:02:29
+## 26: a7af5367c13aba8f otherFunctions          process_file 2020-02-19 17:02:29
+## 27: a7af5367c13aba8f otherFunctions         process_group 2020-02-19 17:02:29
+## 28: a7af5367c13aba8f otherFunctions   process_group.block 2020-02-19 17:02:29
+## 29: a7af5367c13aba8f otherFunctions            call_block 2020-02-19 17:02:29
+## 30: a7af5367c13aba8f otherFunctions            block_exec 2020-02-19 17:02:29
+## 31: a7af5367c13aba8f otherFunctions                in_dir 2020-02-19 17:02:29
+## 32: a7af5367c13aba8f otherFunctions             timing_fn 2020-02-19 17:02:29
+## 33: a7af5367c13aba8f otherFunctions                handle 2020-02-19 17:02:29
+## 34: a7af5367c13aba8f otherFunctions           withVisible 2020-02-19 17:02:29
+## 35: a7af5367c13aba8f      preDigest    n:82dc709f2b91918a 2020-02-19 17:02:29
+## 36: a7af5367c13aba8f      preDigest .FUN:892a6afc47a63a90 2020-02-19 17:02:29
+## 37: a7af5367c13aba8f      file.size                   166 2020-02-19 17:02:29
+##              cacheId         tagKey              tagValue         createdDate</code></pre>
+<div class="sourceCode" id="cb134"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb134-1" title="1"><span class="kw">showCache</span>(tmpdir2) <span class="co"># 1 function call</span></a></code></pre></div>
 <pre><code>## Cache size:</code></pre>
 <pre><code>##   Total (including Rasters): 252 bytes</code></pre>
 <pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
-<pre><code>##                             artifact         tagKey
-##  1: 8e37b3bffeb6257415bf3c921e05c54d         format
-##  2: 8e37b3bffeb6257415bf3c921e05c54d           name
-##  3: 8e37b3bffeb6257415bf3c921e05c54d          class
-##  4: 8e37b3bffeb6257415bf3c921e05c54d           date
-##  5: 8e37b3bffeb6257415bf3c921e05c54d        cacheId
-##  6: 8e37b3bffeb6257415bf3c921e05c54d       function
-##  7: 8e37b3bffeb6257415bf3c921e05c54d    object.size
-##  8: 8e37b3bffeb6257415bf3c921e05c54d       accessed
-##  9: 8e37b3bffeb6257415bf3c921e05c54d otherFunctions
-## 10: 8e37b3bffeb6257415bf3c921e05c54d otherFunctions
-## 11: 8e37b3bffeb6257415bf3c921e05c54d otherFunctions
-## 12: 8e37b3bffeb6257415bf3c921e05c54d otherFunctions
-## 13: 8e37b3bffeb6257415bf3c921e05c54d otherFunctions
-## 14: 8e37b3bffeb6257415bf3c921e05c54d otherFunctions
-## 15: 8e37b3bffeb6257415bf3c921e05c54d otherFunctions
-## 16: 8e37b3bffeb6257415bf3c921e05c54d otherFunctions
-## 17: 8e37b3bffeb6257415bf3c921e05c54d otherFunctions
-## 18: 8e37b3bffeb6257415bf3c921e05c54d otherFunctions
-## 19: 8e37b3bffeb6257415bf3c921e05c54d      preDigest
-## 20: 8e37b3bffeb6257415bf3c921e05c54d      preDigest
-##                             tagValue         createdDate
-##  1:                              rda 2019-11-18 06:58:23
-##  2: 8e37b3bffeb6257415bf3c921e05c54d 2019-11-18 06:58:23
-##  3:                          numeric 2019-11-18 06:58:23
-##  4:              2019-11-18 06:58:23 2019-11-18 06:58:23
-##  5:                 33ceb4fb525fd08f 2019-11-18 06:58:23
-##  6:                            inner 2019-11-18 06:58:23
-##  7:                             1008 2019-11-18 06:58:23
-##  8:              2019-11-18 06:58:23 2019-11-18 06:58:23
-##  9:                 vweave_rmarkdown 2019-11-18 06:58:23
-## 10:                     process_file 2019-11-18 06:58:23
-## 11:                    process_group 2019-11-18 06:58:23
-## 12:              process_group.block 2019-11-18 06:58:23
-## 13:                       call_block 2019-11-18 06:58:23
-## 14:                       block_exec 2019-11-18 06:58:23
-## 15:                           in_dir 2019-11-18 06:58:23
-## 16:                        timing_fn 2019-11-18 06:58:23
-## 17:                           handle 2019-11-18 06:58:23
-## 18:                      withVisible 2019-11-18 06:58:23
-## 19:            mean:22413394efd9f6a3 2019-11-18 06:58:23
-## 20:            .FUN:87e2c30917a34d25 2019-11-18 06:58:23</code></pre>
-<div class="sourceCode" id="cb132"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb132-1" title="1"><span class="co"># userTags get appended</span></a>
-<a class="sourceLine" id="cb132-2" title="2"><span class="co"># all items have the outer tag propagate, plus inner ones only have inner ones</span></a>
-<a class="sourceLine" id="cb132-3" title="3"><span class="kw">clearCache</span>(tmpdir1, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</a>
-<a class="sourceLine" id="cb132-4" title="4">outerTag &lt;-<span class="st"> &quot;outerTag&quot;</span></a>
-<a class="sourceLine" id="cb132-5" title="5">innerTag &lt;-<span class="st"> &quot;innerTag&quot;</span></a>
-<a class="sourceLine" id="cb132-6" title="6">inner &lt;-<span class="st"> </span><span class="cf">function</span>(mean) {</a>
-<a class="sourceLine" id="cb132-7" title="7">  d &lt;-<span class="st"> </span><span class="dv">1</span></a>
-<a class="sourceLine" id="cb132-8" title="8">  <span class="kw">Cache</span>(rnorm, <span class="dt">n =</span> <span class="dv">3</span>, <span class="dt">mean =</span> mean, <span class="dt">notOlderThan =</span> <span class="kw">Sys.time</span>() <span class="op">-</span><span class="st"> </span><span class="fl">1e5</span>, <span class="dt">userTags =</span> innerTag)</a>
-<a class="sourceLine" id="cb132-9" title="9">}</a>
-<a class="sourceLine" id="cb132-10" title="10">outer &lt;-<span class="st"> </span><span class="cf">function</span>(n) {</a>
-<a class="sourceLine" id="cb132-11" title="11">  <span class="kw">Cache</span>(inner, <span class="fl">0.1</span>)</a>
-<a class="sourceLine" id="cb132-12" title="12">}</a>
-<a class="sourceLine" id="cb132-13" title="13">aa &lt;-<span class="st"> </span><span class="kw">Cache</span>(outer, <span class="dt">n =</span> <span class="dv">2</span>, <span class="dt">cacheRepo =</span> tmpdir1, <span class="dt">userTags =</span> outerTag)</a>
-<a class="sourceLine" id="cb132-14" title="14"><span class="kw">showCache</span>(tmpdir1) <span class="co"># rnorm function has outerTag and innerTag, inner and outer only have outerTag</span></a></code></pre></div>
+<pre><code>##              cacheId         tagKey              tagValue         createdDate
+##  1: 33ceb4fb525fd08f       function                 inner 2020-02-19 17:02:28
+##  2: 33ceb4fb525fd08f          class               numeric 2020-02-19 17:02:28
+##  3: 33ceb4fb525fd08f    object.size                  1008 2020-02-19 17:02:28
+##  4: 33ceb4fb525fd08f       accessed   2020-02-19 17:02:28 2020-02-19 17:02:28
+##  5: 33ceb4fb525fd08f        inCloud                 FALSE 2020-02-19 17:02:28
+##  6: 33ceb4fb525fd08f otherFunctions      vweave_rmarkdown 2020-02-19 17:02:28
+##  7: 33ceb4fb525fd08f otherFunctions          process_file 2020-02-19 17:02:28
+##  8: 33ceb4fb525fd08f otherFunctions         process_group 2020-02-19 17:02:28
+##  9: 33ceb4fb525fd08f otherFunctions   process_group.block 2020-02-19 17:02:28
+## 10: 33ceb4fb525fd08f otherFunctions            call_block 2020-02-19 17:02:28
+## 11: 33ceb4fb525fd08f otherFunctions            block_exec 2020-02-19 17:02:28
+## 12: 33ceb4fb525fd08f otherFunctions                in_dir 2020-02-19 17:02:28
+## 13: 33ceb4fb525fd08f otherFunctions             timing_fn 2020-02-19 17:02:28
+## 14: 33ceb4fb525fd08f otherFunctions                handle 2020-02-19 17:02:28
+## 15: 33ceb4fb525fd08f otherFunctions           withVisible 2020-02-19 17:02:28
+## 16: 33ceb4fb525fd08f      preDigest mean:22413394efd9f6a3 2020-02-19 17:02:28
+## 17: 33ceb4fb525fd08f      preDigest .FUN:87e2c30917a34d25 2020-02-19 17:02:28
+## 18: 33ceb4fb525fd08f      file.size                   166 2020-02-19 17:02:28</code></pre>
+<div class="sourceCode" id="cb139"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb139-1" title="1"><span class="co"># userTags get appended</span></a>
+<a class="sourceLine" id="cb139-2" title="2"><span class="co"># all items have the outer tag propagate, plus inner ones only have inner ones</span></a>
+<a class="sourceLine" id="cb139-3" title="3"><span class="kw">clearCache</span>(tmpdir1, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</a>
+<a class="sourceLine" id="cb139-4" title="4">outerTag &lt;-<span class="st"> &quot;outerTag&quot;</span></a>
+<a class="sourceLine" id="cb139-5" title="5">innerTag &lt;-<span class="st"> &quot;innerTag&quot;</span></a>
+<a class="sourceLine" id="cb139-6" title="6">inner &lt;-<span class="st"> </span><span class="cf">function</span>(mean) {</a>
+<a class="sourceLine" id="cb139-7" title="7">  d &lt;-<span class="st"> </span><span class="dv">1</span></a>
+<a class="sourceLine" id="cb139-8" title="8">  <span class="kw">Cache</span>(rnorm, <span class="dt">n =</span> <span class="dv">3</span>, <span class="dt">mean =</span> mean, <span class="dt">notOlderThan =</span> <span class="kw">Sys.time</span>() <span class="op">-</span><span class="st"> </span><span class="fl">1e5</span>, <span class="dt">userTags =</span> innerTag)</a>
+<a class="sourceLine" id="cb139-9" title="9">}</a>
+<a class="sourceLine" id="cb139-10" title="10">outer &lt;-<span class="st"> </span><span class="cf">function</span>(n) {</a>
+<a class="sourceLine" id="cb139-11" title="11">  <span class="kw">Cache</span>(inner, <span class="fl">0.1</span>)</a>
+<a class="sourceLine" id="cb139-12" title="12">}</a>
+<a class="sourceLine" id="cb139-13" title="13">aa &lt;-<span class="st"> </span><span class="kw">Cache</span>(outer, <span class="dt">n =</span> <span class="dv">2</span>, <span class="dt">cacheRepo =</span> tmpdir1, <span class="dt">userTags =</span> outerTag)</a>
+<a class="sourceLine" id="cb139-14" title="14"><span class="kw">showCache</span>(tmpdir1) <span class="co"># rnorm function has outerTag and innerTag, inner and outer only have outerTag</span></a></code></pre></div>
 <pre><code>## Cache size:</code></pre>
 <pre><code>##   Total (including Rasters): 756 bytes</code></pre>
 <pre><code>##   Selected objects (not including Rasters): 756 bytes</code></pre>
-<pre><code>##                             artifact         tagKey
-##  1: 1abdd84da8f62e178e8301d3170254ec         format
-##  2: 1abdd84da8f62e178e8301d3170254ec           name
-##  3: 1abdd84da8f62e178e8301d3170254ec          class
-##  4: 1abdd84da8f62e178e8301d3170254ec           date
-##  5: 1abdd84da8f62e178e8301d3170254ec        cacheId
-##  6: 1abdd84da8f62e178e8301d3170254ec       outerTag
-##  7: 1abdd84da8f62e178e8301d3170254ec       function
-##  8: 1abdd84da8f62e178e8301d3170254ec    object.size
-##  9: 1abdd84da8f62e178e8301d3170254ec       accessed
-## 10: 1abdd84da8f62e178e8301d3170254ec otherFunctions
-## 11: 1abdd84da8f62e178e8301d3170254ec otherFunctions
-## 12: 1abdd84da8f62e178e8301d3170254ec otherFunctions
-## 13: 1abdd84da8f62e178e8301d3170254ec otherFunctions
-## 14: 1abdd84da8f62e178e8301d3170254ec otherFunctions
-## 15: 1abdd84da8f62e178e8301d3170254ec otherFunctions
-## 16: 1abdd84da8f62e178e8301d3170254ec otherFunctions
-## 17: 1abdd84da8f62e178e8301d3170254ec otherFunctions
-## 18: 1abdd84da8f62e178e8301d3170254ec otherFunctions
-## 19: 1abdd84da8f62e178e8301d3170254ec otherFunctions
-## 20: 1abdd84da8f62e178e8301d3170254ec      preDigest
-## 21: 1abdd84da8f62e178e8301d3170254ec      preDigest
-## 22: 89f8572e8d8df9259ff4ecdcfeedac1c         format
-## 23: 89f8572e8d8df9259ff4ecdcfeedac1c           name
-## 24: 89f8572e8d8df9259ff4ecdcfeedac1c          class
-## 25: 89f8572e8d8df9259ff4ecdcfeedac1c           date
-## 26: 89f8572e8d8df9259ff4ecdcfeedac1c        cacheId
-## 27: 89f8572e8d8df9259ff4ecdcfeedac1c       outerTag
-## 28: 89f8572e8d8df9259ff4ecdcfeedac1c       function
-## 29: 89f8572e8d8df9259ff4ecdcfeedac1c    object.size
-## 30: 89f8572e8d8df9259ff4ecdcfeedac1c       accessed
-## 31: 89f8572e8d8df9259ff4ecdcfeedac1c otherFunctions
-## 32: 89f8572e8d8df9259ff4ecdcfeedac1c otherFunctions
-## 33: 89f8572e8d8df9259ff4ecdcfeedac1c otherFunctions
-## 34: 89f8572e8d8df9259ff4ecdcfeedac1c otherFunctions
-## 35: 89f8572e8d8df9259ff4ecdcfeedac1c otherFunctions
-## 36: 89f8572e8d8df9259ff4ecdcfeedac1c otherFunctions
-## 37: 89f8572e8d8df9259ff4ecdcfeedac1c otherFunctions
-## 38: 89f8572e8d8df9259ff4ecdcfeedac1c otherFunctions
-## 39: 89f8572e8d8df9259ff4ecdcfeedac1c otherFunctions
-## 40: 89f8572e8d8df9259ff4ecdcfeedac1c otherFunctions
-## 41: 89f8572e8d8df9259ff4ecdcfeedac1c      preDigest
-## 42: 89f8572e8d8df9259ff4ecdcfeedac1c      preDigest
-## 43: d44b541c95c73f8b0fc4102d4ac2fcbf         format
-## 44: d44b541c95c73f8b0fc4102d4ac2fcbf           name
-## 45: d44b541c95c73f8b0fc4102d4ac2fcbf          class
-## 46: d44b541c95c73f8b0fc4102d4ac2fcbf           date
-## 47: d44b541c95c73f8b0fc4102d4ac2fcbf        cacheId
-## 48: d44b541c95c73f8b0fc4102d4ac2fcbf       innerTag
-## 49: d44b541c95c73f8b0fc4102d4ac2fcbf       outerTag
-## 50: d44b541c95c73f8b0fc4102d4ac2fcbf       function
-## 51: d44b541c95c73f8b0fc4102d4ac2fcbf    object.size
-## 52: d44b541c95c73f8b0fc4102d4ac2fcbf       accessed
-## 53: d44b541c95c73f8b0fc4102d4ac2fcbf otherFunctions
-## 54: d44b541c95c73f8b0fc4102d4ac2fcbf otherFunctions
-## 55: d44b541c95c73f8b0fc4102d4ac2fcbf otherFunctions
-## 56: d44b541c95c73f8b0fc4102d4ac2fcbf otherFunctions
-## 57: d44b541c95c73f8b0fc4102d4ac2fcbf otherFunctions
-## 58: d44b541c95c73f8b0fc4102d4ac2fcbf otherFunctions
-## 59: d44b541c95c73f8b0fc4102d4ac2fcbf otherFunctions
-## 60: d44b541c95c73f8b0fc4102d4ac2fcbf otherFunctions
-## 61: d44b541c95c73f8b0fc4102d4ac2fcbf otherFunctions
-## 62: d44b541c95c73f8b0fc4102d4ac2fcbf otherFunctions
-## 63: d44b541c95c73f8b0fc4102d4ac2fcbf      preDigest
-## 64: d44b541c95c73f8b0fc4102d4ac2fcbf      preDigest
-## 65: d44b541c95c73f8b0fc4102d4ac2fcbf      preDigest
-##                             artifact         tagKey
-##                             tagValue         createdDate
-##  1:                              rda 2019-11-18 06:58:24
-##  2: 1abdd84da8f62e178e8301d3170254ec 2019-11-18 06:58:24
-##  3:                          numeric 2019-11-18 06:58:24
-##  4:              2019-11-18 06:58:24 2019-11-18 06:58:24
-##  5:                 88a34e1d033329e5 2019-11-18 06:58:24
-##  6:                         outerTag 2019-11-18 06:58:24
-##  7:                            outer 2019-11-18 06:58:24
-##  8:                             1008 2019-11-18 06:58:24
-##  9:              2019-11-18 06:58:24 2019-11-18 06:58:24
-## 10:                 vweave_rmarkdown 2019-11-18 06:58:24
-## 11:                     process_file 2019-11-18 06:58:24
-## 12:                    process_group 2019-11-18 06:58:24
-## 13:              process_group.block 2019-11-18 06:58:24
-## 14:                       call_block 2019-11-18 06:58:24
-## 15:                       block_exec 2019-11-18 06:58:24
-## 16:                           in_dir 2019-11-18 06:58:24
-## 17:                        timing_fn 2019-11-18 06:58:24
-## 18:                           handle 2019-11-18 06:58:24
-## 19:                      withVisible 2019-11-18 06:58:24
-## 20:               n:82dc709f2b91918a 2019-11-18 06:58:24
-## 21:            .FUN:5f06fb5fbffe9e3b 2019-11-18 06:58:24
-## 22:                              rda 2019-11-18 06:58:24
-## 23: 89f8572e8d8df9259ff4ecdcfeedac1c 2019-11-18 06:58:24
-## 24:                          numeric 2019-11-18 06:58:24
-## 25:              2019-11-18 06:58:24 2019-11-18 06:58:24
-## 26:                 b06af03d5a73dc7d 2019-11-18 06:58:24
-## 27:                         outerTag 2019-11-18 06:58:24
-## 28:                            inner 2019-11-18 06:58:24
-## 29:                             1008 2019-11-18 06:58:24
-## 30:              2019-11-18 06:58:24 2019-11-18 06:58:24
-## 31:                 vweave_rmarkdown 2019-11-18 06:58:24
-## 32:                     process_file 2019-11-18 06:58:24
-## 33:                    process_group 2019-11-18 06:58:24
-## 34:              process_group.block 2019-11-18 06:58:24
-## 35:                       call_block 2019-11-18 06:58:24
-## 36:                       block_exec 2019-11-18 06:58:24
-## 37:                           in_dir 2019-11-18 06:58:24
-## 38:                        timing_fn 2019-11-18 06:58:24
-## 39:                           handle 2019-11-18 06:58:24
-## 40:                      withVisible 2019-11-18 06:58:24
-## 41:            mean:22413394efd9f6a3 2019-11-18 06:58:24
-## 42:            .FUN:7ad10bc1ae528d8c 2019-11-18 06:58:24
-## 43:                              rda 2019-11-18 06:58:24
-## 44: d44b541c95c73f8b0fc4102d4ac2fcbf 2019-11-18 06:58:24
-## 45:                          numeric 2019-11-18 06:58:24
-## 46:              2019-11-18 06:58:24 2019-11-18 06:58:24
-## 47:                 4ac2b7c0f42d1e46 2019-11-18 06:58:24
-## 48:                         innerTag 2019-11-18 06:58:24
-## 49:                         outerTag 2019-11-18 06:58:24
-## 50:                            rnorm 2019-11-18 06:58:24
-## 51:                             1008 2019-11-18 06:58:24
-## 52:              2019-11-18 06:58:24 2019-11-18 06:58:24
-## 53:                 vweave_rmarkdown 2019-11-18 06:58:24
-## 54:                     process_file 2019-11-18 06:58:24
-## 55:                    process_group 2019-11-18 06:58:24
-## 56:              process_group.block 2019-11-18 06:58:24
-## 57:                       call_block 2019-11-18 06:58:24
-## 58:                       block_exec 2019-11-18 06:58:24
-## 59:                           in_dir 2019-11-18 06:58:24
-## 60:                        timing_fn 2019-11-18 06:58:24
-## 61:                           handle 2019-11-18 06:58:24
-## 62:                      withVisible 2019-11-18 06:58:24
-## 63:               n:7f12988bd88a0fb8 2019-11-18 06:58:24
-## 64:            mean:22413394efd9f6a3 2019-11-18 06:58:24
-## 65:            .FUN:4f604aa46882b368 2019-11-18 06:58:24
-##                             tagValue         createdDate</code></pre>
+<pre><code>##              cacheId         tagKey              tagValue         createdDate
+##  1: 4ac2b7c0f42d1e46       innerTag              innerTag 2020-02-19 17:02:29
+##  2: 4ac2b7c0f42d1e46       outerTag              outerTag 2020-02-19 17:02:29
+##  3: 4ac2b7c0f42d1e46       function                 rnorm 2020-02-19 17:02:29
+##  4: 4ac2b7c0f42d1e46          class               numeric 2020-02-19 17:02:29
+##  5: 4ac2b7c0f42d1e46    object.size                  1008 2020-02-19 17:02:29
+##  6: 4ac2b7c0f42d1e46       accessed   2020-02-19 17:02:29 2020-02-19 17:02:29
+##  7: 4ac2b7c0f42d1e46        inCloud                 FALSE 2020-02-19 17:02:29
+##  8: 4ac2b7c0f42d1e46 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:29
+##  9: 4ac2b7c0f42d1e46 otherFunctions          process_file 2020-02-19 17:02:29
+## 10: 4ac2b7c0f42d1e46 otherFunctions         process_group 2020-02-19 17:02:29
+## 11: 4ac2b7c0f42d1e46 otherFunctions   process_group.block 2020-02-19 17:02:29
+## 12: 4ac2b7c0f42d1e46 otherFunctions            call_block 2020-02-19 17:02:29
+## 13: 4ac2b7c0f42d1e46 otherFunctions            block_exec 2020-02-19 17:02:29
+## 14: 4ac2b7c0f42d1e46 otherFunctions                in_dir 2020-02-19 17:02:29
+## 15: 4ac2b7c0f42d1e46 otherFunctions             timing_fn 2020-02-19 17:02:29
+## 16: 4ac2b7c0f42d1e46 otherFunctions                handle 2020-02-19 17:02:29
+## 17: 4ac2b7c0f42d1e46 otherFunctions           withVisible 2020-02-19 17:02:29
+## 18: 4ac2b7c0f42d1e46      preDigest    n:7f12988bd88a0fb8 2020-02-19 17:02:29
+## 19: 4ac2b7c0f42d1e46      preDigest mean:22413394efd9f6a3 2020-02-19 17:02:29
+## 20: 4ac2b7c0f42d1e46      preDigest .FUN:4f604aa46882b368 2020-02-19 17:02:29
+## 21: 4ac2b7c0f42d1e46      file.size                   166 2020-02-19 17:02:29
+## 22: b06af03d5a73dc7d       outerTag              outerTag 2020-02-19 17:02:29
+## 23: b06af03d5a73dc7d       function                 inner 2020-02-19 17:02:29
+## 24: b06af03d5a73dc7d          class               numeric 2020-02-19 17:02:29
+## 25: b06af03d5a73dc7d    object.size                  1008 2020-02-19 17:02:29
+## 26: b06af03d5a73dc7d       accessed   2020-02-19 17:02:29 2020-02-19 17:02:29
+## 27: b06af03d5a73dc7d        inCloud                 FALSE 2020-02-19 17:02:29
+## 28: b06af03d5a73dc7d otherFunctions      vweave_rmarkdown 2020-02-19 17:02:29
+## 29: b06af03d5a73dc7d otherFunctions          process_file 2020-02-19 17:02:29
+## 30: b06af03d5a73dc7d otherFunctions         process_group 2020-02-19 17:02:29
+## 31: b06af03d5a73dc7d otherFunctions   process_group.block 2020-02-19 17:02:29
+## 32: b06af03d5a73dc7d otherFunctions            call_block 2020-02-19 17:02:29
+## 33: b06af03d5a73dc7d otherFunctions            block_exec 2020-02-19 17:02:29
+## 34: b06af03d5a73dc7d otherFunctions                in_dir 2020-02-19 17:02:29
+## 35: b06af03d5a73dc7d otherFunctions             timing_fn 2020-02-19 17:02:29
+## 36: b06af03d5a73dc7d otherFunctions                handle 2020-02-19 17:02:29
+## 37: b06af03d5a73dc7d otherFunctions           withVisible 2020-02-19 17:02:29
+## 38: b06af03d5a73dc7d      preDigest mean:22413394efd9f6a3 2020-02-19 17:02:29
+## 39: b06af03d5a73dc7d      preDigest .FUN:7ad10bc1ae528d8c 2020-02-19 17:02:29
+## 40: b06af03d5a73dc7d      file.size                   166 2020-02-19 17:02:29
+## 41: 88a34e1d033329e5       outerTag              outerTag 2020-02-19 17:02:30
+## 42: 88a34e1d033329e5       function                 outer 2020-02-19 17:02:30
+## 43: 88a34e1d033329e5          class               numeric 2020-02-19 17:02:30
+## 44: 88a34e1d033329e5    object.size                  1008 2020-02-19 17:02:30
+## 45: 88a34e1d033329e5       accessed   2020-02-19 17:02:30 2020-02-19 17:02:30
+## 46: 88a34e1d033329e5        inCloud                 FALSE 2020-02-19 17:02:30
+## 47: 88a34e1d033329e5 otherFunctions      vweave_rmarkdown 2020-02-19 17:02:30
+## 48: 88a34e1d033329e5 otherFunctions          process_file 2020-02-19 17:02:30
+## 49: 88a34e1d033329e5 otherFunctions         process_group 2020-02-19 17:02:30
+## 50: 88a34e1d033329e5 otherFunctions   process_group.block 2020-02-19 17:02:30
+## 51: 88a34e1d033329e5 otherFunctions            call_block 2020-02-19 17:02:30
+## 52: 88a34e1d033329e5 otherFunctions            block_exec 2020-02-19 17:02:30
+## 53: 88a34e1d033329e5 otherFunctions                in_dir 2020-02-19 17:02:30
+## 54: 88a34e1d033329e5 otherFunctions             timing_fn 2020-02-19 17:02:30
+## 55: 88a34e1d033329e5 otherFunctions                handle 2020-02-19 17:02:30
+## 56: 88a34e1d033329e5 otherFunctions           withVisible 2020-02-19 17:02:30
+## 57: 88a34e1d033329e5      preDigest    n:82dc709f2b91918a 2020-02-19 17:02:30
+## 58: 88a34e1d033329e5      preDigest .FUN:5f06fb5fbffe9e3b 2020-02-19 17:02:30
+## 59: 88a34e1d033329e5      file.size                   166 2020-02-19 17:02:30
+##              cacheId         tagKey              tagValue         createdDate</code></pre>
 </div>
 <div id="cacheid" class="section level2">
 <h2><span class="header-section-number">1.10</span> cacheId</h2>
 <p>Sometimes, it is not absolutely desirable to maintain the work flow intact because changes that are irrelevant to the analysis, such as changing messages sent to a user, may be changed, without a desire to rerun functions. The <code>cacheId</code> argument is for this. Once a piece of code is run, then the <code>cacheId</code> can be manually extracted (it is reported at the end of a Cache call) and manually placed in the code, passed in as, say, <code>cacheId = &quot;ad184ce64541972b50afd8e7b75f821b&quot;</code>.</p>
-<div class="sourceCode" id="cb137"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb137-1" title="1"><span class="co">### cacheId</span></a>
-<a class="sourceLine" id="cb137-2" title="2"><span class="kw">set.seed</span>(<span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb137-3" title="3"><span class="kw">Cache</span>(rnorm, <span class="dv">1</span>, <span class="dt">cacheRepo =</span> tmpdir1)</a></code></pre></div>
+<div class="sourceCode" id="cb144"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb144-1" title="1"><span class="co">### cacheId</span></a>
+<a class="sourceLine" id="cb144-2" title="2"><span class="kw">set.seed</span>(<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb144-3" title="3"><span class="kw">Cache</span>(rnorm, <span class="dv">1</span>, <span class="dt">cacheRepo =</span> tmpdir1)</a></code></pre></div>
 <pre><code>## [1] -0.6264538
 ## attr(,&quot;.Cache&quot;)
 ## attr(,&quot;.Cache&quot;)$newCache
@@ -1600,50 +1124,46 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 ## [1] &quot;cacheId:7072c305d8c69df0&quot;
 ## attr(,&quot;call&quot;)
 ## [1] &quot;&quot;</code></pre>
-<div class="sourceCode" id="cb139"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb139-1" title="1"><span class="co"># manually look at output attribute which shows cacheId: ad184ce64541972b50afd8e7b75f821b</span></a>
-<a class="sourceLine" id="cb139-2" title="2"><span class="kw">Cache</span>(rnorm, <span class="dv">1</span>, <span class="dt">cacheRepo =</span> tmpdir1, <span class="dt">cacheId =</span> <span class="st">&quot;ad184ce64541972b50afd8e7b75f821b&quot;</span>) <span class="co"># same value</span></a></code></pre></div>
-<pre><code>## cacheId is not same as calculated hash. Manually searching for cacheId:ad184ce64541972b50afd8e7b75f821b</code></pre>
-<pre><code>## [1] 0.1836433
-## attr(,&quot;.Cache&quot;)
-## attr(,&quot;.Cache&quot;)$newCache
-## [1] TRUE
-## 
-## attr(,&quot;tags&quot;)
-## [1] &quot;cacheId:ad184ce64541972b50afd8e7b75f821b&quot;
-## attr(,&quot;call&quot;)
-## [1] &quot;&quot;</code></pre>
-<div class="sourceCode" id="cb142"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb142-1" title="1"><span class="co"># override even with different inputs:</span></a>
-<a class="sourceLine" id="cb142-2" title="2"><span class="kw">Cache</span>(rnorm, <span class="dv">2</span>, <span class="dt">cacheRepo =</span> tmpdir1, <span class="dt">cacheId =</span> <span class="st">&quot;ad184ce64541972b50afd8e7b75f821b&quot;</span>)</a></code></pre></div>
-<pre><code>## cacheId is not same as calculated hash. Manually searching for cacheId:ad184ce64541972b50afd8e7b75f821b</code></pre>
-<pre><code>##   loading cached result from previous rnorm call, adding to memoised copy</code></pre>
-<pre><code>## [1] 0.1836433
+<div class="sourceCode" id="cb146"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb146-1" title="1"><span class="co"># manually look at output attribute which shows cacheId: 7072c305d8c69df0</span></a>
+<a class="sourceLine" id="cb146-2" title="2"><span class="kw">Cache</span>(rnorm, <span class="dv">1</span>, <span class="dt">cacheRepo =</span> tmpdir1, <span class="dt">cacheId =</span> <span class="st">&quot;7072c305d8c69df0&quot;</span>) <span class="co"># same value</span></a></code></pre></div>
+<pre><code>## cacheId is same as calculated hash</code></pre>
+<pre><code>##   loading cached result from previous rnorm call.</code></pre>
+<pre><code>## [1] -0.6264538
 ## attr(,&quot;.Cache&quot;)
 ## attr(,&quot;.Cache&quot;)$newCache
 ## [1] FALSE
 ## 
 ## attr(,&quot;tags&quot;)
-## [1] &quot;cacheId:ad184ce64541972b50afd8e7b75f821b&quot;
+## [1] &quot;cacheId:7072c305d8c69df0&quot;
 ## attr(,&quot;call&quot;)
 ## [1] &quot;&quot;</code></pre>
-<div class="sourceCode" id="cb146"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb146-1" title="1"><span class="co">## cleanup</span></a>
-<a class="sourceLine" id="cb146-2" title="2"><span class="kw">unlink</span>(<span class="kw">c</span>(<span class="st">&quot;filename.rda&quot;</span>, <span class="st">&quot;filename1.rda&quot;</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb150"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb150-1" title="1"><span class="co"># override even with different inputs:</span></a>
+<a class="sourceLine" id="cb150-2" title="2"><span class="kw">Cache</span>(rnorm, <span class="dv">2</span>, <span class="dt">cacheRepo =</span> tmpdir1, <span class="dt">cacheId =</span> <span class="st">&quot;7072c305d8c69df0&quot;</span>)</a></code></pre></div>
+<pre><code>## cacheId is not same as calculated hash. Manually searching for cacheId:7072c305d8c69df0
+##   loading cached result from previous rnorm call.</code></pre>
+<pre><code>## [1] -0.6264538
+## attr(,&quot;.Cache&quot;)
+## attr(,&quot;.Cache&quot;)$newCache
+## [1] FALSE
+## 
+## attr(,&quot;tags&quot;)
+## [1] &quot;cacheId:7072c305d8c69df0&quot;
+## attr(,&quot;call&quot;)
+## [1] &quot;&quot;</code></pre>
 </div>
 <div id="working-with-the-cache-manually" class="section level2">
 <h2><span class="header-section-number">1.11</span> Working with the Cache manually</h2>
-<p>Since the cache is simply an <code>archivist</code> repository, all <code>archivist</code> functions will work as is. In addition, there are several helpers in the <code>reproducible</code> package, including <code>showCache</code>, <code>keepCache</code> and <code>clearCache</code> that may be useful. Also, one can access cached items manually (rather than simply rerunning the same <code>Cache</code> function again).</p>
-<div class="sourceCode" id="cb147"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb147-1" title="1"><span class="cf">if</span> (<span class="kw">requireNamespace</span>(<span class="st">&quot;archivist&quot;</span>)) {</a>
-<a class="sourceLine" id="cb147-2" title="2">  <span class="co"># get the RasterLayer that was produced with the gaussMap function:</span></a>
-<a class="sourceLine" id="cb147-3" title="3">  mapHash &lt;-<span class="st"> </span><span class="kw">unique</span>(<span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;projectRaster&quot;</span>)<span class="op">$</span>artifact)</a>
-<a class="sourceLine" id="cb147-4" title="4">  map &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">loadFromLocalRepo</span>(<span class="dt">md5hash =</span> mapHash[<span class="dv">1</span>], <span class="dt">repoDir =</span> tmpDir, <span class="dt">value =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb147-5" title="5">  </a>
-<a class="sourceLine" id="cb147-6" title="6">  <span class="kw">plot</span>(map)</a>
-<a class="sourceLine" id="cb147-7" title="7">}</a></code></pre></div>
+<p>Since the cache is simply a <code>DBI</code> data table (of an SQLite database by default). In addition, there are several helpers in the <code>reproducible</code> package, including <code>showCache</code>, <code>keepCache</code> and <code>clearCache</code> that may be useful. Also, one can access cached items manually (rather than simply rerunning the same <code>Cache</code> function again).</p>
+<div class="sourceCode" id="cb153"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb153-1" title="1"><span class="co"># As of reproducible version 1.0, there is a new backend directly using DBI</span></a>
+<a class="sourceLine" id="cb153-2" title="2">mapHash &lt;-<span class="st"> </span><span class="kw">unique</span>(<span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;projectRaster&quot;</span>)<span class="op">$</span>cacheId)</a></code></pre></div>
 <pre><code>## Cache size:</code></pre>
 <pre><code>##   Total (including Rasters): 3.3 Kb</code></pre>
 <pre><code>##   Selected objects (not including Rasters): 3.3 Kb</code></pre>
-<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAqAAAAEgCAMAAABcujGyAAAA+VBMVEUAAAAAADoAAGYAOjoAOpAAZrYFqAAMqgASrAAZrwAfsQAmswAttQA1uAA6AAA6ADo6AGY6Ojo6OpA6kNs7ugBDvQBMvwBTwQBcxABjxgBmAABmADpmtv9syAB0ygB9zQCFzwCP0QCQOgCQ2/+Z1ACh1gCs2AC02gC2ZgC2/7a2//+/3QDI3wDT4QDbkDrb2//b///c4wDm1hLm3Avm5ALnyiLnzxvowTPoxSvpuUPpvDzqtFbqtk3rsWfrsW7rsl3ssXjssn/ts4nttZHuuJruu6Tvvqzvw7XwyL3wzsfw08/x29jx4uDy6+r/tmb/25D//7b//9v///9VOJDSAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAI90lEQVR4nO3dB3vixhqGYXbjTc+WONVxmp1CNoni9J5N7wGj//9jgqRPYC8D8wHjmdfw3NeVc5SDDpLsx0IIaRjUgLBB6RUAViFQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSCNQSEsc6AA7Lm0vjqKkny6jz/IqvbmbItBSCNSFQEshUBcCLYVAXQi0FAJ1IdBSCNSFQEshUBcCLYVAXQi0FAJ1IdBSCNSFQEshUBcCLYVAXQi0FAJ1IdBSCNSFQEshUBcCLYVAXQi0FAJ1IdBSCNTlWgQ6vn2c8uk0EKiLdKDnR/NbU27e3/rptBCoi3Sg9Whw2PwXe1ACFV3g+dHBWSjQcjf9JUOgLuKB1vXwxil7UAIVXmA1OCRQAhVe4Pj2IwRKoMILnJwMCJRAr+cCCZRApRdIoHsd6BUM5kSghkBdIoE+atJ1QKCGQF0igT5mCDQ5AnWJBPq4IdDkCNQlEugThkCTI1CXSKBPGgJNjkBdIoE+ZQg0OQJ1iQT6tCHQ5AjUJRLoM4ZAkyNQl0igz5kls43vzq5zHw0GN06DE9118bdcC1wbge53oM+b8GznR7MbMUbTFpt/AhPjO6fuBa6NQPc70BdMcLbR/E6hyUlzb8bwVmCiHl26nYhADYG6RAJ90YRmGw0OZ+11lxRXN+8vTtTVrYv/LwI1BOoSCfQls2S2eaDty/j0Xxcn6uG96SHooW+B4aX0R7WhNVz/6UQQqEsk0JfNkquZZoG2B5vNfy5OdPe9DftC1ytqOE17/OzZ9Gh3ySXLBLrfgb5qYnvQFYE+NOdaRQ2nbQ/bp6iaytdef2UE6hIJ9DWzzUt8N0N/W9F6AzccX3jqSyvGbccE2jz6uokGuuJNUjdDf65pvUCbA4PJRzV7UAINP/qGiQW64jRTV+pmL/GzvrtU115/ZQTqEgn0TRMLdNWJ+uZc6KZvkqr+Q6llt3US6H4H+pZZFejkpCmw6s8FLU5M34rPA+M8qCFQl0igbxsuFkmOQF0igb5jCDQ5AnWJBPquIdDkCNQlEuj7hkCTI1CXSKAfGAJNjkBdIoF+aAg0OQJ1iQT6sSHQ5AjUJRJov3mMzZQcgbpEAv3UsAdNjkBdIoF+Ygg0OQJ1iQT6hSHQ5AjUJRLo54ZAkyNQl0igXxkCTY5AXSKBfmkINDkCdYkE+o0pFWjVX6lX8V2dBBp49GtTKNDmeuXzo/ZyUwIl0MCj35llI4vM71dffsHy5mMzdbeNTE4OzgiUQIOPfmuCI4v093Q0Zl+puTix+dhM/d3ww4Ozirs6CTTw6AMTmG0++FLd39RWHZwtTmwxNlO3iHYp7EEJNPTo9yYw26X7ilcN3LDF2Ex9ltOjBAIl0MCjP5hQoBcHVLAcB8eLE1uNzVTZ3XaTEwIl0MCjP5rA1UyXxrax3engeHFiq7GZtlx/ZQTqEgn0JxOY7fLgS91bomZ/uTDRzb3RwA1xBLrfgf5sYi/x7c3vN9975TQ00c69ydhMDgS634H+YmJvkux/6oesD0xsMjaTA4Hud6C/mthpps5shK+LE9uMzRRHoPsd6G8mdqK+/Txy1H8weWliq7GZogh0vwP93QRns88y27GZms8zZx9sXp5gbKYgAnWJBPqH4XK75AjUJRLon4ZAkyNQl0igfxkCTY5AXSKB/m0INDkCdYkE+o8h0OQI1CUS6L+GQJMjUJdIoP8ZAk2OQF0igaa/cJ1ADYG6ZP8FE6ghUBcCLYVAXaQD7e4H7XBFPYHqLXD5nR7c1UmgCgvsviQs2dMpIVAX8UBXfAniRk8nhEBd1APN/HQZEagLgZZCoC4EWgqBuhBoKQTqQqClEKgLgZZCoC4EWgqBuhBoKQTqQqClEKgLgZZCoC4EWgqBuhBoKQTqQqClEKgLgZZCoC4EWgqBuhBoKQTqQqClEKiLeKCTk5W3zBEogRZdYNV/v9Jo/kVLWzydFAJ1kQ509lWIF0a93+LptBCoi3Sg/ZfJ1vVDX/h54bZj7Lhk5Tkl3oOmk/knsduLu8avbGseg/ZfVLfsGDSd3S6GQL3WW/N+8Jsr33/uejEE6iW75rtdDIF6ya75bhdDoF6ya77bxRCol+ya73YxBOolu+a7XQyBesmu+W4XQ6Be13fNsRcIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNJUA+3ufop8dW0qo8HgxmmeRdWZN62ux3fbO8TzbmM6qoGO7+T7aY6mv7lRvt9ezk1r/hzaIQwyb2M6qoGOlg7/lFx3u/8w2y4t46a1O85mcbm3MR3VQKt8P8vx7eZu/ypbNhk3rRnAoP17yL2N6agGOrw3PU678tEhWt1Lbr79WsZNa3SBZt7GdEQDPT9qxoYYZvk1dodm2Q7Qcm5ao60y8zYmJBpoJ89ffJFfXr6dGYFene7I6cqXUuLlL8+mNXiJT6yaH6HlOSFT5A1EvnNNvEm6Ct0PNM9ffOZTMDk3re6XxGmm1NqfZaZ3EplPYufctLr/U+BEfWrD6St9rsO0Ku/HgDk3bbavzryNycgGCjQIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNL+B6kYqGQYmJbGAAAAAElFTkSuQmCC" /><!-- --></p>
-<div class="sourceCode" id="cb151"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb151-1" title="1"><span class="co">## cleanup</span></a>
-<a class="sourceLine" id="cb151-2" title="2"><span class="kw">unlink</span>(<span class="kw">dirname</span>(tmpDir), <span class="dt">recursive =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb157"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb157-1" title="1">map &lt;-<span class="st"> </span><span class="kw">loadFromCache</span>(mapHash[<span class="dv">1</span>], <span class="dt">cachePath =</span> tmpDir)</a>
+<a class="sourceLine" id="cb157-2" title="2"><span class="kw">plot</span>(map)</a></code></pre></div>
+<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAqAAAAEgCAMAAABcujGyAAAA+VBMVEUAAAAAADoAAGYAOjoAOpAAZrYFqAAMqgASrAAZrwAfsQAmswAttQA1uAA6AAA6ADo6AGY6Ojo6OpA6kNs7ugBDvQBMvwBTwQBcxABjxgBmAABmADpmtv9syAB0ygB9zQCFzwCP0QCQOgCQ2/+Z1ACh1gCs2AC02gC2ZgC2/7a2//+/3QDI3wDT4QDbkDrb2//b///c4wDm1hLm3Avm5ALnyiLnzxvowTPoxSvpuUPpvDzqtFbqtk3rsWfrsW7rsl3ssXjssn/ts4nttZHuuJruu6Tvvqzvw7XwyL3wzsfw08/x29jx4uDy6+r/tmb/25D//7b//9v///9VOJDSAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAI/UlEQVR4nO3dh3bqRhRGYTmx03NLbqpz03AKaYrTe+9NGL3/w0RCRxgHwRxgPPMb9rdWEmUhq9jbAmRpKGpAWJF7A4B1CBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSCBTSIgdaYM/F7cVRlPTiEvokrdy7uy0CzYVAXQg0FwJ1IdBcCNSFQHMhUBcCzYVAXQg0FwJ1IdBcCNSFQHMhUBcCzYVAXQg0FwJ1IdBcCNSFQHMhUBcCzYVAXQg0FwJ1IdBcCNSFQHMhUBcCzYVAXW5EoJNb92MuTgOBukgHenF6eWvKA+/svDgtBOoiHWhdFffa/3AEJVDRFV6cHp8PBZrvpr9oCNRFPNC6Hh+dcQQlUOEVlsU9AiVQ4RVObj1IoAQqvMLpqCBQAr2ZKyRQApVeIYEedKDXMJgTgRoCdQkE+pCJ1wGBGgJ1CQT6sCHQ6AjUJRDoI4ZAoyNQl0CgjxoCjY5AXQKBPmYINDoCdQkE+rgh0OgI1CUQ6BOGQKMjUJdAoE8aAo2OQF0CgT5tCDQ6AnUJBPqMGZptOiqK7or3VlUUR2eDE92NGyeuFW6MQA870GfNwGzTUZNf2YdXNf/T/jMwMbl95l7hxgj0sAN9zgzM1l1FXHY3s01H7aF0fDIwUVdX7ncjUEOgLoFAnzcrZ6u6p/N5rcsTdXmy+AVbFDV/0TC0hZsvTgSBugQCfcGsvJpp3B0eu6fx5li5PFGP7y6+Vt2sqHHzlZOnzpvXsSsuWSbQww70JbNqNrsv2A6kzb+XJ7obM8d9oRsVNW6+dDxbUNkuZOPtV0agLoFAXzYrZqsW3yOtCNRm6F+IbjZww/2Fg/OVDeO2YwJtH33FDM9WzZ+51z3FdzP0971tFmi7/OkHNUdQAh1+9FUzOFt5+cpy3Zukbob+XNNGRc2/vEt14+1XRqAugUBfM0OzlQv3Wq45zdSVutVTfLOO/pz/qts6CfSwA33dDJ4HXTyorTlR354L3fJNUhiBHnagb5iB2cruTcrR2XR00v1vd7Rbnhg3s82PgARqCNQlEOibhotFoiNQl0CgbxkCjY5AXQKBvmsINDoCdQkE+p4h0OgI1CUQ6PuGQKMjUJdAoB8aAo2OQF0Cgfa7x9hM0RGoSyDQjw1H0OgI1CUQ6EeGQKMjUJdAoJ8ZAo2OQF0CgX5qCDQ6AnUJBPqFIdDoCNQlEOjnhkCjI1CXQKBfmVyBlv2FUCWf1UmgA49+aTIF2l6vfHE6u5qPQAl04NFvTJ5Au6vyp6PjcwIl0MFHvzYrZpvcmWez+oLl7cdm6u+GHx+fl9zVSaADj35vhme7OJ1nM//M1+WJ7cdm6o6g7dJPOIIS6NCj35rB2aqiuHrXZXl8vjyxy9hMfZbNQZhACXTg0e/M0GxVcW/e3rqBG3YZm6m/c3Q6IlACHXj0B7Piaqb/B1rcX57YaWymHbdfGYG6BAL90awa+ubqwCHN8W55YpexmcII9LAD/cmEArW3RO3xcmni6pwEagjUJRDozyYYaHvz+wNvv3g2NNHaamwmBwI97EB/MeFAW/PTogMTW43NFEaghx3or8YX6HwIusWJncZmCiLQww70NxMKdPYH86r/y/mVCcZmGkagLoFAfzfrAp2NzdT+PXP+h82rE4zNNIhAXQKB/mG4HjQ6AnUJBPqnIdDoCNQlEOhfhkCjI1CXQKB/GwKNjkBdAoH+Ywg0OgJ1CQT6ryHQ6AjUJRBo/AvXCdQQqEvyHzCBGgJ1IdBcCNRFOtDudrsOV9QTqN4KV9/pwV2dBKqwwu4zmKItTgmBuogHuuZDELdanBACdVEPNPHiEiJQFwLNhUBdCDQXAnUh0FwI1IVAcyFQFwLNhUBdCDQXAnUh0FwI1IVAcyFQFwLNhUBdCDQXAnUh0FwI1IVAcyFQFwLNhUBdCDQXAnUh0FwI1IVAcyFQF/FAp6O1t8wRKIFmXWHZf3xNdfk5NjssTgqBukgHOv8oxIVBxXdYnBYCdZEOtP8w2XppNPwChyJaeU6Rj6DxJP5O7PfqbvAz24avQfvPAVv1GjSe/S6GQL022/J+8JtrP37uezEE6iW75ftdDIF6yW75fhdDoF6yW77fxRCol+yW73cxBOolu+X7XQyBeslu+X4XQ6BeN3fLcRAIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNJUA+3ufgp8dG0sVVEcnaVZVZ141+p6cmd2h3jafYxHNdDJ7XTfzar5yVXpfnopd639dZgNYZB4H+NRDbRaOfxTdN3t/uNkh7SEuzY7cLarS72P8agGWqb7Xk5utXf7l8mySbhr7QAGs9+H1PsYj2qg47vN67RrHx1ipnvKTXdcS7hrrS7QxPsYj2igF6ft2BDjJD/G7qVZshdoKXetNasy8T5GJBpoJ81vfJYfXrqDGYFen+6V07WvJcfTX5pda/EUH1l5+QotzQmZLG8g0p1r4k3Sdei+oWl+4xOfgkm5a3W/Jk4zxTb7XiZ6J5H4JHbKXav7XwVO1Mc2bp7pU71MK9P+GTDlrs2P1Yn3MRrZQIEWgUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagUIagULaf293qXlyID/lAAAAAElFTkSuQmCC" /><!-- --></p>
+<div class="sourceCode" id="cb158"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb158-1" title="1"><span class="co">## cleanup</span></a>
+<a class="sourceLine" id="cb158-2" title="2"><span class="kw">unlink</span>(<span class="kw">dirname</span>(tmpDir), <span class="dt">recursive =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
 </div>
 </div>
 <div id="reproducible-workflow-1" class="section level1">

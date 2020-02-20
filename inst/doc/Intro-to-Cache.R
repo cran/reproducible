@@ -1,4 +1,4 @@
-## ----function-level, echo=TRUE-------------------------------------------
+## ----function-level, echo=TRUE------------------------------------------------
 library(raster)
 library(reproducible)
 
@@ -12,6 +12,8 @@ newCRS <- "+init=epsg:4326 +proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +tow
 # No Cache
 system.time(map1 <- projectRaster(ras, crs = newCRS))
 
+# Try with memoise for this example -- for many simple cases, memoising will not be faster
+opts <- options("reproducible.useMemoise" = TRUE)
 # With Cache -- a little slower the first time because saving to disk
 system.time(map1 <- Cache(projectRaster, ras, crs = newCRS, cacheRepo = tmpDir,
                          notOlderThan = Sys.time()))
@@ -19,13 +21,14 @@ system.time(map1 <- Cache(projectRaster, ras, crs = newCRS, cacheRepo = tmpDir,
 # vastly faster the second time
 system.time(map2 <- Cache(projectRaster, ras, crs = newCRS, cacheRepo = tmpDir))
 
-# even faster the third time
+# may be faster the third time because of memoise; but this example is too simple to show
 system.time(map3 <- Cache(projectRaster, ras, crs = newCRS, cacheRepo = tmpDir))
+options(opts)
 
 all.equal(map1, map2) # TRUE
 all.equal(map1, map3) # TRUE
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 library(raster)
 library(magrittr)
 
@@ -41,7 +44,7 @@ ranNumsD <- Cache(quote(rnorm(n = 10, 16)), cacheRepo = tmpDir) # recovers cache
 # Any minor change makes it different
 ranNumsE <- Cache(cacheRepo = tmpDir) %C% rnorm(10, 6) # different
 
-## ----tags----------------------------------------------------------------
+## ----tags---------------------------------------------------------------------
 ranNumsA <- Cache(rnorm, 4, cacheRepo = tmpDir, userTags = "objectName:a")
 ranNumsB <- Cache(runif, 4, cacheRepo = tmpDir, userTags = "objectName:b")
 
@@ -54,11 +57,12 @@ showCache(tmpDir) # only those made during rnorm call
 
 clearCache(tmpDir, ask = FALSE)
 
-## ----accessed-tag--------------------------------------------------------
+## ----accessed-tag-------------------------------------------------------------
 ranNumsA <- Cache(rnorm, 4, cacheRepo = tmpDir, userTags = "objectName:a")
 ranNumsB <- Cache(runif, 4, cacheRepo = tmpDir, userTags = "objectName:b")
 
 # access it again, from Cache
+Sys.sleep(1)
 ranNumsA <- Cache(rnorm, 4, cacheRepo = tmpDir, userTags = "objectName:a")
 wholeCache <- showCache(tmpDir)
 
@@ -67,14 +71,13 @@ onlyRecentlyAccessed <- showCache(tmpDir, userTags = max(wholeCache[tagKey == "a
 
 # inverse join with 2 data.tables ... using: a[!b]
 # i.e., return all of wholeCache that was not recently accessed
-toRemove <- unique(wholeCache[!onlyRecentlyAccessed], by = "artifact")$artifact
+#   Note: the two different ways to access -- old way with "artifact" will be deprecated
+toRemove <- unique(wholeCache[!onlyRecentlyAccessed, on = "cacheId"], by = "cacheId")$cacheId
 clearCache(tmpDir, toRemove, ask = FALSE) # remove ones not recently accessed
 showCache(tmpDir) # still has more recently accessed
 
-clearCache(tmpDir, ask = FALSE)
 
-
-## ----keepCache-----------------------------------------------------------
+## ----keepCache----------------------------------------------------------------
 ranNumsA <- Cache(rnorm, 4, cacheRepo = tmpDir, userTags = "objectName:a")
 ranNumsB <- Cache(runif, 4, cacheRepo = tmpDir, userTags = "objectName:b")
 
@@ -90,7 +93,18 @@ clearCache(tmpDir, userTags = "rnorm", ask = FALSE)
 
 showCache(tmpDir) ## empty
 
-## ----searching-within-cache----------------------------------------------
+# Also, can set a time before caching happens and remove based on this
+#  --> a useful, simple way to control Cache
+ranNumsA <- Cache(rnorm, 4, cacheRepo = tmpDir, userTags = "objectName:a")
+startTime <- Sys.time()
+Sys.sleep(1)
+ranNumsB <- Cache(rnorm, 5, cacheRepo = tmpDir, userTags = "objectName:b")
+keepCache(tmpDir, after = startTime, ask = FALSE) # keep only those newer than startTime
+
+clearCache(tmpDir, ask = FALSE)
+
+
+## ----searching-within-cache---------------------------------------------------
 # default userTags is "and" matching; for "or" matching use |
 ranNumsA <- Cache(runif, 4, cacheRepo = tmpDir, userTags = "objectName:a")
 ranNumsB <- Cache(rnorm, 4, cacheRepo = tmpDir, userTags = "objectName:b")
@@ -110,7 +124,7 @@ keepCache(tmpDir, userTags = "runif|rnorm", ask = FALSE)
 
 clearCache(tmpDir, ask = FALSE)
 
-## ----expensive-computations----------------------------------------------
+## ----expensive-computations---------------------------------------------------
 ras <- raster(extent(0, 5, 0, 5), res = 1,
               vals = sample(1:5, replace = TRUE, size = 25),
               crs = "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +ellps=WGS84")
@@ -136,7 +150,7 @@ reRun <- suppressWarnings(
 # recovered cached version is same as non-cached version
 all.equal(notCached, reRun) ## TRUE
 
-## ----nested--------------------------------------------------------------
+## ----nested-------------------------------------------------------------------
 ##########################
 ## Nested Caching
 # Make 2 functions
@@ -177,28 +191,23 @@ aa <- Cache(outer, n = 2, cacheRepo = tmpdir1, userTags = outerTag)
 showCache(tmpdir1) # rnorm function has outerTag and innerTag, inner and outer only have outerTag
 
 
-## ----selective-cacheId---------------------------------------------------
+## ----selective-cacheId--------------------------------------------------------
 ### cacheId
 set.seed(1)
 Cache(rnorm, 1, cacheRepo = tmpdir1)
-# manually look at output attribute which shows cacheId: ad184ce64541972b50afd8e7b75f821b
-Cache(rnorm, 1, cacheRepo = tmpdir1, cacheId = "ad184ce64541972b50afd8e7b75f821b") # same value
+# manually look at output attribute which shows cacheId: 7072c305d8c69df0
+Cache(rnorm, 1, cacheRepo = tmpdir1, cacheId = "7072c305d8c69df0") # same value
 # override even with different inputs:
-Cache(rnorm, 2, cacheRepo = tmpdir1, cacheId = "ad184ce64541972b50afd8e7b75f821b")
+Cache(rnorm, 2, cacheRepo = tmpdir1, cacheId = "7072c305d8c69df0")
 
-## cleanup
-unlink(c("filename.rda", "filename1.rda"))
 
-## ----manual-cache--------------------------------------------------------
-if (requireNamespace("archivist")) {
-  # get the RasterLayer that was produced with the gaussMap function:
-  mapHash <- unique(showCache(tmpDir, userTags = "projectRaster")$artifact)
-  map <- archivist::loadFromLocalRepo(md5hash = mapHash[1], repoDir = tmpDir, value = TRUE)
-  
-  plot(map)
-}
+## ----manual-cache-------------------------------------------------------------
+# As of reproducible version 1.0, there is a new backend directly using DBI
+mapHash <- unique(showCache(tmpDir, userTags = "projectRaster")$cacheId)
+map <- loadFromCache(mapHash[1], cachePath = tmpDir)
+plot(map)
 
-## ----cleanup-------------------------------------------------------------
+## ----cleanup------------------------------------------------------------------
 ## cleanup
 unlink(dirname(tmpDir), recursive = TRUE)
 
