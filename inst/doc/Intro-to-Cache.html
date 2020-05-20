@@ -302,7 +302,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Introduction to Cache</h1>
 <h4 class="author">Eliot J. B. McIntire</h4>
-<h4 class="date">May 14 2020</h4>
+<h4 class="date">May 19 2020</h4>
 
 
 <div id="TOC">
@@ -346,7 +346,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb3-2"><a href="#cb3-2"></a></span>
 <span id="cb3-3"><a href="#cb3-3"></a>tmpDir &lt;-<span class="st"> </span><span class="kw">file.path</span>(<span class="kw">tempdir</span>(), <span class="st">&quot;reproducible_examples&quot;</span>, <span class="st">&quot;Cache&quot;</span>)</span>
 <span id="cb3-4"><a href="#cb3-4"></a><span class="kw">checkPath</span>(tmpDir, <span class="dt">create =</span> <span class="ot">TRUE</span>)</span></code></pre></div>
-<pre><code>## [1] &quot;/tmp/RtmpJFBvyv/reproducible_examples/Cache&quot;</code></pre>
+<pre><code>## [1] &quot;/tmp/RtmpGGK5qo/reproducible_examples/Cache&quot;</code></pre>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>ras &lt;-<span class="st"> </span><span class="kw">raster</span>(<span class="kw">extent</span>(<span class="dv">0</span>, <span class="dv">1000</span>, <span class="dv">0</span>, <span class="dv">1000</span>), <span class="dt">vals =</span> <span class="dv">1</span><span class="op">:</span><span class="fl">1e6</span>, <span class="dt">res =</span> <span class="dv">1</span>)</span>
 <span id="cb5-2"><a href="#cb5-2"></a><span class="kw">crs</span>(ras) &lt;-<span class="st"> &quot;+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +ellps=WGS84&quot;</span></span>
 <span id="cb5-3"><a href="#cb5-3"></a></span>
@@ -354,26 +354,26 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb5-5"><a href="#cb5-5"></a><span class="co"># No Cache</span></span>
 <span id="cb5-6"><a href="#cb5-6"></a><span class="kw">system.time</span>(map1 &lt;-<span class="st"> </span><span class="kw">projectRaster</span>(ras, <span class="dt">crs =</span> newCRS))</span></code></pre></div>
 <pre><code>##    user  system elapsed 
-##   1.759   0.178   1.941</code></pre>
+##   2.236   0.331   2.571</code></pre>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a><span class="co"># Try with memoise for this example -- for many simple cases, memoising will not be faster</span></span>
 <span id="cb7-2"><a href="#cb7-2"></a>opts &lt;-<span class="st"> </span><span class="kw">options</span>(<span class="st">&quot;reproducible.useMemoise&quot;</span> =<span class="st"> </span><span class="ot">TRUE</span>)</span>
 <span id="cb7-3"><a href="#cb7-3"></a><span class="co"># With Cache -- a little slower the first time because saving to disk</span></span>
 <span id="cb7-4"><a href="#cb7-4"></a><span class="kw">system.time</span>(map1 &lt;-<span class="st"> </span><span class="kw">Cache</span>(projectRaster, ras, <span class="dt">crs =</span> newCRS, <span class="dt">cacheRepo =</span> tmpDir,</span>
 <span id="cb7-5"><a href="#cb7-5"></a>                         <span class="dt">notOlderThan =</span> <span class="kw">Sys.time</span>()))</span></code></pre></div>
 <pre><code>##    user  system elapsed 
-##   2.575   0.109   2.957</code></pre>
+##   2.557   0.132   2.940</code></pre>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a><span class="co"># vastly faster the second time</span></span>
 <span id="cb9-2"><a href="#cb9-2"></a><span class="kw">system.time</span>(map2 &lt;-<span class="st"> </span><span class="kw">Cache</span>(projectRaster, ras, <span class="dt">crs =</span> newCRS, <span class="dt">cacheRepo =</span> tmpDir))</span></code></pre></div>
 <pre><code>##   ...(Object to retrieve (88249b4e1af6b3a2.rds) is large: 6.5 Mb)</code></pre>
 <pre><code>##      loaded cached result from previous projectRaster call, adding to memoised copy...</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.508   0.002   0.446</code></pre>
+##   0.500   0.015   0.463</code></pre>
 <div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a><span class="co"># may be faster the third time because of memoise; but this example is too simple to show</span></span>
 <span id="cb13-2"><a href="#cb13-2"></a><span class="kw">system.time</span>(map3 &lt;-<span class="st"> </span><span class="kw">Cache</span>(projectRaster, ras, <span class="dt">crs =</span> newCRS, <span class="dt">cacheRepo =</span> tmpDir))</span></code></pre></div>
 <pre><code>##   ...(Object to retrieve (88249b4e1af6b3a2.rds) is large: 6.5 Mb)</code></pre>
 <pre><code>##      loaded memoised result from previous projectRaster call,</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.520   0.010   0.508</code></pre>
+##   0.562   0.000   0.522</code></pre>
 <div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">options</span>(opts)</span>
 <span id="cb17-2"><a href="#cb17-2"></a></span>
 <span id="cb17-3"><a href="#cb17-3"></a><span class="kw">all.equal</span>(map1, map2) <span class="co"># TRUE</span></span></code></pre></div>
@@ -424,11 +424,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ##  2: 3aef38d1fc02aee5            function                 runif
 ##  3: 3aef38d1fc02aee5               class               numeric
 ##  4: 3aef38d1fc02aee5         object.size                  1008
-##  5: 3aef38d1fc02aee5            accessed   2020-05-14 10:36:43
+##  5: 3aef38d1fc02aee5            accessed   2020-05-19 10:20:43
 ##  6: 3aef38d1fc02aee5             inCloud                 FALSE
 ##  7: 3aef38d1fc02aee5          resultHash                      
-##  8: 3aef38d1fc02aee5   elapsedTimeDigest      0.001053095 secs
-##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun     4.124641e-05 secs
+##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0008718967 secs
+##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun     1.573563e-05 secs
 ## 10: 3aef38d1fc02aee5      otherFunctions      vweave_rmarkdown
 ## 11: 3aef38d1fc02aee5      otherFunctions          process_file
 ## 12: 3aef38d1fc02aee5      otherFunctions         process_group
@@ -445,11 +445,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 23: f7bee22047b8d0c1            function                 rnorm
 ## 24: f7bee22047b8d0c1               class               numeric
 ## 25: f7bee22047b8d0c1         object.size                  1008
-## 26: f7bee22047b8d0c1            accessed   2020-05-14 10:36:43
+## 26: f7bee22047b8d0c1            accessed   2020-05-19 10:20:43
 ## 27: f7bee22047b8d0c1             inCloud                 FALSE
 ## 28: f7bee22047b8d0c1          resultHash                      
-## 29: f7bee22047b8d0c1   elapsedTimeDigest     0.0006389618 secs
-## 30: f7bee22047b8d0c1 elapsedTimeFirstRun     1.811981e-05 secs
+## 29: f7bee22047b8d0c1   elapsedTimeDigest     0.0005962849 secs
+## 30: f7bee22047b8d0c1 elapsedTimeFirstRun     1.764297e-05 secs
 ## 31: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 32: f7bee22047b8d0c1      otherFunctions          process_file
 ## 33: f7bee22047b8d0c1      otherFunctions         process_group
@@ -464,48 +464,48 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 42: f7bee22047b8d0c1           file.size                   173
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-05-14 10:36:43
-##  2: 2020-05-14 10:36:43
-##  3: 2020-05-14 10:36:43
-##  4: 2020-05-14 10:36:43
-##  5: 2020-05-14 10:36:43
-##  6: 2020-05-14 10:36:43
-##  7: 2020-05-14 10:36:43
-##  8: 2020-05-14 10:36:43
-##  9: 2020-05-14 10:36:43
-## 10: 2020-05-14 10:36:43
-## 11: 2020-05-14 10:36:43
-## 12: 2020-05-14 10:36:43
-## 13: 2020-05-14 10:36:43
-## 14: 2020-05-14 10:36:43
-## 15: 2020-05-14 10:36:43
-## 16: 2020-05-14 10:36:43
-## 17: 2020-05-14 10:36:43
-## 18: 2020-05-14 10:36:43
-## 19: 2020-05-14 10:36:43
-## 20: 2020-05-14 10:36:43
-## 21: 2020-05-14 10:36:43
-## 22: 2020-05-14 10:36:43
-## 23: 2020-05-14 10:36:43
-## 24: 2020-05-14 10:36:43
-## 25: 2020-05-14 10:36:43
-## 26: 2020-05-14 10:36:43
-## 27: 2020-05-14 10:36:43
-## 28: 2020-05-14 10:36:43
-## 29: 2020-05-14 10:36:43
-## 30: 2020-05-14 10:36:43
-## 31: 2020-05-14 10:36:43
-## 32: 2020-05-14 10:36:43
-## 33: 2020-05-14 10:36:43
-## 34: 2020-05-14 10:36:43
-## 35: 2020-05-14 10:36:43
-## 36: 2020-05-14 10:36:43
-## 37: 2020-05-14 10:36:43
-## 38: 2020-05-14 10:36:43
-## 39: 2020-05-14 10:36:43
-## 40: 2020-05-14 10:36:43
-## 41: 2020-05-14 10:36:43
-## 42: 2020-05-14 10:36:43
+##  1: 2020-05-19 10:20:43
+##  2: 2020-05-19 10:20:43
+##  3: 2020-05-19 10:20:43
+##  4: 2020-05-19 10:20:43
+##  5: 2020-05-19 10:20:43
+##  6: 2020-05-19 10:20:43
+##  7: 2020-05-19 10:20:43
+##  8: 2020-05-19 10:20:43
+##  9: 2020-05-19 10:20:43
+## 10: 2020-05-19 10:20:43
+## 11: 2020-05-19 10:20:43
+## 12: 2020-05-19 10:20:43
+## 13: 2020-05-19 10:20:43
+## 14: 2020-05-19 10:20:43
+## 15: 2020-05-19 10:20:43
+## 16: 2020-05-19 10:20:43
+## 17: 2020-05-19 10:20:43
+## 18: 2020-05-19 10:20:43
+## 19: 2020-05-19 10:20:43
+## 20: 2020-05-19 10:20:43
+## 21: 2020-05-19 10:20:43
+## 22: 2020-05-19 10:20:43
+## 23: 2020-05-19 10:20:43
+## 24: 2020-05-19 10:20:43
+## 25: 2020-05-19 10:20:43
+## 26: 2020-05-19 10:20:43
+## 27: 2020-05-19 10:20:43
+## 28: 2020-05-19 10:20:43
+## 29: 2020-05-19 10:20:43
+## 30: 2020-05-19 10:20:43
+## 31: 2020-05-19 10:20:43
+## 32: 2020-05-19 10:20:43
+## 33: 2020-05-19 10:20:43
+## 34: 2020-05-19 10:20:43
+## 35: 2020-05-19 10:20:43
+## 36: 2020-05-19 10:20:43
+## 37: 2020-05-19 10:20:43
+## 38: 2020-05-19 10:20:43
+## 39: 2020-05-19 10:20:43
+## 40: 2020-05-19 10:20:43
+## 41: 2020-05-19 10:20:43
+## 42: 2020-05-19 10:20:43
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1"></a><span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="kw">c</span>(<span class="st">&quot;^a$&quot;</span>)) <span class="co"># regular expression ... &quot;a&quot; exactly</span></span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
@@ -516,11 +516,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ##  2: f7bee22047b8d0c1            function                 rnorm
 ##  3: f7bee22047b8d0c1               class               numeric
 ##  4: f7bee22047b8d0c1         object.size                  1008
-##  5: f7bee22047b8d0c1            accessed   2020-05-14 10:36:43
+##  5: f7bee22047b8d0c1            accessed   2020-05-19 10:20:43
 ##  6: f7bee22047b8d0c1             inCloud                 FALSE
 ##  7: f7bee22047b8d0c1          resultHash                      
-##  8: f7bee22047b8d0c1   elapsedTimeDigest     0.0006389618 secs
-##  9: f7bee22047b8d0c1 elapsedTimeFirstRun     1.811981e-05 secs
+##  8: f7bee22047b8d0c1   elapsedTimeDigest     0.0005962849 secs
+##  9: f7bee22047b8d0c1 elapsedTimeFirstRun     1.764297e-05 secs
 ## 10: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 11: f7bee22047b8d0c1      otherFunctions          process_file
 ## 12: f7bee22047b8d0c1      otherFunctions         process_group
@@ -535,27 +535,27 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 21: f7bee22047b8d0c1           file.size                   173
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-05-14 10:36:43
-##  2: 2020-05-14 10:36:43
-##  3: 2020-05-14 10:36:43
-##  4: 2020-05-14 10:36:43
-##  5: 2020-05-14 10:36:43
-##  6: 2020-05-14 10:36:43
-##  7: 2020-05-14 10:36:43
-##  8: 2020-05-14 10:36:43
-##  9: 2020-05-14 10:36:43
-## 10: 2020-05-14 10:36:43
-## 11: 2020-05-14 10:36:43
-## 12: 2020-05-14 10:36:43
-## 13: 2020-05-14 10:36:43
-## 14: 2020-05-14 10:36:43
-## 15: 2020-05-14 10:36:43
-## 16: 2020-05-14 10:36:43
-## 17: 2020-05-14 10:36:43
-## 18: 2020-05-14 10:36:43
-## 19: 2020-05-14 10:36:43
-## 20: 2020-05-14 10:36:43
-## 21: 2020-05-14 10:36:43
+##  1: 2020-05-19 10:20:43
+##  2: 2020-05-19 10:20:43
+##  3: 2020-05-19 10:20:43
+##  4: 2020-05-19 10:20:43
+##  5: 2020-05-19 10:20:43
+##  6: 2020-05-19 10:20:43
+##  7: 2020-05-19 10:20:43
+##  8: 2020-05-19 10:20:43
+##  9: 2020-05-19 10:20:43
+## 10: 2020-05-19 10:20:43
+## 11: 2020-05-19 10:20:43
+## 12: 2020-05-19 10:20:43
+## 13: 2020-05-19 10:20:43
+## 14: 2020-05-19 10:20:43
+## 15: 2020-05-19 10:20:43
+## 16: 2020-05-19 10:20:43
+## 17: 2020-05-19 10:20:43
+## 18: 2020-05-19 10:20:43
+## 19: 2020-05-19 10:20:43
+## 20: 2020-05-19 10:20:43
+## 21: 2020-05-19 10:20:43
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1"></a><span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="kw">c</span>(<span class="st">&quot;runif&quot;</span>)) <span class="co"># show only cached objects made during runif call</span></span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
@@ -566,11 +566,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ##  2: 3aef38d1fc02aee5            function                 runif
 ##  3: 3aef38d1fc02aee5               class               numeric
 ##  4: 3aef38d1fc02aee5         object.size                  1008
-##  5: 3aef38d1fc02aee5            accessed   2020-05-14 10:36:43
+##  5: 3aef38d1fc02aee5            accessed   2020-05-19 10:20:43
 ##  6: 3aef38d1fc02aee5             inCloud                 FALSE
 ##  7: 3aef38d1fc02aee5          resultHash                      
-##  8: 3aef38d1fc02aee5   elapsedTimeDigest      0.001053095 secs
-##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun     4.124641e-05 secs
+##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0008718967 secs
+##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun     1.573563e-05 secs
 ## 10: 3aef38d1fc02aee5      otherFunctions      vweave_rmarkdown
 ## 11: 3aef38d1fc02aee5      otherFunctions          process_file
 ## 12: 3aef38d1fc02aee5      otherFunctions         process_group
@@ -585,27 +585,27 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 21: 3aef38d1fc02aee5           file.size                   169
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-05-14 10:36:43
-##  2: 2020-05-14 10:36:43
-##  3: 2020-05-14 10:36:43
-##  4: 2020-05-14 10:36:43
-##  5: 2020-05-14 10:36:43
-##  6: 2020-05-14 10:36:43
-##  7: 2020-05-14 10:36:43
-##  8: 2020-05-14 10:36:43
-##  9: 2020-05-14 10:36:43
-## 10: 2020-05-14 10:36:43
-## 11: 2020-05-14 10:36:43
-## 12: 2020-05-14 10:36:43
-## 13: 2020-05-14 10:36:43
-## 14: 2020-05-14 10:36:43
-## 15: 2020-05-14 10:36:43
-## 16: 2020-05-14 10:36:43
-## 17: 2020-05-14 10:36:43
-## 18: 2020-05-14 10:36:43
-## 19: 2020-05-14 10:36:43
-## 20: 2020-05-14 10:36:43
-## 21: 2020-05-14 10:36:43
+##  1: 2020-05-19 10:20:43
+##  2: 2020-05-19 10:20:43
+##  3: 2020-05-19 10:20:43
+##  4: 2020-05-19 10:20:43
+##  5: 2020-05-19 10:20:43
+##  6: 2020-05-19 10:20:43
+##  7: 2020-05-19 10:20:43
+##  8: 2020-05-19 10:20:43
+##  9: 2020-05-19 10:20:43
+## 10: 2020-05-19 10:20:43
+## 11: 2020-05-19 10:20:43
+## 12: 2020-05-19 10:20:43
+## 13: 2020-05-19 10:20:43
+## 14: 2020-05-19 10:20:43
+## 15: 2020-05-19 10:20:43
+## 16: 2020-05-19 10:20:43
+## 17: 2020-05-19 10:20:43
+## 18: 2020-05-19 10:20:43
+## 19: 2020-05-19 10:20:43
+## 20: 2020-05-19 10:20:43
+## 21: 2020-05-19 10:20:43
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1"></a><span class="kw">clearCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="kw">c</span>(<span class="st">&quot;runif&quot;</span>), <span class="dt">ask =</span> <span class="ot">FALSE</span>) <span class="co"># remove only cached objects made during runif call</span></span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
@@ -619,11 +619,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ##  1: f11fb1a2880f8060            function                 rnorm
 ##  2: f11fb1a2880f8060               class               numeric
 ##  3: f11fb1a2880f8060         object.size                  1104
-##  4: f11fb1a2880f8060            accessed   2020-05-14 10:36:42
+##  4: f11fb1a2880f8060            accessed   2020-05-19 10:20:42
 ##  5: f11fb1a2880f8060             inCloud                 FALSE
 ##  6: f11fb1a2880f8060          resultHash                      
-##  7: f11fb1a2880f8060   elapsedTimeDigest      0.001437426 secs
-##  8: f11fb1a2880f8060 elapsedTimeFirstRun     5.316734e-05 secs
+##  7: f11fb1a2880f8060   elapsedTimeDigest      0.001416445 secs
+##  8: f11fb1a2880f8060 elapsedTimeFirstRun     0.0001075268 secs
 ##  9: f11fb1a2880f8060      otherFunctions      vweave_rmarkdown
 ## 10: f11fb1a2880f8060      otherFunctions          process_file
 ## 11: f11fb1a2880f8060      otherFunctions         process_group
@@ -636,19 +636,19 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 18: f11fb1a2880f8060           preDigest    n:c5775c3b366fb719
 ## 19: f11fb1a2880f8060           preDigest mean:15620f138033a66c
 ## 20: f11fb1a2880f8060           preDigest .FUN:4f604aa46882b368
-## 21: f11fb1a2880f8060           file.size                   221
-## 22: f11fb1a2880f8060            accessed   2020-05-14 10:36:42
-## 23: f11fb1a2880f8060     elapsedTimeLoad       0.01204038 secs
-## 24: f11fb1a2880f8060            accessed   2020-05-14 10:36:42
-## 25: f11fb1a2880f8060            accessed   2020-05-14 10:36:42
+## 21: f11fb1a2880f8060           file.size                   223
+## 22: f11fb1a2880f8060            accessed   2020-05-19 10:20:43
+## 23: f11fb1a2880f8060     elapsedTimeLoad       0.01187992 secs
+## 24: f11fb1a2880f8060            accessed   2020-05-19 10:20:43
+## 25: f11fb1a2880f8060            accessed   2020-05-19 10:20:43
 ## 26: c16f0e2c57596069            function &#39;rnorm&#39; pipe sequence
 ## 27: c16f0e2c57596069               class               numeric
 ## 28: c16f0e2c57596069         object.size                  1104
-## 29: c16f0e2c57596069            accessed   2020-05-14 10:36:42
+## 29: c16f0e2c57596069            accessed   2020-05-19 10:20:43
 ## 30: c16f0e2c57596069             inCloud                 FALSE
 ## 31: c16f0e2c57596069          resultHash                      
-## 32: c16f0e2c57596069   elapsedTimeDigest     0.0007715225 secs
-## 33: c16f0e2c57596069 elapsedTimeFirstRun     2.670288e-05 secs
+## 32: c16f0e2c57596069   elapsedTimeDigest      0.001086235 secs
+## 33: c16f0e2c57596069 elapsedTimeFirstRun     2.741814e-05 secs
 ## 34: c16f0e2c57596069      otherFunctions      vweave_rmarkdown
 ## 35: c16f0e2c57596069      otherFunctions          process_file
 ## 36: c16f0e2c57596069      otherFunctions         process_group
@@ -668,11 +668,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 50: f7bee22047b8d0c1            function                 rnorm
 ## 51: f7bee22047b8d0c1               class               numeric
 ## 52: f7bee22047b8d0c1         object.size                  1008
-## 53: f7bee22047b8d0c1            accessed   2020-05-14 10:36:43
+## 53: f7bee22047b8d0c1            accessed   2020-05-19 10:20:43
 ## 54: f7bee22047b8d0c1             inCloud                 FALSE
 ## 55: f7bee22047b8d0c1          resultHash                      
-## 56: f7bee22047b8d0c1   elapsedTimeDigest     0.0006389618 secs
-## 57: f7bee22047b8d0c1 elapsedTimeFirstRun     1.811981e-05 secs
+## 56: f7bee22047b8d0c1   elapsedTimeDigest     0.0005962849 secs
+## 57: f7bee22047b8d0c1 elapsedTimeFirstRun     1.764297e-05 secs
 ## 58: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 59: f7bee22047b8d0c1      otherFunctions          process_file
 ## 60: f7bee22047b8d0c1      otherFunctions         process_group
@@ -687,75 +687,75 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 69: f7bee22047b8d0c1           file.size                   173
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-05-14 10:36:42
-##  2: 2020-05-14 10:36:42
-##  3: 2020-05-14 10:36:42
-##  4: 2020-05-14 10:36:42
-##  5: 2020-05-14 10:36:42
-##  6: 2020-05-14 10:36:42
-##  7: 2020-05-14 10:36:42
-##  8: 2020-05-14 10:36:42
-##  9: 2020-05-14 10:36:42
-## 10: 2020-05-14 10:36:42
-## 11: 2020-05-14 10:36:42
-## 12: 2020-05-14 10:36:42
-## 13: 2020-05-14 10:36:42
-## 14: 2020-05-14 10:36:42
-## 15: 2020-05-14 10:36:42
-## 16: 2020-05-14 10:36:42
-## 17: 2020-05-14 10:36:42
-## 18: 2020-05-14 10:36:42
-## 19: 2020-05-14 10:36:42
-## 20: 2020-05-14 10:36:42
-## 21: 2020-05-14 10:36:42
-## 22: 2020-05-14 10:36:42
-## 23: 2020-05-14 10:36:42
-## 24: 2020-05-14 10:36:42
-## 25: 2020-05-14 10:36:42
-## 26: 2020-05-14 10:36:42
-## 27: 2020-05-14 10:36:42
-## 28: 2020-05-14 10:36:42
-## 29: 2020-05-14 10:36:42
-## 30: 2020-05-14 10:36:42
-## 31: 2020-05-14 10:36:42
-## 32: 2020-05-14 10:36:42
-## 33: 2020-05-14 10:36:42
-## 34: 2020-05-14 10:36:42
-## 35: 2020-05-14 10:36:42
-## 36: 2020-05-14 10:36:42
-## 37: 2020-05-14 10:36:42
-## 38: 2020-05-14 10:36:42
-## 39: 2020-05-14 10:36:42
-## 40: 2020-05-14 10:36:42
-## 41: 2020-05-14 10:36:42
-## 42: 2020-05-14 10:36:42
-## 43: 2020-05-14 10:36:42
-## 44: 2020-05-14 10:36:42
-## 45: 2020-05-14 10:36:42
-## 46: 2020-05-14 10:36:42
-## 47: 2020-05-14 10:36:42
-## 48: 2020-05-14 10:36:42
-## 49: 2020-05-14 10:36:43
-## 50: 2020-05-14 10:36:43
-## 51: 2020-05-14 10:36:43
-## 52: 2020-05-14 10:36:43
-## 53: 2020-05-14 10:36:43
-## 54: 2020-05-14 10:36:43
-## 55: 2020-05-14 10:36:43
-## 56: 2020-05-14 10:36:43
-## 57: 2020-05-14 10:36:43
-## 58: 2020-05-14 10:36:43
-## 59: 2020-05-14 10:36:43
-## 60: 2020-05-14 10:36:43
-## 61: 2020-05-14 10:36:43
-## 62: 2020-05-14 10:36:43
-## 63: 2020-05-14 10:36:43
-## 64: 2020-05-14 10:36:43
-## 65: 2020-05-14 10:36:43
-## 66: 2020-05-14 10:36:43
-## 67: 2020-05-14 10:36:43
-## 68: 2020-05-14 10:36:43
-## 69: 2020-05-14 10:36:43
+##  1: 2020-05-19 10:20:42
+##  2: 2020-05-19 10:20:42
+##  3: 2020-05-19 10:20:42
+##  4: 2020-05-19 10:20:42
+##  5: 2020-05-19 10:20:42
+##  6: 2020-05-19 10:20:42
+##  7: 2020-05-19 10:20:42
+##  8: 2020-05-19 10:20:42
+##  9: 2020-05-19 10:20:42
+## 10: 2020-05-19 10:20:42
+## 11: 2020-05-19 10:20:42
+## 12: 2020-05-19 10:20:42
+## 13: 2020-05-19 10:20:42
+## 14: 2020-05-19 10:20:42
+## 15: 2020-05-19 10:20:42
+## 16: 2020-05-19 10:20:42
+## 17: 2020-05-19 10:20:42
+## 18: 2020-05-19 10:20:42
+## 19: 2020-05-19 10:20:42
+## 20: 2020-05-19 10:20:42
+## 21: 2020-05-19 10:20:42
+## 22: 2020-05-19 10:20:43
+## 23: 2020-05-19 10:20:43
+## 24: 2020-05-19 10:20:43
+## 25: 2020-05-19 10:20:43
+## 26: 2020-05-19 10:20:43
+## 27: 2020-05-19 10:20:43
+## 28: 2020-05-19 10:20:43
+## 29: 2020-05-19 10:20:43
+## 30: 2020-05-19 10:20:43
+## 31: 2020-05-19 10:20:43
+## 32: 2020-05-19 10:20:43
+## 33: 2020-05-19 10:20:43
+## 34: 2020-05-19 10:20:43
+## 35: 2020-05-19 10:20:43
+## 36: 2020-05-19 10:20:43
+## 37: 2020-05-19 10:20:43
+## 38: 2020-05-19 10:20:43
+## 39: 2020-05-19 10:20:43
+## 40: 2020-05-19 10:20:43
+## 41: 2020-05-19 10:20:43
+## 42: 2020-05-19 10:20:43
+## 43: 2020-05-19 10:20:43
+## 44: 2020-05-19 10:20:43
+## 45: 2020-05-19 10:20:43
+## 46: 2020-05-19 10:20:43
+## 47: 2020-05-19 10:20:43
+## 48: 2020-05-19 10:20:43
+## 49: 2020-05-19 10:20:43
+## 50: 2020-05-19 10:20:43
+## 51: 2020-05-19 10:20:43
+## 52: 2020-05-19 10:20:43
+## 53: 2020-05-19 10:20:43
+## 54: 2020-05-19 10:20:43
+## 55: 2020-05-19 10:20:43
+## 56: 2020-05-19 10:20:43
+## 57: 2020-05-19 10:20:43
+## 58: 2020-05-19 10:20:43
+## 59: 2020-05-19 10:20:43
+## 60: 2020-05-19 10:20:43
+## 61: 2020-05-19 10:20:43
+## 62: 2020-05-19 10:20:43
+## 63: 2020-05-19 10:20:43
+## 64: 2020-05-19 10:20:43
+## 65: 2020-05-19 10:20:43
+## 66: 2020-05-19 10:20:43
+## 67: 2020-05-19 10:20:43
+## 68: 2020-05-19 10:20:43
+## 69: 2020-05-19 10:20:43
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1"></a><span class="kw">clearCache</span>(tmpDir, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</span></code></pre></div>
 </div>
@@ -795,11 +795,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ##  2: f7bee22047b8d0c1            function                 rnorm
 ##  3: f7bee22047b8d0c1               class               numeric
 ##  4: f7bee22047b8d0c1         object.size                  1008
-##  5: f7bee22047b8d0c1            accessed   2020-05-14 10:36:44
+##  5: f7bee22047b8d0c1            accessed   2020-05-19 10:20:44
 ##  6: f7bee22047b8d0c1             inCloud                 FALSE
 ##  7: f7bee22047b8d0c1          resultHash                      
-##  8: f7bee22047b8d0c1   elapsedTimeDigest     0.0005767345 secs
-##  9: f7bee22047b8d0c1 elapsedTimeFirstRun     3.385544e-05 secs
+##  8: f7bee22047b8d0c1   elapsedTimeDigest     0.0006318092 secs
+##  9: f7bee22047b8d0c1 elapsedTimeFirstRun     1.811981e-05 secs
 ## 10: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 11: f7bee22047b8d0c1      otherFunctions          process_file
 ## 12: f7bee22047b8d0c1      otherFunctions         process_group
@@ -811,34 +811,34 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 18: f7bee22047b8d0c1      otherFunctions                handle
 ## 19: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 20: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
-## 21: f7bee22047b8d0c1           file.size                   174
-## 22: f7bee22047b8d0c1            accessed   2020-05-14 10:36:46
-## 23: f7bee22047b8d0c1     elapsedTimeLoad       0.01884222 secs
+## 21: f7bee22047b8d0c1           file.size                   173
+## 22: f7bee22047b8d0c1            accessed   2020-05-19 10:20:46
+## 23: f7bee22047b8d0c1     elapsedTimeLoad       0.01877189 secs
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-05-14 10:36:44
-##  2: 2020-05-14 10:36:44
-##  3: 2020-05-14 10:36:44
-##  4: 2020-05-14 10:36:44
-##  5: 2020-05-14 10:36:44
-##  6: 2020-05-14 10:36:44
-##  7: 2020-05-14 10:36:44
-##  8: 2020-05-14 10:36:44
-##  9: 2020-05-14 10:36:44
-## 10: 2020-05-14 10:36:44
-## 11: 2020-05-14 10:36:44
-## 12: 2020-05-14 10:36:44
-## 13: 2020-05-14 10:36:44
-## 14: 2020-05-14 10:36:44
-## 15: 2020-05-14 10:36:44
-## 16: 2020-05-14 10:36:44
-## 17: 2020-05-14 10:36:44
-## 18: 2020-05-14 10:36:44
-## 19: 2020-05-14 10:36:44
-## 20: 2020-05-14 10:36:44
-## 21: 2020-05-14 10:36:44
-## 22: 2020-05-14 10:36:46
-## 23: 2020-05-14 10:36:46
+##  1: 2020-05-19 10:20:44
+##  2: 2020-05-19 10:20:44
+##  3: 2020-05-19 10:20:44
+##  4: 2020-05-19 10:20:44
+##  5: 2020-05-19 10:20:44
+##  6: 2020-05-19 10:20:44
+##  7: 2020-05-19 10:20:44
+##  8: 2020-05-19 10:20:44
+##  9: 2020-05-19 10:20:44
+## 10: 2020-05-19 10:20:44
+## 11: 2020-05-19 10:20:44
+## 12: 2020-05-19 10:20:44
+## 13: 2020-05-19 10:20:44
+## 14: 2020-05-19 10:20:44
+## 15: 2020-05-19 10:20:44
+## 16: 2020-05-19 10:20:44
+## 17: 2020-05-19 10:20:44
+## 18: 2020-05-19 10:20:44
+## 19: 2020-05-19 10:20:44
+## 20: 2020-05-19 10:20:44
+## 21: 2020-05-19 10:20:44
+## 22: 2020-05-19 10:20:46
+## 23: 2020-05-19 10:20:46
 ##             createdDate</code></pre>
 </div>
 <div id="example-3-using-keepcache" class="section level2">
@@ -859,11 +859,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ##  2: f7bee22047b8d0c1            function                 rnorm
 ##  3: f7bee22047b8d0c1               class               numeric
 ##  4: f7bee22047b8d0c1         object.size                  1008
-##  5: f7bee22047b8d0c1            accessed   2020-05-14 10:36:44
+##  5: f7bee22047b8d0c1            accessed   2020-05-19 10:20:44
 ##  6: f7bee22047b8d0c1             inCloud                 FALSE
 ##  7: f7bee22047b8d0c1          resultHash                      
-##  8: f7bee22047b8d0c1   elapsedTimeDigest     0.0005767345 secs
-##  9: f7bee22047b8d0c1 elapsedTimeFirstRun     3.385544e-05 secs
+##  8: f7bee22047b8d0c1   elapsedTimeDigest     0.0006318092 secs
+##  9: f7bee22047b8d0c1 elapsedTimeFirstRun     1.811981e-05 secs
 ## 10: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 11: f7bee22047b8d0c1      otherFunctions          process_file
 ## 12: f7bee22047b8d0c1      otherFunctions         process_group
@@ -875,19 +875,19 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 18: f7bee22047b8d0c1      otherFunctions                handle
 ## 19: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 20: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
-## 21: f7bee22047b8d0c1           file.size                   174
-## 22: f7bee22047b8d0c1            accessed   2020-05-14 10:36:46
-## 23: f7bee22047b8d0c1     elapsedTimeLoad       0.01199174 secs
-## 24: f7bee22047b8d0c1            accessed   2020-05-14 10:36:46
+## 21: f7bee22047b8d0c1           file.size                   173
+## 22: f7bee22047b8d0c1            accessed   2020-05-19 10:20:46
+## 23: f7bee22047b8d0c1     elapsedTimeLoad       0.01578069 secs
+## 24: f7bee22047b8d0c1            accessed   2020-05-19 10:20:46
 ## 25: 3aef38d1fc02aee5          objectName                     b
 ## 26: 3aef38d1fc02aee5            function                 runif
 ## 27: 3aef38d1fc02aee5               class               numeric
 ## 28: 3aef38d1fc02aee5         object.size                  1008
-## 29: 3aef38d1fc02aee5            accessed   2020-05-14 10:36:46
+## 29: 3aef38d1fc02aee5            accessed   2020-05-19 10:20:46
 ## 30: 3aef38d1fc02aee5             inCloud                 FALSE
 ## 31: 3aef38d1fc02aee5          resultHash                      
-## 32: 3aef38d1fc02aee5   elapsedTimeDigest      0.001001596 secs
-## 33: 3aef38d1fc02aee5 elapsedTimeFirstRun     1.692772e-05 secs
+## 32: 3aef38d1fc02aee5   elapsedTimeDigest     0.0008137226 secs
+## 33: 3aef38d1fc02aee5 elapsedTimeFirstRun     2.360344e-05 secs
 ## 34: 3aef38d1fc02aee5      otherFunctions      vweave_rmarkdown
 ## 35: 3aef38d1fc02aee5      otherFunctions          process_file
 ## 36: 3aef38d1fc02aee5      otherFunctions         process_group
@@ -899,54 +899,54 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 42: 3aef38d1fc02aee5      otherFunctions                handle
 ## 43: 3aef38d1fc02aee5           preDigest    n:7eef4eae85fd9229
 ## 44: 3aef38d1fc02aee5           preDigest .FUN:881ec847b7161f3c
-## 45: 3aef38d1fc02aee5           file.size                   167
+## 45: 3aef38d1fc02aee5           file.size                   166
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-05-14 10:36:44
-##  2: 2020-05-14 10:36:44
-##  3: 2020-05-14 10:36:44
-##  4: 2020-05-14 10:36:44
-##  5: 2020-05-14 10:36:44
-##  6: 2020-05-14 10:36:44
-##  7: 2020-05-14 10:36:44
-##  8: 2020-05-14 10:36:44
-##  9: 2020-05-14 10:36:44
-## 10: 2020-05-14 10:36:44
-## 11: 2020-05-14 10:36:44
-## 12: 2020-05-14 10:36:44
-## 13: 2020-05-14 10:36:44
-## 14: 2020-05-14 10:36:44
-## 15: 2020-05-14 10:36:44
-## 16: 2020-05-14 10:36:44
-## 17: 2020-05-14 10:36:44
-## 18: 2020-05-14 10:36:44
-## 19: 2020-05-14 10:36:44
-## 20: 2020-05-14 10:36:44
-## 21: 2020-05-14 10:36:44
-## 22: 2020-05-14 10:36:46
-## 23: 2020-05-14 10:36:46
-## 24: 2020-05-14 10:36:46
-## 25: 2020-05-14 10:36:46
-## 26: 2020-05-14 10:36:46
-## 27: 2020-05-14 10:36:46
-## 28: 2020-05-14 10:36:46
-## 29: 2020-05-14 10:36:46
-## 30: 2020-05-14 10:36:46
-## 31: 2020-05-14 10:36:46
-## 32: 2020-05-14 10:36:46
-## 33: 2020-05-14 10:36:46
-## 34: 2020-05-14 10:36:46
-## 35: 2020-05-14 10:36:46
-## 36: 2020-05-14 10:36:46
-## 37: 2020-05-14 10:36:46
-## 38: 2020-05-14 10:36:46
-## 39: 2020-05-14 10:36:46
-## 40: 2020-05-14 10:36:46
-## 41: 2020-05-14 10:36:46
-## 42: 2020-05-14 10:36:46
-## 43: 2020-05-14 10:36:46
-## 44: 2020-05-14 10:36:46
-## 45: 2020-05-14 10:36:46
+##  1: 2020-05-19 10:20:44
+##  2: 2020-05-19 10:20:44
+##  3: 2020-05-19 10:20:44
+##  4: 2020-05-19 10:20:44
+##  5: 2020-05-19 10:20:44
+##  6: 2020-05-19 10:20:44
+##  7: 2020-05-19 10:20:44
+##  8: 2020-05-19 10:20:44
+##  9: 2020-05-19 10:20:44
+## 10: 2020-05-19 10:20:44
+## 11: 2020-05-19 10:20:44
+## 12: 2020-05-19 10:20:44
+## 13: 2020-05-19 10:20:44
+## 14: 2020-05-19 10:20:44
+## 15: 2020-05-19 10:20:44
+## 16: 2020-05-19 10:20:44
+## 17: 2020-05-19 10:20:44
+## 18: 2020-05-19 10:20:44
+## 19: 2020-05-19 10:20:44
+## 20: 2020-05-19 10:20:44
+## 21: 2020-05-19 10:20:44
+## 22: 2020-05-19 10:20:46
+## 23: 2020-05-19 10:20:46
+## 24: 2020-05-19 10:20:46
+## 25: 2020-05-19 10:20:46
+## 26: 2020-05-19 10:20:46
+## 27: 2020-05-19 10:20:46
+## 28: 2020-05-19 10:20:46
+## 29: 2020-05-19 10:20:46
+## 30: 2020-05-19 10:20:46
+## 31: 2020-05-19 10:20:46
+## 32: 2020-05-19 10:20:46
+## 33: 2020-05-19 10:20:46
+## 34: 2020-05-19 10:20:46
+## 35: 2020-05-19 10:20:46
+## 36: 2020-05-19 10:20:46
+## 37: 2020-05-19 10:20:46
+## 38: 2020-05-19 10:20:46
+## 39: 2020-05-19 10:20:46
+## 40: 2020-05-19 10:20:46
+## 41: 2020-05-19 10:20:46
+## 42: 2020-05-19 10:20:46
+## 43: 2020-05-19 10:20:46
+## 44: 2020-05-19 10:20:46
+## 45: 2020-05-19 10:20:46
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb87"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb87-1"><a href="#cb87-1"></a><span class="co"># Keep all Cache items created with an rnorm() call</span></span>
 <span id="cb87-2"><a href="#cb87-2"></a><span class="kw">keepCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;rnorm&quot;</span>, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</span></code></pre></div>
@@ -958,11 +958,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ##  2: f7bee22047b8d0c1            function                 rnorm
 ##  3: f7bee22047b8d0c1               class               numeric
 ##  4: f7bee22047b8d0c1         object.size                  1008
-##  5: f7bee22047b8d0c1            accessed   2020-05-14 10:36:44
+##  5: f7bee22047b8d0c1            accessed   2020-05-19 10:20:44
 ##  6: f7bee22047b8d0c1             inCloud                 FALSE
 ##  7: f7bee22047b8d0c1          resultHash                      
-##  8: f7bee22047b8d0c1   elapsedTimeDigest     0.0005767345 secs
-##  9: f7bee22047b8d0c1 elapsedTimeFirstRun     3.385544e-05 secs
+##  8: f7bee22047b8d0c1   elapsedTimeDigest     0.0006318092 secs
+##  9: f7bee22047b8d0c1 elapsedTimeFirstRun     1.811981e-05 secs
 ## 10: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 11: f7bee22047b8d0c1      otherFunctions          process_file
 ## 12: f7bee22047b8d0c1      otherFunctions         process_group
@@ -974,36 +974,36 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 18: f7bee22047b8d0c1      otherFunctions                handle
 ## 19: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 20: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
-## 21: f7bee22047b8d0c1           file.size                   174
-## 22: f7bee22047b8d0c1            accessed   2020-05-14 10:36:46
-## 23: f7bee22047b8d0c1     elapsedTimeLoad       0.01199174 secs
-## 24: f7bee22047b8d0c1            accessed   2020-05-14 10:36:46
+## 21: f7bee22047b8d0c1           file.size                   173
+## 22: f7bee22047b8d0c1            accessed   2020-05-19 10:20:46
+## 23: f7bee22047b8d0c1     elapsedTimeLoad       0.01578069 secs
+## 24: f7bee22047b8d0c1            accessed   2020-05-19 10:20:46
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-05-14 10:36:44
-##  2: 2020-05-14 10:36:44
-##  3: 2020-05-14 10:36:44
-##  4: 2020-05-14 10:36:44
-##  5: 2020-05-14 10:36:44
-##  6: 2020-05-14 10:36:44
-##  7: 2020-05-14 10:36:44
-##  8: 2020-05-14 10:36:44
-##  9: 2020-05-14 10:36:44
-## 10: 2020-05-14 10:36:44
-## 11: 2020-05-14 10:36:44
-## 12: 2020-05-14 10:36:44
-## 13: 2020-05-14 10:36:44
-## 14: 2020-05-14 10:36:44
-## 15: 2020-05-14 10:36:44
-## 16: 2020-05-14 10:36:44
-## 17: 2020-05-14 10:36:44
-## 18: 2020-05-14 10:36:44
-## 19: 2020-05-14 10:36:44
-## 20: 2020-05-14 10:36:44
-## 21: 2020-05-14 10:36:44
-## 22: 2020-05-14 10:36:46
-## 23: 2020-05-14 10:36:46
-## 24: 2020-05-14 10:36:46
+##  1: 2020-05-19 10:20:44
+##  2: 2020-05-19 10:20:44
+##  3: 2020-05-19 10:20:44
+##  4: 2020-05-19 10:20:44
+##  5: 2020-05-19 10:20:44
+##  6: 2020-05-19 10:20:44
+##  7: 2020-05-19 10:20:44
+##  8: 2020-05-19 10:20:44
+##  9: 2020-05-19 10:20:44
+## 10: 2020-05-19 10:20:44
+## 11: 2020-05-19 10:20:44
+## 12: 2020-05-19 10:20:44
+## 13: 2020-05-19 10:20:44
+## 14: 2020-05-19 10:20:44
+## 15: 2020-05-19 10:20:44
+## 16: 2020-05-19 10:20:44
+## 17: 2020-05-19 10:20:44
+## 18: 2020-05-19 10:20:44
+## 19: 2020-05-19 10:20:44
+## 20: 2020-05-19 10:20:44
+## 21: 2020-05-19 10:20:44
+## 22: 2020-05-19 10:20:46
+## 23: 2020-05-19 10:20:46
+## 24: 2020-05-19 10:20:46
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb92"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb92-1"><a href="#cb92-1"></a><span class="co"># Remove all Cache items that happened within a rnorm() call</span></span>
 <span id="cb92-2"><a href="#cb92-2"></a><span class="kw">clearCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;rnorm&quot;</span>, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</span></code></pre></div>
@@ -1030,11 +1030,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ##  2: 142b4176fe87d51d            function                 rnorm
 ##  3: 142b4176fe87d51d               class               numeric
 ##  4: 142b4176fe87d51d         object.size                  1024
-##  5: 142b4176fe87d51d            accessed   2020-05-14 10:36:47
+##  5: 142b4176fe87d51d            accessed   2020-05-19 10:20:48
 ##  6: 142b4176fe87d51d             inCloud                 FALSE
 ##  7: 142b4176fe87d51d          resultHash                      
-##  8: 142b4176fe87d51d   elapsedTimeDigest     0.0007731915 secs
-##  9: 142b4176fe87d51d elapsedTimeFirstRun     3.314018e-05 secs
+##  8: 142b4176fe87d51d   elapsedTimeDigest     0.0005977154 secs
+##  9: 142b4176fe87d51d elapsedTimeFirstRun     2.193451e-05 secs
 ## 10: 142b4176fe87d51d      otherFunctions      vweave_rmarkdown
 ## 11: 142b4176fe87d51d      otherFunctions          process_file
 ## 12: 142b4176fe87d51d      otherFunctions         process_group
@@ -1049,27 +1049,27 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 21: 142b4176fe87d51d           file.size                   182
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-05-14 10:36:47
-##  2: 2020-05-14 10:36:47
-##  3: 2020-05-14 10:36:47
-##  4: 2020-05-14 10:36:47
-##  5: 2020-05-14 10:36:47
-##  6: 2020-05-14 10:36:47
-##  7: 2020-05-14 10:36:47
-##  8: 2020-05-14 10:36:47
-##  9: 2020-05-14 10:36:47
-## 10: 2020-05-14 10:36:47
-## 11: 2020-05-14 10:36:47
-## 12: 2020-05-14 10:36:47
-## 13: 2020-05-14 10:36:47
-## 14: 2020-05-14 10:36:47
-## 15: 2020-05-14 10:36:47
-## 16: 2020-05-14 10:36:47
-## 17: 2020-05-14 10:36:47
-## 18: 2020-05-14 10:36:47
-## 19: 2020-05-14 10:36:47
-## 20: 2020-05-14 10:36:47
-## 21: 2020-05-14 10:36:47
+##  1: 2020-05-19 10:20:48
+##  2: 2020-05-19 10:20:48
+##  3: 2020-05-19 10:20:48
+##  4: 2020-05-19 10:20:48
+##  5: 2020-05-19 10:20:48
+##  6: 2020-05-19 10:20:48
+##  7: 2020-05-19 10:20:48
+##  8: 2020-05-19 10:20:48
+##  9: 2020-05-19 10:20:48
+## 10: 2020-05-19 10:20:48
+## 11: 2020-05-19 10:20:48
+## 12: 2020-05-19 10:20:48
+## 13: 2020-05-19 10:20:48
+## 14: 2020-05-19 10:20:48
+## 15: 2020-05-19 10:20:48
+## 16: 2020-05-19 10:20:48
+## 17: 2020-05-19 10:20:48
+## 18: 2020-05-19 10:20:48
+## 19: 2020-05-19 10:20:48
+## 20: 2020-05-19 10:20:48
+## 21: 2020-05-19 10:20:48
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb106"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb106-1"><a href="#cb106-1"></a><span class="kw">clearCache</span>(tmpDir, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</span></code></pre></div>
 </div>
@@ -1089,11 +1089,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ##  2: 3aef38d1fc02aee5            function                 runif
 ##  3: 3aef38d1fc02aee5               class               numeric
 ##  4: 3aef38d1fc02aee5         object.size                  1008
-##  5: 3aef38d1fc02aee5            accessed   2020-05-14 10:36:48
+##  5: 3aef38d1fc02aee5            accessed   2020-05-19 10:20:48
 ##  6: 3aef38d1fc02aee5             inCloud                 FALSE
 ##  7: 3aef38d1fc02aee5          resultHash                      
-##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0006120205 secs
-##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun     2.264977e-05 secs
+##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0006392002 secs
+##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun      1.66893e-05 secs
 ## 10: 3aef38d1fc02aee5      otherFunctions      vweave_rmarkdown
 ## 11: 3aef38d1fc02aee5      otherFunctions          process_file
 ## 12: 3aef38d1fc02aee5      otherFunctions         process_group
@@ -1105,16 +1105,16 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 18: 3aef38d1fc02aee5      otherFunctions                handle
 ## 19: 3aef38d1fc02aee5           preDigest    n:7eef4eae85fd9229
 ## 20: 3aef38d1fc02aee5           preDigest .FUN:881ec847b7161f3c
-## 21: 3aef38d1fc02aee5           file.size                   168
+## 21: 3aef38d1fc02aee5           file.size                   167
 ## 22: f7bee22047b8d0c1          objectName                     b
 ## 23: f7bee22047b8d0c1            function                 rnorm
 ## 24: f7bee22047b8d0c1               class               numeric
 ## 25: f7bee22047b8d0c1         object.size                  1008
-## 26: f7bee22047b8d0c1            accessed   2020-05-14 10:36:48
+## 26: f7bee22047b8d0c1            accessed   2020-05-19 10:20:48
 ## 27: f7bee22047b8d0c1             inCloud                 FALSE
 ## 28: f7bee22047b8d0c1          resultHash                      
-## 29: f7bee22047b8d0c1   elapsedTimeDigest     0.0008912086 secs
-## 30: f7bee22047b8d0c1 elapsedTimeFirstRun     2.527237e-05 secs
+## 29: f7bee22047b8d0c1   elapsedTimeDigest     0.0005815029 secs
+## 30: f7bee22047b8d0c1 elapsedTimeFirstRun      1.93119e-05 secs
 ## 31: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 32: f7bee22047b8d0c1      otherFunctions          process_file
 ## 33: f7bee22047b8d0c1      otherFunctions         process_group
@@ -1126,51 +1126,51 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 39: f7bee22047b8d0c1      otherFunctions                handle
 ## 40: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 41: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
-## 42: f7bee22047b8d0c1           file.size                   172
+## 42: f7bee22047b8d0c1           file.size                   173
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-05-14 10:36:48
-##  2: 2020-05-14 10:36:48
-##  3: 2020-05-14 10:36:48
-##  4: 2020-05-14 10:36:48
-##  5: 2020-05-14 10:36:48
-##  6: 2020-05-14 10:36:48
-##  7: 2020-05-14 10:36:48
-##  8: 2020-05-14 10:36:48
-##  9: 2020-05-14 10:36:48
-## 10: 2020-05-14 10:36:48
-## 11: 2020-05-14 10:36:48
-## 12: 2020-05-14 10:36:48
-## 13: 2020-05-14 10:36:48
-## 14: 2020-05-14 10:36:48
-## 15: 2020-05-14 10:36:48
-## 16: 2020-05-14 10:36:48
-## 17: 2020-05-14 10:36:48
-## 18: 2020-05-14 10:36:48
-## 19: 2020-05-14 10:36:48
-## 20: 2020-05-14 10:36:48
-## 21: 2020-05-14 10:36:48
-## 22: 2020-05-14 10:36:48
-## 23: 2020-05-14 10:36:48
-## 24: 2020-05-14 10:36:48
-## 25: 2020-05-14 10:36:48
-## 26: 2020-05-14 10:36:48
-## 27: 2020-05-14 10:36:48
-## 28: 2020-05-14 10:36:48
-## 29: 2020-05-14 10:36:48
-## 30: 2020-05-14 10:36:48
-## 31: 2020-05-14 10:36:48
-## 32: 2020-05-14 10:36:48
-## 33: 2020-05-14 10:36:48
-## 34: 2020-05-14 10:36:48
-## 35: 2020-05-14 10:36:48
-## 36: 2020-05-14 10:36:48
-## 37: 2020-05-14 10:36:48
-## 38: 2020-05-14 10:36:48
-## 39: 2020-05-14 10:36:48
-## 40: 2020-05-14 10:36:48
-## 41: 2020-05-14 10:36:48
-## 42: 2020-05-14 10:36:48
+##  1: 2020-05-19 10:20:48
+##  2: 2020-05-19 10:20:48
+##  3: 2020-05-19 10:20:48
+##  4: 2020-05-19 10:20:48
+##  5: 2020-05-19 10:20:48
+##  6: 2020-05-19 10:20:48
+##  7: 2020-05-19 10:20:48
+##  8: 2020-05-19 10:20:48
+##  9: 2020-05-19 10:20:48
+## 10: 2020-05-19 10:20:48
+## 11: 2020-05-19 10:20:48
+## 12: 2020-05-19 10:20:48
+## 13: 2020-05-19 10:20:48
+## 14: 2020-05-19 10:20:48
+## 15: 2020-05-19 10:20:48
+## 16: 2020-05-19 10:20:48
+## 17: 2020-05-19 10:20:48
+## 18: 2020-05-19 10:20:48
+## 19: 2020-05-19 10:20:48
+## 20: 2020-05-19 10:20:48
+## 21: 2020-05-19 10:20:48
+## 22: 2020-05-19 10:20:48
+## 23: 2020-05-19 10:20:48
+## 24: 2020-05-19 10:20:48
+## 25: 2020-05-19 10:20:48
+## 26: 2020-05-19 10:20:48
+## 27: 2020-05-19 10:20:48
+## 28: 2020-05-19 10:20:48
+## 29: 2020-05-19 10:20:48
+## 30: 2020-05-19 10:20:48
+## 31: 2020-05-19 10:20:48
+## 32: 2020-05-19 10:20:48
+## 33: 2020-05-19 10:20:48
+## 34: 2020-05-19 10:20:48
+## 35: 2020-05-19 10:20:48
+## 36: 2020-05-19 10:20:48
+## 37: 2020-05-19 10:20:48
+## 38: 2020-05-19 10:20:48
+## 39: 2020-05-19 10:20:48
+## 40: 2020-05-19 10:20:48
+## 41: 2020-05-19 10:20:48
+## 42: 2020-05-19 10:20:48
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb112"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb112-1"><a href="#cb112-1"></a><span class="co"># show objects that are both runif and rnorm</span></span>
 <span id="cb112-2"><a href="#cb112-2"></a><span class="co"># (i.e., none in this case, because objecs are either or, not both)</span></span>
@@ -1189,11 +1189,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ##  2: 3aef38d1fc02aee5            function                 runif
 ##  3: 3aef38d1fc02aee5               class               numeric
 ##  4: 3aef38d1fc02aee5         object.size                  1008
-##  5: 3aef38d1fc02aee5            accessed   2020-05-14 10:36:48
+##  5: 3aef38d1fc02aee5            accessed   2020-05-19 10:20:48
 ##  6: 3aef38d1fc02aee5             inCloud                 FALSE
 ##  7: 3aef38d1fc02aee5          resultHash                      
-##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0006120205 secs
-##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun     2.264977e-05 secs
+##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0006392002 secs
+##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun      1.66893e-05 secs
 ## 10: 3aef38d1fc02aee5      otherFunctions      vweave_rmarkdown
 ## 11: 3aef38d1fc02aee5      otherFunctions          process_file
 ## 12: 3aef38d1fc02aee5      otherFunctions         process_group
@@ -1205,16 +1205,16 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 18: 3aef38d1fc02aee5      otherFunctions                handle
 ## 19: 3aef38d1fc02aee5           preDigest    n:7eef4eae85fd9229
 ## 20: 3aef38d1fc02aee5           preDigest .FUN:881ec847b7161f3c
-## 21: 3aef38d1fc02aee5           file.size                   168
+## 21: 3aef38d1fc02aee5           file.size                   167
 ## 22: f7bee22047b8d0c1          objectName                     b
 ## 23: f7bee22047b8d0c1            function                 rnorm
 ## 24: f7bee22047b8d0c1               class               numeric
 ## 25: f7bee22047b8d0c1         object.size                  1008
-## 26: f7bee22047b8d0c1            accessed   2020-05-14 10:36:48
+## 26: f7bee22047b8d0c1            accessed   2020-05-19 10:20:48
 ## 27: f7bee22047b8d0c1             inCloud                 FALSE
 ## 28: f7bee22047b8d0c1          resultHash                      
-## 29: f7bee22047b8d0c1   elapsedTimeDigest     0.0008912086 secs
-## 30: f7bee22047b8d0c1 elapsedTimeFirstRun     2.527237e-05 secs
+## 29: f7bee22047b8d0c1   elapsedTimeDigest     0.0005815029 secs
+## 30: f7bee22047b8d0c1 elapsedTimeFirstRun      1.93119e-05 secs
 ## 31: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 32: f7bee22047b8d0c1      otherFunctions          process_file
 ## 33: f7bee22047b8d0c1      otherFunctions         process_group
@@ -1226,51 +1226,51 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 39: f7bee22047b8d0c1      otherFunctions                handle
 ## 40: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 41: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
-## 42: f7bee22047b8d0c1           file.size                   172
+## 42: f7bee22047b8d0c1           file.size                   173
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-05-14 10:36:48
-##  2: 2020-05-14 10:36:48
-##  3: 2020-05-14 10:36:48
-##  4: 2020-05-14 10:36:48
-##  5: 2020-05-14 10:36:48
-##  6: 2020-05-14 10:36:48
-##  7: 2020-05-14 10:36:48
-##  8: 2020-05-14 10:36:48
-##  9: 2020-05-14 10:36:48
-## 10: 2020-05-14 10:36:48
-## 11: 2020-05-14 10:36:48
-## 12: 2020-05-14 10:36:48
-## 13: 2020-05-14 10:36:48
-## 14: 2020-05-14 10:36:48
-## 15: 2020-05-14 10:36:48
-## 16: 2020-05-14 10:36:48
-## 17: 2020-05-14 10:36:48
-## 18: 2020-05-14 10:36:48
-## 19: 2020-05-14 10:36:48
-## 20: 2020-05-14 10:36:48
-## 21: 2020-05-14 10:36:48
-## 22: 2020-05-14 10:36:48
-## 23: 2020-05-14 10:36:48
-## 24: 2020-05-14 10:36:48
-## 25: 2020-05-14 10:36:48
-## 26: 2020-05-14 10:36:48
-## 27: 2020-05-14 10:36:48
-## 28: 2020-05-14 10:36:48
-## 29: 2020-05-14 10:36:48
-## 30: 2020-05-14 10:36:48
-## 31: 2020-05-14 10:36:48
-## 32: 2020-05-14 10:36:48
-## 33: 2020-05-14 10:36:48
-## 34: 2020-05-14 10:36:48
-## 35: 2020-05-14 10:36:48
-## 36: 2020-05-14 10:36:48
-## 37: 2020-05-14 10:36:48
-## 38: 2020-05-14 10:36:48
-## 39: 2020-05-14 10:36:48
-## 40: 2020-05-14 10:36:48
-## 41: 2020-05-14 10:36:48
-## 42: 2020-05-14 10:36:48
+##  1: 2020-05-19 10:20:48
+##  2: 2020-05-19 10:20:48
+##  3: 2020-05-19 10:20:48
+##  4: 2020-05-19 10:20:48
+##  5: 2020-05-19 10:20:48
+##  6: 2020-05-19 10:20:48
+##  7: 2020-05-19 10:20:48
+##  8: 2020-05-19 10:20:48
+##  9: 2020-05-19 10:20:48
+## 10: 2020-05-19 10:20:48
+## 11: 2020-05-19 10:20:48
+## 12: 2020-05-19 10:20:48
+## 13: 2020-05-19 10:20:48
+## 14: 2020-05-19 10:20:48
+## 15: 2020-05-19 10:20:48
+## 16: 2020-05-19 10:20:48
+## 17: 2020-05-19 10:20:48
+## 18: 2020-05-19 10:20:48
+## 19: 2020-05-19 10:20:48
+## 20: 2020-05-19 10:20:48
+## 21: 2020-05-19 10:20:48
+## 22: 2020-05-19 10:20:48
+## 23: 2020-05-19 10:20:48
+## 24: 2020-05-19 10:20:48
+## 25: 2020-05-19 10:20:48
+## 26: 2020-05-19 10:20:48
+## 27: 2020-05-19 10:20:48
+## 28: 2020-05-19 10:20:48
+## 29: 2020-05-19 10:20:48
+## 30: 2020-05-19 10:20:48
+## 31: 2020-05-19 10:20:48
+## 32: 2020-05-19 10:20:48
+## 33: 2020-05-19 10:20:48
+## 34: 2020-05-19 10:20:48
+## 35: 2020-05-19 10:20:48
+## 36: 2020-05-19 10:20:48
+## 37: 2020-05-19 10:20:48
+## 38: 2020-05-19 10:20:48
+## 39: 2020-05-19 10:20:48
+## 40: 2020-05-19 10:20:48
+## 41: 2020-05-19 10:20:48
+## 42: 2020-05-19 10:20:48
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb122"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb122-1"><a href="#cb122-1"></a><span class="co"># keep only objects that are either runif or rnorm (&quot;or&quot; search)</span></span>
 <span id="cb122-2"><a href="#cb122-2"></a><span class="kw">keepCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;runif|rnorm&quot;</span>, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</span></code></pre></div>
@@ -1282,11 +1282,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ##  2: 3aef38d1fc02aee5            function                 runif
 ##  3: 3aef38d1fc02aee5               class               numeric
 ##  4: 3aef38d1fc02aee5         object.size                  1008
-##  5: 3aef38d1fc02aee5            accessed   2020-05-14 10:36:48
+##  5: 3aef38d1fc02aee5            accessed   2020-05-19 10:20:48
 ##  6: 3aef38d1fc02aee5             inCloud                 FALSE
 ##  7: 3aef38d1fc02aee5          resultHash                      
-##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0006120205 secs
-##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun     2.264977e-05 secs
+##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0006392002 secs
+##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun      1.66893e-05 secs
 ## 10: 3aef38d1fc02aee5      otherFunctions      vweave_rmarkdown
 ## 11: 3aef38d1fc02aee5      otherFunctions          process_file
 ## 12: 3aef38d1fc02aee5      otherFunctions         process_group
@@ -1298,16 +1298,16 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 18: 3aef38d1fc02aee5      otherFunctions                handle
 ## 19: 3aef38d1fc02aee5           preDigest    n:7eef4eae85fd9229
 ## 20: 3aef38d1fc02aee5           preDigest .FUN:881ec847b7161f3c
-## 21: 3aef38d1fc02aee5           file.size                   168
+## 21: 3aef38d1fc02aee5           file.size                   167
 ## 22: f7bee22047b8d0c1          objectName                     b
 ## 23: f7bee22047b8d0c1            function                 rnorm
 ## 24: f7bee22047b8d0c1               class               numeric
 ## 25: f7bee22047b8d0c1         object.size                  1008
-## 26: f7bee22047b8d0c1            accessed   2020-05-14 10:36:48
+## 26: f7bee22047b8d0c1            accessed   2020-05-19 10:20:48
 ## 27: f7bee22047b8d0c1             inCloud                 FALSE
 ## 28: f7bee22047b8d0c1          resultHash                      
-## 29: f7bee22047b8d0c1   elapsedTimeDigest     0.0008912086 secs
-## 30: f7bee22047b8d0c1 elapsedTimeFirstRun     2.527237e-05 secs
+## 29: f7bee22047b8d0c1   elapsedTimeDigest     0.0005815029 secs
+## 30: f7bee22047b8d0c1 elapsedTimeFirstRun      1.93119e-05 secs
 ## 31: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 32: f7bee22047b8d0c1      otherFunctions          process_file
 ## 33: f7bee22047b8d0c1      otherFunctions         process_group
@@ -1319,51 +1319,51 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 39: f7bee22047b8d0c1      otherFunctions                handle
 ## 40: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 41: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
-## 42: f7bee22047b8d0c1           file.size                   172
+## 42: f7bee22047b8d0c1           file.size                   173
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-05-14 10:36:48
-##  2: 2020-05-14 10:36:48
-##  3: 2020-05-14 10:36:48
-##  4: 2020-05-14 10:36:48
-##  5: 2020-05-14 10:36:48
-##  6: 2020-05-14 10:36:48
-##  7: 2020-05-14 10:36:48
-##  8: 2020-05-14 10:36:48
-##  9: 2020-05-14 10:36:48
-## 10: 2020-05-14 10:36:48
-## 11: 2020-05-14 10:36:48
-## 12: 2020-05-14 10:36:48
-## 13: 2020-05-14 10:36:48
-## 14: 2020-05-14 10:36:48
-## 15: 2020-05-14 10:36:48
-## 16: 2020-05-14 10:36:48
-## 17: 2020-05-14 10:36:48
-## 18: 2020-05-14 10:36:48
-## 19: 2020-05-14 10:36:48
-## 20: 2020-05-14 10:36:48
-## 21: 2020-05-14 10:36:48
-## 22: 2020-05-14 10:36:48
-## 23: 2020-05-14 10:36:48
-## 24: 2020-05-14 10:36:48
-## 25: 2020-05-14 10:36:48
-## 26: 2020-05-14 10:36:48
-## 27: 2020-05-14 10:36:48
-## 28: 2020-05-14 10:36:48
-## 29: 2020-05-14 10:36:48
-## 30: 2020-05-14 10:36:48
-## 31: 2020-05-14 10:36:48
-## 32: 2020-05-14 10:36:48
-## 33: 2020-05-14 10:36:48
-## 34: 2020-05-14 10:36:48
-## 35: 2020-05-14 10:36:48
-## 36: 2020-05-14 10:36:48
-## 37: 2020-05-14 10:36:48
-## 38: 2020-05-14 10:36:48
-## 39: 2020-05-14 10:36:48
-## 40: 2020-05-14 10:36:48
-## 41: 2020-05-14 10:36:48
-## 42: 2020-05-14 10:36:48
+##  1: 2020-05-19 10:20:48
+##  2: 2020-05-19 10:20:48
+##  3: 2020-05-19 10:20:48
+##  4: 2020-05-19 10:20:48
+##  5: 2020-05-19 10:20:48
+##  6: 2020-05-19 10:20:48
+##  7: 2020-05-19 10:20:48
+##  8: 2020-05-19 10:20:48
+##  9: 2020-05-19 10:20:48
+## 10: 2020-05-19 10:20:48
+## 11: 2020-05-19 10:20:48
+## 12: 2020-05-19 10:20:48
+## 13: 2020-05-19 10:20:48
+## 14: 2020-05-19 10:20:48
+## 15: 2020-05-19 10:20:48
+## 16: 2020-05-19 10:20:48
+## 17: 2020-05-19 10:20:48
+## 18: 2020-05-19 10:20:48
+## 19: 2020-05-19 10:20:48
+## 20: 2020-05-19 10:20:48
+## 21: 2020-05-19 10:20:48
+## 22: 2020-05-19 10:20:48
+## 23: 2020-05-19 10:20:48
+## 24: 2020-05-19 10:20:48
+## 25: 2020-05-19 10:20:48
+## 26: 2020-05-19 10:20:48
+## 27: 2020-05-19 10:20:48
+## 28: 2020-05-19 10:20:48
+## 29: 2020-05-19 10:20:48
+## 30: 2020-05-19 10:20:48
+## 31: 2020-05-19 10:20:48
+## 32: 2020-05-19 10:20:48
+## 33: 2020-05-19 10:20:48
+## 34: 2020-05-19 10:20:48
+## 35: 2020-05-19 10:20:48
+## 36: 2020-05-19 10:20:48
+## 37: 2020-05-19 10:20:48
+## 38: 2020-05-19 10:20:48
+## 39: 2020-05-19 10:20:48
+## 40: 2020-05-19 10:20:48
+## 41: 2020-05-19 10:20:48
+## 42: 2020-05-19 10:20:48
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb127"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb127-1"><a href="#cb127-1"></a><span class="kw">clearCache</span>(tmpDir, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</span></code></pre></div>
 </div>
@@ -1390,7 +1390,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb128-19"><a href="#cb128-19"></a>  <span class="co"># project raster generates warnings when run non-interactively</span></span>
 <span id="cb128-20"><a href="#cb128-20"></a>  <span class="kw">Cache</span>(projectRaster, ras, <span class="dt">crs =</span> <span class="kw">crs</span>(ras), <span class="dt">res =</span> <span class="dv">5</span>, <span class="dt">cacheRepo =</span> tmpDir)</span>
 <span id="cb128-21"><a href="#cb128-21"></a>)</span></code></pre></div>
-<pre><code>##   ...(Object to retrieve (7a18b58467abf000.rds))</code></pre>
+<pre><code>##   ...(Object to retrieve (580e71842b06f2a1.rds))</code></pre>
 <pre><code>##      loaded cached result from previous projectRaster call,</code></pre>
 <div class="sourceCode" id="cb131"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb131-1"><a href="#cb131-1"></a><span class="co"># recovered cached version is same as non-cached version</span></span>
 <span id="cb131-2"><a href="#cb131-2"></a><span class="kw">all.equal</span>(notCached, reRun) <span class="co">## TRUE</span></span></code></pre></div>
@@ -1419,7 +1419,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb133-18"><a href="#cb133-18"></a><span class="co">#   Cache calls, unless individually overridden ... here inner</span></span>
 <span id="cb133-19"><a href="#cb133-19"></a><span class="co">#   uses tmpdir2 repository</span></span>
 <span id="cb133-20"><a href="#cb133-20"></a><span class="kw">Cache</span>(outer, <span class="dt">n =</span> <span class="dv">2</span>, <span class="dt">cacheRepo =</span> tmpdir1, <span class="dt">notOlderThan =</span> <span class="kw">Sys.time</span>())</span></code></pre></div>
-<pre><code>## [1] 1.7047758 1.8484613 0.3409318
+<pre><code>## [1] -0.23966572 -0.05684973  0.21977730
 ## attr(,&quot;.Cache&quot;)
 ## attr(,&quot;.Cache&quot;)$newCache
 ## [1] TRUE
@@ -1436,11 +1436,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ##  1: 4ac2b7c0f42d1e46            function                 rnorm
 ##  2: 4ac2b7c0f42d1e46               class               numeric
 ##  3: 4ac2b7c0f42d1e46         object.size                  1008
-##  4: 4ac2b7c0f42d1e46            accessed   2020-05-14 10:36:49
+##  4: 4ac2b7c0f42d1e46            accessed   2020-05-19 10:20:49
 ##  5: 4ac2b7c0f42d1e46             inCloud                 FALSE
 ##  6: 4ac2b7c0f42d1e46          resultHash                      
-##  7: 4ac2b7c0f42d1e46   elapsedTimeDigest     0.0007376671 secs
-##  8: 4ac2b7c0f42d1e46 elapsedTimeFirstRun     2.145767e-05 secs
+##  7: 4ac2b7c0f42d1e46   elapsedTimeDigest     0.0007510185 secs
+##  8: 4ac2b7c0f42d1e46 elapsedTimeFirstRun     1.835823e-05 secs
 ##  9: 4ac2b7c0f42d1e46      otherFunctions      vweave_rmarkdown
 ## 10: 4ac2b7c0f42d1e46      otherFunctions          process_file
 ## 11: 4ac2b7c0f42d1e46      otherFunctions         process_group
@@ -1453,15 +1453,15 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 18: 4ac2b7c0f42d1e46           preDigest    n:7f12988bd88a0fb8
 ## 19: 4ac2b7c0f42d1e46           preDigest mean:22413394efd9f6a3
 ## 20: 4ac2b7c0f42d1e46           preDigest .FUN:4f604aa46882b368
-## 21: 4ac2b7c0f42d1e46           file.size                   165
+## 21: 4ac2b7c0f42d1e46           file.size                   164
 ## 22: a7af5367c13aba8f            function                 outer
 ## 23: a7af5367c13aba8f               class               numeric
 ## 24: a7af5367c13aba8f         object.size                  1008
-## 25: a7af5367c13aba8f            accessed   2020-05-14 10:36:49
+## 25: a7af5367c13aba8f            accessed   2020-05-19 10:20:50
 ## 26: a7af5367c13aba8f             inCloud                 FALSE
 ## 27: a7af5367c13aba8f          resultHash                      
-## 28: a7af5367c13aba8f   elapsedTimeDigest     0.0009381771 secs
-## 29: a7af5367c13aba8f elapsedTimeFirstRun        0.4804804 secs
+## 28: a7af5367c13aba8f   elapsedTimeDigest     0.0009036064 secs
+## 29: a7af5367c13aba8f elapsedTimeFirstRun        0.4728463 secs
 ## 30: a7af5367c13aba8f      otherFunctions      vweave_rmarkdown
 ## 31: a7af5367c13aba8f      otherFunctions          process_file
 ## 32: a7af5367c13aba8f      otherFunctions         process_group
@@ -1473,50 +1473,50 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 38: a7af5367c13aba8f      otherFunctions                handle
 ## 39: a7af5367c13aba8f           preDigest    n:82dc709f2b91918a
 ## 40: a7af5367c13aba8f           preDigest .FUN:892a6afc47a63a90
-## 41: a7af5367c13aba8f           file.size                   165
+## 41: a7af5367c13aba8f           file.size                   164
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-05-14 10:36:49
-##  2: 2020-05-14 10:36:49
-##  3: 2020-05-14 10:36:49
-##  4: 2020-05-14 10:36:49
-##  5: 2020-05-14 10:36:49
-##  6: 2020-05-14 10:36:49
-##  7: 2020-05-14 10:36:49
-##  8: 2020-05-14 10:36:49
-##  9: 2020-05-14 10:36:49
-## 10: 2020-05-14 10:36:49
-## 11: 2020-05-14 10:36:49
-## 12: 2020-05-14 10:36:49
-## 13: 2020-05-14 10:36:49
-## 14: 2020-05-14 10:36:49
-## 15: 2020-05-14 10:36:49
-## 16: 2020-05-14 10:36:49
-## 17: 2020-05-14 10:36:49
-## 18: 2020-05-14 10:36:49
-## 19: 2020-05-14 10:36:49
-## 20: 2020-05-14 10:36:49
-## 21: 2020-05-14 10:36:49
-## 22: 2020-05-14 10:36:49
-## 23: 2020-05-14 10:36:49
-## 24: 2020-05-14 10:36:49
-## 25: 2020-05-14 10:36:49
-## 26: 2020-05-14 10:36:49
-## 27: 2020-05-14 10:36:49
-## 28: 2020-05-14 10:36:49
-## 29: 2020-05-14 10:36:49
-## 30: 2020-05-14 10:36:49
-## 31: 2020-05-14 10:36:49
-## 32: 2020-05-14 10:36:49
-## 33: 2020-05-14 10:36:49
-## 34: 2020-05-14 10:36:49
-## 35: 2020-05-14 10:36:49
-## 36: 2020-05-14 10:36:49
-## 37: 2020-05-14 10:36:49
-## 38: 2020-05-14 10:36:49
-## 39: 2020-05-14 10:36:49
-## 40: 2020-05-14 10:36:49
-## 41: 2020-05-14 10:36:49
+##  1: 2020-05-19 10:20:49
+##  2: 2020-05-19 10:20:49
+##  3: 2020-05-19 10:20:49
+##  4: 2020-05-19 10:20:49
+##  5: 2020-05-19 10:20:49
+##  6: 2020-05-19 10:20:49
+##  7: 2020-05-19 10:20:49
+##  8: 2020-05-19 10:20:49
+##  9: 2020-05-19 10:20:49
+## 10: 2020-05-19 10:20:49
+## 11: 2020-05-19 10:20:49
+## 12: 2020-05-19 10:20:49
+## 13: 2020-05-19 10:20:49
+## 14: 2020-05-19 10:20:49
+## 15: 2020-05-19 10:20:49
+## 16: 2020-05-19 10:20:49
+## 17: 2020-05-19 10:20:49
+## 18: 2020-05-19 10:20:49
+## 19: 2020-05-19 10:20:49
+## 20: 2020-05-19 10:20:49
+## 21: 2020-05-19 10:20:49
+## 22: 2020-05-19 10:20:50
+## 23: 2020-05-19 10:20:50
+## 24: 2020-05-19 10:20:50
+## 25: 2020-05-19 10:20:50
+## 26: 2020-05-19 10:20:50
+## 27: 2020-05-19 10:20:50
+## 28: 2020-05-19 10:20:50
+## 29: 2020-05-19 10:20:50
+## 30: 2020-05-19 10:20:50
+## 31: 2020-05-19 10:20:50
+## 32: 2020-05-19 10:20:50
+## 33: 2020-05-19 10:20:50
+## 34: 2020-05-19 10:20:50
+## 35: 2020-05-19 10:20:50
+## 36: 2020-05-19 10:20:50
+## 37: 2020-05-19 10:20:50
+## 38: 2020-05-19 10:20:50
+## 39: 2020-05-19 10:20:50
+## 40: 2020-05-19 10:20:50
+## 41: 2020-05-19 10:20:50
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb140"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb140-1"><a href="#cb140-1"></a><span class="kw">showCache</span>(tmpdir2) <span class="co"># 1 function call</span></span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
@@ -1526,11 +1526,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ##  1: 33ceb4fb525fd08f            function                 inner
 ##  2: 33ceb4fb525fd08f               class               numeric
 ##  3: 33ceb4fb525fd08f         object.size                  1008
-##  4: 33ceb4fb525fd08f            accessed   2020-05-14 10:36:49
+##  4: 33ceb4fb525fd08f            accessed   2020-05-19 10:20:49
 ##  5: 33ceb4fb525fd08f             inCloud                 FALSE
 ##  6: 33ceb4fb525fd08f          resultHash                      
-##  7: 33ceb4fb525fd08f   elapsedTimeDigest       0.00066185 secs
-##  8: 33ceb4fb525fd08f elapsedTimeFirstRun        0.2195415 secs
+##  7: 33ceb4fb525fd08f   elapsedTimeDigest     0.0009138584 secs
+##  8: 33ceb4fb525fd08f elapsedTimeFirstRun        0.2377977 secs
 ##  9: 33ceb4fb525fd08f      otherFunctions      vweave_rmarkdown
 ## 10: 33ceb4fb525fd08f      otherFunctions          process_file
 ## 11: 33ceb4fb525fd08f      otherFunctions         process_group
@@ -1542,28 +1542,28 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 17: 33ceb4fb525fd08f      otherFunctions                handle
 ## 18: 33ceb4fb525fd08f           preDigest mean:22413394efd9f6a3
 ## 19: 33ceb4fb525fd08f           preDigest .FUN:87e2c30917a34d25
-## 20: 33ceb4fb525fd08f           file.size                   165
+## 20: 33ceb4fb525fd08f           file.size                   164
 ##             createdDate
-##  1: 2020-05-14 10:36:49
-##  2: 2020-05-14 10:36:49
-##  3: 2020-05-14 10:36:49
-##  4: 2020-05-14 10:36:49
-##  5: 2020-05-14 10:36:49
-##  6: 2020-05-14 10:36:49
-##  7: 2020-05-14 10:36:49
-##  8: 2020-05-14 10:36:49
-##  9: 2020-05-14 10:36:49
-## 10: 2020-05-14 10:36:49
-## 11: 2020-05-14 10:36:49
-## 12: 2020-05-14 10:36:49
-## 13: 2020-05-14 10:36:49
-## 14: 2020-05-14 10:36:49
-## 15: 2020-05-14 10:36:49
-## 16: 2020-05-14 10:36:49
-## 17: 2020-05-14 10:36:49
-## 18: 2020-05-14 10:36:49
-## 19: 2020-05-14 10:36:49
-## 20: 2020-05-14 10:36:49</code></pre>
+##  1: 2020-05-19 10:20:49
+##  2: 2020-05-19 10:20:49
+##  3: 2020-05-19 10:20:49
+##  4: 2020-05-19 10:20:49
+##  5: 2020-05-19 10:20:49
+##  6: 2020-05-19 10:20:49
+##  7: 2020-05-19 10:20:49
+##  8: 2020-05-19 10:20:49
+##  9: 2020-05-19 10:20:49
+## 10: 2020-05-19 10:20:49
+## 11: 2020-05-19 10:20:49
+## 12: 2020-05-19 10:20:49
+## 13: 2020-05-19 10:20:49
+## 14: 2020-05-19 10:20:49
+## 15: 2020-05-19 10:20:49
+## 16: 2020-05-19 10:20:49
+## 17: 2020-05-19 10:20:49
+## 18: 2020-05-19 10:20:49
+## 19: 2020-05-19 10:20:49
+## 20: 2020-05-19 10:20:49</code></pre>
 <div class="sourceCode" id="cb145"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb145-1"><a href="#cb145-1"></a><span class="co"># userTags get appended</span></span>
 <span id="cb145-2"><a href="#cb145-2"></a><span class="co"># all items have the outer tag propagate, plus inner ones only have inner ones</span></span>
 <span id="cb145-3"><a href="#cb145-3"></a><span class="kw">clearCache</span>(tmpdir1, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</span>
@@ -1587,11 +1587,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ##  3: 4ac2b7c0f42d1e46            function                 rnorm
 ##  4: 4ac2b7c0f42d1e46               class               numeric
 ##  5: 4ac2b7c0f42d1e46         object.size                  1008
-##  6: 4ac2b7c0f42d1e46            accessed   2020-05-14 10:36:50
+##  6: 4ac2b7c0f42d1e46            accessed   2020-05-19 10:20:50
 ##  7: 4ac2b7c0f42d1e46             inCloud                 FALSE
 ##  8: 4ac2b7c0f42d1e46          resultHash                      
-##  9: 4ac2b7c0f42d1e46   elapsedTimeDigest     0.0007841587 secs
-## 10: 4ac2b7c0f42d1e46 elapsedTimeFirstRun     1.859665e-05 secs
+##  9: 4ac2b7c0f42d1e46   elapsedTimeDigest     0.0007851124 secs
+## 10: 4ac2b7c0f42d1e46 elapsedTimeFirstRun     2.193451e-05 secs
 ## 11: 4ac2b7c0f42d1e46      otherFunctions      vweave_rmarkdown
 ## 12: 4ac2b7c0f42d1e46      otherFunctions          process_file
 ## 13: 4ac2b7c0f42d1e46      otherFunctions         process_group
@@ -1609,11 +1609,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 25: b06af03d5a73dc7d            function                 inner
 ## 26: b06af03d5a73dc7d               class               numeric
 ## 27: b06af03d5a73dc7d         object.size                  1008
-## 28: b06af03d5a73dc7d            accessed   2020-05-14 10:36:50
+## 28: b06af03d5a73dc7d            accessed   2020-05-19 10:20:50
 ## 29: b06af03d5a73dc7d             inCloud                 FALSE
 ## 30: b06af03d5a73dc7d          resultHash                      
-## 31: b06af03d5a73dc7d   elapsedTimeDigest     0.0007112026 secs
-## 32: b06af03d5a73dc7d elapsedTimeFirstRun        0.2476935 secs
+## 31: b06af03d5a73dc7d   elapsedTimeDigest     0.0005867481 secs
+## 32: b06af03d5a73dc7d elapsedTimeFirstRun        0.2538159 secs
 ## 33: b06af03d5a73dc7d      otherFunctions      vweave_rmarkdown
 ## 34: b06af03d5a73dc7d      otherFunctions          process_file
 ## 35: b06af03d5a73dc7d      otherFunctions         process_group
@@ -1630,11 +1630,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 46: 88a34e1d033329e5            function                 outer
 ## 47: 88a34e1d033329e5               class               numeric
 ## 48: 88a34e1d033329e5         object.size                  1008
-## 49: 88a34e1d033329e5            accessed   2020-05-14 10:36:50
+## 49: 88a34e1d033329e5            accessed   2020-05-19 10:20:50
 ## 50: 88a34e1d033329e5             inCloud                 FALSE
 ## 51: 88a34e1d033329e5          resultHash                      
-## 52: 88a34e1d033329e5   elapsedTimeDigest     0.0006155968 secs
-## 53: 88a34e1d033329e5 elapsedTimeFirstRun        0.4935455 secs
+## 52: 88a34e1d033329e5   elapsedTimeDigest     0.0006127357 secs
+## 53: 88a34e1d033329e5 elapsedTimeFirstRun        0.5035636 secs
 ## 54: 88a34e1d033329e5      otherFunctions      vweave_rmarkdown
 ## 55: 88a34e1d033329e5      otherFunctions          process_file
 ## 56: 88a34e1d033329e5      otherFunctions         process_group
@@ -1649,71 +1649,71 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 65: 88a34e1d033329e5           file.size                   165
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-05-14 10:36:50
-##  2: 2020-05-14 10:36:50
-##  3: 2020-05-14 10:36:50
-##  4: 2020-05-14 10:36:50
-##  5: 2020-05-14 10:36:50
-##  6: 2020-05-14 10:36:50
-##  7: 2020-05-14 10:36:50
-##  8: 2020-05-14 10:36:50
-##  9: 2020-05-14 10:36:50
-## 10: 2020-05-14 10:36:50
-## 11: 2020-05-14 10:36:50
-## 12: 2020-05-14 10:36:50
-## 13: 2020-05-14 10:36:50
-## 14: 2020-05-14 10:36:50
-## 15: 2020-05-14 10:36:50
-## 16: 2020-05-14 10:36:50
-## 17: 2020-05-14 10:36:50
-## 18: 2020-05-14 10:36:50
-## 19: 2020-05-14 10:36:50
-## 20: 2020-05-14 10:36:50
-## 21: 2020-05-14 10:36:50
-## 22: 2020-05-14 10:36:50
-## 23: 2020-05-14 10:36:50
-## 24: 2020-05-14 10:36:50
-## 25: 2020-05-14 10:36:50
-## 26: 2020-05-14 10:36:50
-## 27: 2020-05-14 10:36:50
-## 28: 2020-05-14 10:36:50
-## 29: 2020-05-14 10:36:50
-## 30: 2020-05-14 10:36:50
-## 31: 2020-05-14 10:36:50
-## 32: 2020-05-14 10:36:50
-## 33: 2020-05-14 10:36:50
-## 34: 2020-05-14 10:36:50
-## 35: 2020-05-14 10:36:50
-## 36: 2020-05-14 10:36:50
-## 37: 2020-05-14 10:36:50
-## 38: 2020-05-14 10:36:50
-## 39: 2020-05-14 10:36:50
-## 40: 2020-05-14 10:36:50
-## 41: 2020-05-14 10:36:50
-## 42: 2020-05-14 10:36:50
-## 43: 2020-05-14 10:36:50
-## 44: 2020-05-14 10:36:50
-## 45: 2020-05-14 10:36:50
-## 46: 2020-05-14 10:36:50
-## 47: 2020-05-14 10:36:50
-## 48: 2020-05-14 10:36:50
-## 49: 2020-05-14 10:36:50
-## 50: 2020-05-14 10:36:50
-## 51: 2020-05-14 10:36:50
-## 52: 2020-05-14 10:36:50
-## 53: 2020-05-14 10:36:50
-## 54: 2020-05-14 10:36:50
-## 55: 2020-05-14 10:36:50
-## 56: 2020-05-14 10:36:50
-## 57: 2020-05-14 10:36:50
-## 58: 2020-05-14 10:36:50
-## 59: 2020-05-14 10:36:50
-## 60: 2020-05-14 10:36:50
-## 61: 2020-05-14 10:36:50
-## 62: 2020-05-14 10:36:50
-## 63: 2020-05-14 10:36:50
-## 64: 2020-05-14 10:36:50
-## 65: 2020-05-14 10:36:50
+##  1: 2020-05-19 10:20:50
+##  2: 2020-05-19 10:20:50
+##  3: 2020-05-19 10:20:50
+##  4: 2020-05-19 10:20:50
+##  5: 2020-05-19 10:20:50
+##  6: 2020-05-19 10:20:50
+##  7: 2020-05-19 10:20:50
+##  8: 2020-05-19 10:20:50
+##  9: 2020-05-19 10:20:50
+## 10: 2020-05-19 10:20:50
+## 11: 2020-05-19 10:20:50
+## 12: 2020-05-19 10:20:50
+## 13: 2020-05-19 10:20:50
+## 14: 2020-05-19 10:20:50
+## 15: 2020-05-19 10:20:50
+## 16: 2020-05-19 10:20:50
+## 17: 2020-05-19 10:20:50
+## 18: 2020-05-19 10:20:50
+## 19: 2020-05-19 10:20:50
+## 20: 2020-05-19 10:20:50
+## 21: 2020-05-19 10:20:50
+## 22: 2020-05-19 10:20:50
+## 23: 2020-05-19 10:20:50
+## 24: 2020-05-19 10:20:50
+## 25: 2020-05-19 10:20:50
+## 26: 2020-05-19 10:20:50
+## 27: 2020-05-19 10:20:50
+## 28: 2020-05-19 10:20:50
+## 29: 2020-05-19 10:20:50
+## 30: 2020-05-19 10:20:50
+## 31: 2020-05-19 10:20:50
+## 32: 2020-05-19 10:20:50
+## 33: 2020-05-19 10:20:50
+## 34: 2020-05-19 10:20:50
+## 35: 2020-05-19 10:20:50
+## 36: 2020-05-19 10:20:50
+## 37: 2020-05-19 10:20:50
+## 38: 2020-05-19 10:20:50
+## 39: 2020-05-19 10:20:50
+## 40: 2020-05-19 10:20:50
+## 41: 2020-05-19 10:20:50
+## 42: 2020-05-19 10:20:50
+## 43: 2020-05-19 10:20:50
+## 44: 2020-05-19 10:20:50
+## 45: 2020-05-19 10:20:50
+## 46: 2020-05-19 10:20:50
+## 47: 2020-05-19 10:20:50
+## 48: 2020-05-19 10:20:50
+## 49: 2020-05-19 10:20:50
+## 50: 2020-05-19 10:20:50
+## 51: 2020-05-19 10:20:50
+## 52: 2020-05-19 10:20:50
+## 53: 2020-05-19 10:20:50
+## 54: 2020-05-19 10:20:50
+## 55: 2020-05-19 10:20:50
+## 56: 2020-05-19 10:20:50
+## 57: 2020-05-19 10:20:50
+## 58: 2020-05-19 10:20:50
+## 59: 2020-05-19 10:20:50
+## 60: 2020-05-19 10:20:50
+## 61: 2020-05-19 10:20:50
+## 62: 2020-05-19 10:20:50
+## 63: 2020-05-19 10:20:50
+## 64: 2020-05-19 10:20:50
+## 65: 2020-05-19 10:20:50
 ##             createdDate</code></pre>
 </div>
 <div id="cacheid" class="section level2">
@@ -1770,7 +1770,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <pre><code>##   Selected objects (not including Rasters): 3.3 Kb</code></pre>
 <div class="sourceCode" id="cb166"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb166-1"><a href="#cb166-1"></a>map &lt;-<span class="st"> </span><span class="kw">loadFromCache</span>(mapHash[<span class="dv">1</span>], <span class="dt">cachePath =</span> tmpDir)</span>
 <span id="cb166-2"><a href="#cb166-2"></a><span class="kw">plot</span>(map)</span></code></pre></div>
-<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
 <div class="sourceCode" id="cb167"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb167-1"><a href="#cb167-1"></a><span class="co">## cleanup</span></span>
 <span id="cb167-2"><a href="#cb167-2"></a><span class="kw">unlink</span>(<span class="kw">dirname</span>(tmpDir), <span class="dt">recursive =</span> <span class="ot">TRUE</span>)</span></code></pre></div>
 </div>
