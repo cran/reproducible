@@ -17,24 +17,26 @@ postProcess(x, ...)
 \method{postProcess}{spatialClasses}(
   x,
   filename1 = NULL,
-  filename2 = TRUE,
+  filename2 = NULL,
   studyArea = NULL,
   rasterToMatch = NULL,
   overwrite = getOption("reproducible.overwrite", TRUE),
   useSAcrs = FALSE,
   useCache = getOption("reproducible.useCache", FALSE),
+  verbose = getOption("reproducible.verbose", 1),
   ...
 )
 
 \method{postProcess}{sf}(
   x,
   filename1 = NULL,
-  filename2 = TRUE,
+  filename2 = NULL,
   studyArea = NULL,
   rasterToMatch = NULL,
   overwrite = getOption("reproducible.overwrite", TRUE),
   useSAcrs = FALSE,
   useCache = getOption("reproducible.useCache", FALSE),
+  verbose = getOption("reproducible.verbose", 1),
   ...
 )
 }
@@ -102,6 +104,12 @@ in details below.}
 
 \item{useCache}{Passed to \code{Cache} in various places.
 Defaults to \code{getOption("reproducible.useCache")}.}
+
+\item{verbose}{Numeric, -1 silent (where possible), 0 being very quiet,
+1 showing more messaging, 2 being more messaging, etc.
+Default is 1. Above 3 will output much more information about the internals of
+Caching, which may help diagnose Caching challenges. Can set globally with an
+option, e.g., \code{options('reproducible.verbose' = 0) to reduce to minimal}}
 }
 \description{
 \if{html}{\figure{lifecycle-maturing.svg}{options: alt="maturing"}}
@@ -189,11 +197,10 @@ Sr1 <- Polygon(coords)
 Srs1 <- Polygons(list(Sr1), "s1")
 StudyArea <- SpatialPolygons(list(Srs1), 1L)
 crs(StudyArea) <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
-#'
-#'
+
 ##########
 shpEcozonePostProcessed <- postProcess(shpEcozone, studyArea = StudyArea)
-#'
+
 # Try manually, individual pieces
 shpEcozoneReprojected <- projectInputs(shpEcozone, StudyArea)
 shpEcozoneCropped <- cropInputs(shpEcozone, StudyArea)
@@ -222,11 +229,10 @@ Sr1 <- Polygon(coords)
 Srs1 <- Polygons(list(Sr1), "s1")
 StudyArea <- SpatialPolygons(list(Srs1), 1L)
 crs(StudyArea) <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
-#'
-#'
+
 ##########
 shpEcozonePostProcessed <- postProcess(shpEcozone, studyArea = StudyArea)
-#'
+
 # Try manually, individual pieces
 shpEcozoneReprojected <- projectInputs(shpEcozone, StudyArea)
 shpEcozoneCropped <- cropInputs(shpEcozone, StudyArea)

@@ -1,12 +1,27 @@
 Known issues: https://github.com/PredictiveEcology/reproducible/issues
 
+
+version 1.2.1
+==============
+## New features
+* harmonized message colours that are use adjustable via options: `reproducible.messageColourPrepInputs` for all `prepInputs` functions;  `reproducible.messageColourCache` for all `Cache` functions; and `reproducible.messageColourQuestion` for questions that require user input. Defaults are `cyan`, `blue` and `green` respectively. These are user-visible colour changes.
+* improved messaging for `Cache` cases where a `file.link` is used instead of saving.
+* with improved messaging, now `options(reproducible.verbose = 0)` will turn off almost all messaging.
+* `postProcess` and family now have `filename2 = NULL` as the default, so not saved to disk. This is a change.
+* `verbose` is now an argument throughout, whose default is `getOption(reproducible.verbose)`, which is set by default to `1`. Thus, individual function calls can be more or less verbose, or the whole session via option. 
+
+## Bug fixes
+* `RasterStack` objects were not correctly saved to disk under some conditions in `postProcess` - fixed
+* several minor
+
+
 version 1.2.0
 ==============
 
 ## New features
 * `postProcess` now uses a simpler single call to `gdalwarp`, if available, for `RasterLayer` class to accomplish `cropInputs`, `projectInputs`, `maskInputs`, and `writeOutputs` all at once. This should be faster, simpler and, perhaps, more stable. It will only be invoked if the `RasterLayer` is too large to fit into RAM. To force it to be used the user must set `useGDAL = "force"` in `prepInputs` or `postProcess` or globally with `options("reproducible.useGDAL" = "force")`
 * `postProcess` when using the new `gdalwarp`, has better persistence of colour table, and NA values as these are kept with better reliability
-* concurrent `Cache` now works as expected (e.g., with parallel processing, it will avoid collisions) with SQLite thanks to suggestion here: https://stackoverflow.com/a/44445010
+* concurrent `Cache` now works as expected (e.g., with parallel processing, it will avoid collisions) with SQLite thanks to suggestion here: <https://stackoverflow.com/a/44445010>
 * updated digesting of `Raster` class objects to account for more of the metadata (including the colortable). This will change the digest value of all `Raster` layers, causing re-run of `Cache`
 * removed `Require`, `pkgDep`, `trimVersionNumber`, `normPath`, `checkPath` that were moved to `Require` package. For backwards compatibility, these are imported and reexported
 * address permanently or temporarily new changes in GDAL>3 and PROJ>6 in the spatial packages.
@@ -21,7 +36,8 @@ version 1.2.0
 * fix over-wide tables in PDF manual (#144)
 * use `file.link` not `file.symlink` for `saveToCache`. This would have resulted in C Stack overflow errors due to missing original file in the `file.symlink`
 * use system call to `unzip` when extracting large (>= 4GB) files (#145, @tati-micheletti)
-* several minor including projectInputs when converting to longlat projections, setMinMax for gdalwarp results
+* several minor including `projectInputs` when converting to longlat projections, `setMinMax` for `gdalwarp` results
+* `Filenames` now consistently returns a character vector (#149)
 * improvements to file-backed Raster caching to accommodate a few more edge cases
 
 version 1.1.1

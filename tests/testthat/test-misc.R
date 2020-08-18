@@ -110,7 +110,7 @@ test_that("guessAtTargetAndFun works correctly", {
   expect_message(.guessAtTargetAndFun(targetFilePath = NULL, filesExtracted = "", fun = "load"),
                  "Don't know which file to load")
   expect_message(.guessAtTargetAndFun(targetFilePath = NULL, filesExtracted = "hi.rds", fun = "readRDS"),
-                 "targetFile was not specified.  Trying readRDS")
+                 "targetFile was not specified.")
   expect_message(.guessAtTargetAndFun(targetFilePath = NULL, filesExtracted = c("hi.rds", "hello.rds"), fun = "readRDS"),
                  "More than one possible files to load")
 })
@@ -140,35 +140,6 @@ test_that("check GDAL version", {
     "reproducible::getGDALVersion" = function() NA,
     {
       expect_false(checkGDALVersion("3.0"))
-    }
-  )
-})
-
-test_that("repo stuff works", {
-  skip_on_appveyor() # can't tell what the CRAN repo is
-
-  testInitOut <- testInit("raster", tmpFileExt = c(".tif", ".grd"))
-  on.exit({
-    testOnExit(testInitOut)
-  }, add = TRUE)
-
-  # helpers.R
-  a <- getCRANrepos(NULL)
-  expect_true(is.character(a))
-
-  a <- getCRANrepos("")
-  expect_true(grepl("https://cloud.r-project.org", a))
-
-  testthat::with_mock(
-    "reproducible::isInteractive" = function() TRUE,
-    "reproducible::chooseCRANmirror2" = function() {
-      repos <- NULL
-      repos2 <- "https://cloud.r-project.org"
-      repos["CRAN"] <- repos2
-      options("repos" = repos)},
-    {
-      out <- getCRANrepos()
-      expect_true(identical("https://cloud.r-project.org", unname(out)))
     }
   )
 })
@@ -221,19 +192,23 @@ test_that("test miscellaneous fns (part 2)", {
     "reproducible::retry" = function(..., retries = 1) TRUE,
     {
       # cloudFolderID can't be meaningless "character", but retry is TRUE
-      warns <- capture_warnings(err <- capture_error(
-        cloudDownloadRasterBackend(output = ras, cacheRepo = tmpCache, cloudFolderID = "character")
-      ))
+      warns <- capture_warnings({
+        err <- capture_error({
+          cloudDownloadRasterBackend(output = ras, cacheRepo = tmpCache, cloudFolderID = "character")
+        })
+      })
       expect_true(is.null(err))
     })
 
   testthat::with_mock(
     "reproducible::retry" = function(..., retries = 1) TRUE,
     {
-      mess1 <- capture_messages(err <- capture_error(
-        cloudUploadFromCache(isInCloud = FALSE, outputHash = "sdsdfs", saved = "life",
-                             cacheRepo = tmpCache)
-      ))
+      mess1 <- capture_messages({
+        err <- capture_error({
+          cloudUploadFromCache(isInCloud = FALSE, outputHash = "sdsdfs", saved = "life",
+                               cacheRepo = tmpCache)
+        })
+      })
       expect_true(all(grepl("cloudFolderID.*is missing, with no default", err)))
     })
   expect_true(grepl("Uploading new cached object|with cacheId", mess1))
@@ -241,13 +216,11 @@ test_that("test miscellaneous fns (part 2)", {
   a <- new.env(parent = emptyenv())
   a$a = list(ras, ras)
   expect_true(all(isOrHasRaster(a)))
-
 })
 
 test_that("Filenames for environment", {
   testInitOut <- testInit(c("raster"), tmpFileExt = c(".tif", ".grd", ".tif", ".tif", ".grd"),
                           opts = list("reproducible.ask" = FALSE))
-
   on.exit({
     testOnExit(testInitOut)
     options(opts)
@@ -255,26 +228,30 @@ test_that("Filenames for environment", {
   }, add = TRUE)
 
   s <- new.env(parent = emptyenv())
-  s$r <- raster(extent(0,10,0,10), vals = 1, res = 1)
-  s$r2 <- raster(extent(0,10,0,10), vals = 1, res = 1)
-  s$r <- writeRaster(s$r, filename = tmpfile[1], overwrite = TRUE)
-  s$r2 <- writeRaster(s$r2, filename = tmpfile[3], overwrite = TRUE)
+  s$r <- raster(extent(0, 10, 0, 10), vals = 1, res = 1)
+  s$r2 <- raster(extent(0, 10, 0, 10), vals = 1, res = 1)
+  s$r <- suppressWarningsSpecific(writeRaster(s$r, filename = tmpfile[1], overwrite = TRUE),
+                                  "NOT UPDATED FOR PROJ >= 6")
+  s$r2 <- suppressWarningsSpecific(writeRaster(s$r2, filename = tmpfile[3], overwrite = TRUE),
+                                   "NOT UPDATED FOR PROJ >= 6")
   s$s <- stack(s$r, s$r2)
   s$b <- writeRaster(s$s, filename = tmpfile[5], overwrite = TRUE)
 
   Fns <- Filenames(s)
 
-  fnsGrd <- normPath(c(filename(s$b), gsub("grd$", "gri", filename(s$b))))
-  expect_true(identical(Fns$b, fnsGrd))
-  expect_true(identical(Fns$r, normPath(filename(s$r))))
-  expect_true(identical(Fns$r2, normPath(filename(s$r2))))
-  expect_true(identical(Fns$s, sapply(seq_len(nlayers(s$s)), function(rInd) normPath(filename(s$s[[rInd]])))))
+  fnsGrd <- unlist(normPath(c(filename(s$b), gsub("grd$", "gri", filename(s$b)))))
+  expect_true(identical(c(Fns[["b1"]], Fns[["b2"]]), fnsGrd))
+  expect_true(identical(Fns[["r"]], normPath(filename(s$r))))
+  expect_true(identical(Fns[["r2"]], normPath(filename(s$r2))))
+  expect_true(identical(c(Fns[["s1"]], Fns[["s2"]]),
+                        sapply(seq_len(nlayers(s$s)), function(rInd) normPath(filename(s$s[[rInd]])))))
 
   FnsR <- Filenames(s$r)
   expect_true(identical(FnsR, normPath(filename(s$r))))
 
   FnsS <- Filenames(s$s)
-  expect_true(identical(FnsS, sapply(seq_len(nlayers(s$s)), function(rInd) normPath(filename(s$s[[rInd]])))))
+  expect_true(identical(FnsS, sapply(seq_len(nlayers(s$s)),
+                                     function(rInd) normPath(filename(s$s[[rInd]])))))
 
   FnsB <- Filenames(s$b)
   expect_true(identical(FnsB, fnsGrd))

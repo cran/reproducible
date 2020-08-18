@@ -5,7 +5,6 @@
 #' @author Alex Chubaty and Eliot McIntire
 #' @export
 #' @importFrom magrittr %>%
-#'
 getGDALVersion <-  function() {
   if (.requireNamespace("rgdal")) {
     vers <- tryCatch(rgdal::getGDALVersionInfo(), error = function(e) NA_real_)
@@ -69,12 +68,14 @@ checkGDALVersion <- function(version) {
 #'
 #' @author Eliot McIntire
 #' @export
+#' @inheritParams Cache
 #' @inheritParams projectInputs.Raster
 #' @importFrom raster crop crs extract mask nlayers raster stack tmpDir
 #' @importFrom raster xmin xmax ymin ymax fromDisk setMinMax
 #' @importFrom sp SpatialPolygonsDataFrame spTransform
 #'
 #' @examples
+#' library(sp)
 #' library(raster)
 #'
 #' Sr1 <- Polygon(cbind(c(2, 4, 4, 0.9, 2), c(2, 3, 5, 4, 2)))
@@ -93,7 +94,7 @@ checkGDALVersion <- function(version) {
 #' poly[[2]] <- raster(raster::extent(shp), vals = 1, res = c(1, 1))
 #' origStack <- stack(poly)
 #' # original mask function in raster
-#' newStack1 <- mask(origStack, mask = shp)
+#' newStack1 <- mask(x= origStack, mask = shp)
 #' newStack2 <- fastMask(x = origStack, y = shp)
 #'
 #' # test all equal
@@ -107,7 +108,8 @@ checkGDALVersion <- function(version) {
 #'   plot(shp, add = TRUE)
 #' }
 #'
-fastMask <- function(x, y, cores = NULL, useGDAL = getOption("reproducible.useGDAL", TRUE), ...) {
+fastMask <- function(x, y, cores = NULL, useGDAL = getOption("reproducible.useGDAL", TRUE),
+                     verbose = getOption("reproducible.verbose", 1), ...) {
   if (!identical(.crs(y), .crs(x))) {
     if (!is(y, "sf")) {
       y <- spTransform(x = y, CRSobj = .crs(x))
@@ -125,18 +127,18 @@ fastMask <- function(x, y, cores = NULL, useGDAL = getOption("reproducible.useGD
   }
 
   # need to double check that gdal executable exists before going down this path
-  attemptGDAL <- attemptGDAL(x, useGDAL)
+  attemptGDAL <- attemptGDAL(x, useGDAL, verbose = verbose)
 
   browser(expr = exists("._fastMask_2"))
 
   if (is(x, "RasterLayer") && requireNamespace("sf", quietly = TRUE) &&
       requireNamespace("fasterize", quietly = TRUE)) {
-    message("fastMask is using sf and fasterize")
+    messagePrepInputs("fastMask is using sf and fasterize")
 
 
     if (attemptGDAL) {
       # call gdal
-      message("fastMask is using gdalwarp")
+      messagePrepInputs("fastMask is using gdalwarp")
 
       # rasters need to go to same directory that can be unlinked at end without losing other temp files
       tmpRasPath <- checkPath(bigRastersTmpFolder(), create = TRUE)
@@ -164,7 +166,7 @@ fastMask <- function(x, y, cores = NULL, useGDAL = getOption("reproducible.useGD
       tr <- res(x)
 
       if (isWindows()) {
-        message("Using gdal at ", getOption("gdalUtils_gdalPath")[[1]]$path)
+        messagePrepInputs("Using gdal at ", getOption("gdalUtils_gdalPath")[[1]]$path)
         exe <- ".exe"
       } else {
         exe <- ""
@@ -216,12 +218,12 @@ fastMask <- function(x, y, cores = NULL, useGDAL = getOption("reproducible.useGD
       }
     }
   } else {
-    message("This function is using raster::mask")
+    messagePrepInputs("This function is using raster::mask")
     if (is(x, "RasterStack") || is(x, "RasterBrick")) {
-      message(" because fastMask doesn't have a specific method ",
+      messagePrepInputs(" because fastMask doesn't have a specific method ",
               "for these RasterStack or RasterBrick yet")
     } else {
-      message("This may be slow in large cases. ",
+      messagePrepInputs("This may be slow in large cases. ",
               "To use sf and GDAL instead, see ",
               "https://github.com/r-spatial/sf to install GDAL ",
               "on your system. Then, 'install.packages(\"sf\")",
@@ -278,12 +280,11 @@ findGDAL <- function() {
                                 "C:/Program Files (x86)/Quantum GIS Wroclaw/bin",
                                 "C:/Program Files/GDAL",
                                 "C:/Program Files (x86)/GDAL")
-      message("Searching for gdal installation")
+      messagePrepInputs("Searching for gdal installation")
       gdalInfoExists <- file.exists(file.path(possibleWindowsPaths, "gdalinfo.exe"))
       if (any(gdalInfoExists))
         gdalPath <- possibleWindowsPaths[gdalInfoExists]
     }
-    gdalPath
     gdalUtils::gdal_setInstallation(gdalPath)
 
     if (is.null(getOption("gdalUtils_gdalPath"))) # if it doesn't find gdal installed
@@ -292,7 +293,8 @@ findGDAL <- function() {
   }
 }
 
-attemptGDAL <- function(x, useGDAL = getOption("reproducible.useGDAL", TRUE)) {
+attemptGDAL <- function(x, useGDAL = getOption("reproducible.useGDAL", TRUE),
+                        verbose = getOption("reproducible.verbose", 1)) {
   if (requireNamespace("gdalUtils", quietly = TRUE)) {
     browser(expr = exists("._attemptGDAL_1"))
     crsIsNA <- is.na(.crs(x))
@@ -304,15 +306,15 @@ attemptGDAL <- function(x, useGDAL = getOption("reproducible.useGDAL", TRUE)) {
       findGDAL()
     } else {
       if (crsIsNA && shouldUseGDAL)
-        message("Can't use GDAL because crs is NA")
+        messagePrepInputs("      Can't use GDAL because crs is NA", verbose = verbose)
       if (cpim && isTRUEuseGDAL)
-        message("useGDAL is TRUE, but problem is small enough for RAM; skipping GDAL; ",
-                "useGDAL = 'force' to override")
+        messagePrepInputs("      useGDAL is TRUE, but problem is small enough for RAM; skipping GDAL; ",
+                "useGDAL = 'force' to override", verbose = verbose)
 
       FALSE
     }
   } else {
-    message("To use gdal, you need to install gdalUtils; install.packages('gdalUtils')")
+    messagePrepInputs("To use gdal, you need to install gdalUtils; install.packages('gdalUtils')", verbose = verbose)
     attemptGDAL <- FALSE
   }
   attemptGDAL

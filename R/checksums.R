@@ -45,6 +45,7 @@ if (getRversion() >= "3.1.0") {
 #'                For \code{digest}, the notable argument is \code{algo}. For \code{write.table},
 #'                the notable argument is \code{append}.
 #'
+#' @inheritParams Cache
 #' @return A \code{data.table} with columns: \code{result}, \code{expectedFile},
 #'         \code{actualFile}, \code{checksum.x}, \code{checksum.y},
 #'         \code{algorithm.x}, \code{algorithm.y}, \code{filesize.x}, \code{filesize.y}
@@ -74,11 +75,11 @@ if (getRversion() >= "3.1.0") {
 #'
 setGeneric("Checksums", function(path, write, quickCheck = FALSE,
                                  checksumFile = file.path(path, "CHECKSUMS.txt"),
-                                 files = NULL, ...) {
+                                 files = NULL, verbose = getOption("reproducible.verbose", 1),
+                                 ...) {
   standardGeneric("Checksums")
 })
 
-#' @importFrom crayon magenta
 #' @importFrom data.table setnames
 #' @importFrom methods formalArgs
 #' @importFrom utils read.table write.table
@@ -87,7 +88,7 @@ setMethod(
   "Checksums",
   signature = c(path = "character", quickCheck = "ANY",
                 write = "logical", files = "ANY"),
-  definition = function(path, write, quickCheck, checksumFile, files, ...) {
+  definition = function(path, write, quickCheck, checksumFile, files, verbose = getOption("reproducible.verbose", 1), ...) {
     defaultHashAlgo <- "xxhash64"
     defaultWriteHashAlgo <- "xxhash64"
     dots <- list(...)
@@ -143,7 +144,7 @@ setMethod(
       }
     }
 
-    message(crayon::magenta("Checking local files...", sep = ""))
+    messagePrepInputs("Checking local files...", sep = "", verbose = verbose)
     filesToCheck <-  if (length(txt$file) & length(files)) {
       files[basename(files) %in% txt$file]
     } else {
@@ -174,8 +175,8 @@ setMethod(
 
     if (is.null(txt$filesize)) {
       quickCheck <- FALSE
-      message(crayon::magenta("  Not possible to use quickCheck;\n ",
-                              "    CHECKSUMS.txt file does not have filesizes", sep = ""))
+      messagePrepInputs("  Not possible to use quickCheck;\n ",
+                              "    CHECKSUMS.txt file does not have filesizes", sep = "", verbose = verbose)
     }
     checksums <- rep(list(rep("", length(filesToCheck))), 2)
     if (quickCheck | write) {
@@ -189,7 +190,7 @@ setMethod(
                                 args = append(list(file = filesToCheck, quickCheck = FALSE),
                                               dots))
     }
-    message(crayon::magenta("Finished checking local files.", sep = ""))
+    messagePrepInputs("Finished checking local files.", sep = "", verbose = verbose)
 
     out <- if (length(filesToCheck)) {
       data.table(file = basename(filesToCheck), checksum = checksums[[1]],
@@ -275,7 +276,7 @@ setMethod(
     #   dplyr::filter(row_number() == 1L)
 
     # if (!isTRUE(all.equal(as.data.frame(results.df1), as.data.frame(results.df))))
-    #   browser()
+    #   stop()
 
     return(invisible(results.df))
     #}
@@ -286,9 +287,9 @@ setMethod(
   "Checksums",
   signature = c(path = "character", quickCheck = "ANY",
                 write = "missing", files = "ANY"),
-  definition = function(path, quickCheck, checksumFile, files, ...) {
+  definition = function(path, quickCheck, checksumFile, files, verbose, ...) {
     Checksums(path, write = FALSE, quickCheck = quickCheck, checksumFile = checksumFile,
-              files = files, ...)
+              files = files, verbose = verbose, ...)
 })
 
 #' @keywords internal

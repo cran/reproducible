@@ -13,6 +13,7 @@ fixErrors(
   objectName,
   attemptErrorFixes = TRUE,
   useCache = getOption("reproducible.useCache", FALSE),
+  verbose = getOption("reproducible.verbose", 1),
   ...
 )
 
@@ -21,6 +22,7 @@ fixErrors(
   objectName,
   attemptErrorFixes = TRUE,
   useCache = getOption("reproducible.useCache", FALSE),
+  verbose = getOption("reproducible.verbose", 1),
   ...
 )
 
@@ -29,6 +31,7 @@ fixErrors(
   objectName,
   attemptErrorFixes = TRUE,
   useCache = getOption("reproducible.useCache", FALSE),
+  verbose = getOption("reproducible.verbose", 1),
   ...
 )
 
@@ -37,6 +40,7 @@ fixErrors(
   objectName = NULL,
   attemptErrorFixes = TRUE,
   useCache = getOption("reproducible.useCache", FALSE),
+  verbose = getOption("reproducible.verbose", 1),
   ...
 )
 
@@ -45,6 +49,7 @@ fixErrors(
   objectName = NULL,
   attemptErrorFixes = TRUE,
   useCache = getOption("reproducible.useCache", FALSE),
+  verbose = getOption("reproducible.verbose", 1),
   ...
 )
 }
@@ -94,11 +99,10 @@ Sr1 <- Polygon(coords)
 Srs1 <- Polygons(list(Sr1), "s1")
 StudyArea <- SpatialPolygons(list(Srs1), 1L)
 crs(StudyArea) <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
-#'
-#'
+
 ##########
 shpEcozonePostProcessed <- postProcess(shpEcozone, studyArea = StudyArea)
-#'
+
 # Try manually, individual pieces
 shpEcozoneReprojected <- projectInputs(shpEcozone, StudyArea)
 shpEcozoneCropped <- cropInputs(shpEcozone, StudyArea)

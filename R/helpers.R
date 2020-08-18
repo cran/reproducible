@@ -6,41 +6,7 @@
   inst
 }
 
-#' @importFrom utils chooseCRANmirror
-#' @keywords internal
-getCRANrepos <- function(repos = NULL) {
-  if (is.null(repos)) {
-    repos <- getOption("repos")["CRAN"]
-  }
 
-  # still might be imprecise repository, specifically ""
-  if (isTRUE("" == repos)) {
-    repos <- "@CRAN@"
-  }
-
-  # if @CRAN@, and non interactive session
-  if (isTRUE("@CRAN@" %in% repos)) {
-    cranRepo <- Sys.getenv("CRAN_REPO")
-    repos <- if (nzchar(cranRepo)) {
-      cranRepo
-    } else {
-      chooseCRANmirror2() ## sets repo option
-      getOption("repos")["CRAN"]
-    }
-  }
-
-  return(repos)
-}
-
-#' @importFrom utils chooseCRANmirror
-#' @keywords internal
-chooseCRANmirror2 <- function() {
-  if (isInteractive()) {
-    chooseCRANmirror()
-  } else {
-    chooseCRANmirror(ind = 1) ## https://cloud.r-project.org
-  }
-}
 #' Add a prefix or suffix to the basename part of a file path
 #'
 #' Prepend (or postpend) a filename with a prefix (or suffix).
@@ -295,9 +261,9 @@ messageDF <- function(df, round, colour = NULL, colnames = NULL) {
   if (skipColNames) outMess <- outMess[-1]
   out <- lapply(outMess, function(x) {
     if (!is.null(colour)) {
-      message(getFromNamespace(colour, ns = "crayon")(x))
+      messageColoured(x, colour = colour)
     } else {
-    message(x)
+      message(x)
     }
   })
 }
@@ -358,4 +324,41 @@ isAbsolutePath <- function(pathnames) {
   (components[1L] == "")
 }
 
+# This is so that we don't need to import from backports
 .isFALSE <- function(x) is.logical(x) && length(x) == 1L && !is.na(x) && !x
+
+
+messagePrepInputs <- function(...) {
+  messageColoured(..., colour = getOption("reproducible.messageColourPrepInputs"))
+}
+
+messageCache <- function(...) {
+  messageColoured(..., colour = getOption("reproducible.messageColourCache"))
+}
+
+messageQuestion <- function(..., verboseLevel = 0) {
+  # force this message to print
+  messageColoured(..., colour = getOption("reproducible.messageColourQuestion"),
+                  verboseLevel = verboseLevel, verbose = 0)
+}
+
+messageColoured <- function(..., colour = NULL, verboseLevel = 1,
+                            verbose = getOption("reproducible.verbose", 1)) {
+  if (isTRUE(verboseLevel <= verbose)) {
+    needCrayon <- FALSE
+    if (!is.null(colour)) {
+      if (is.character(colour))
+        needCrayon <- TRUE
+    }
+    if (needCrayon && requireNamespace("crayon", quietly = TRUE)) {
+      message(getFromNamespace(colour, "crayon")(paste0(...)))
+    } else {
+      if (!isTRUE(.pkgEnv$.checkedCrayon) && !.requireNamespace("crayon")) {
+        message("To add colours to messages, install.packages('crayon')")
+        .pkgEnv$.checkedCrayon <- TRUE
+      }
+      message(paste0(...))
+    }
+  }
+
+}

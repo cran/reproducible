@@ -167,6 +167,9 @@ reproducibleOptions <- function() {
     reproducible.inputPaths = NULL,
     reproducible.inputPathsRecursive = FALSE,
     reproducible.length = Inf,
+    reproducible.messageColourPrepInputs = "cyan",
+    reproducible.messageColourCache = "blue",
+    reproducible.messageColourQuestion = "green",
     reproducible.nThreads = 1,
     reproducible.overwrite = FALSE,
     reproducible.quick = FALSE,
@@ -180,6 +183,6 @@ reproducibleOptions <- function() {
     reproducible.useMemoise = FALSE, #memoise
     reproducible.useNewDigestAlgorithm = TRUE,
     reproducible.useragent = "https://github.com/PredictiveEcology/reproducible",
-    reproducible.verbose = FALSE
+    reproducible.verbose = 1
   )
 }

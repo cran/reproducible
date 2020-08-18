@@ -1,7 +1,11 @@
 # reproducible
 
+<!-- badges: start -->
 [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/reproducible)](https://cran.r-project.org/package=reproducible)
 [![CRAN Downloads](http://cranlogs.r-pkg.org/badges/grand-total/reproducible)](https://cran.r-project.org/package=reproducible)
+[![R build status](https://github.com/PredictiveEcology/reproducible/workflows/R-CMD-check/badge.svg)](https://github.com/PredictiveEcology/reproducible/actions)
+[![Codecov test coverage](https://codecov.io/gh/PredictiveEcology/reproducible/branch/master/graph/badge.svg)](https://codecov.io/gh/PredictiveEcology/reproducible?branch=master)
+<!-- badges: end -->
 
 A set of tools for R that enhance reproducibility beyond package management.
 Built on top of `git2r` and `archivist`, this package aims at making high-level, robust, machine and OS independent tools for making deeply reproducible and reusable content in R.
@@ -25,7 +29,6 @@ Caching is the principle tool to achieve this reproducible work-flow. There are 
 rnorm(1) # give a random number
 Cache(rnorm, 1) # generates a random number
 Cache(rnorm, 1) # recovers the previous random number because call is identical
-
 ```
 
 ## `prepInputs`
@@ -39,8 +42,6 @@ Get a geospatial dataset. It will be checksummed (locally), meaning if the file 
 test1 <- prepInputs(targetFile = "GADM_2.8_LUX_adm0.rds", # must specify currently
                     dlFun = "raster::getData", name = "GADM", country = "LUX", level = 0,
                     path = dPath)
-                    
-                    
 ```
 
 ## `Cache` with `prepInputs`
@@ -61,9 +62,8 @@ See vignettes and help files for many more real-world examples.
 
 ### Current release (on CRAN)
 
-[![Build Status](https://travis-ci.org/PredictiveEcology/reproducible.svg?branch=master)](https://travis-ci.org/PredictiveEcology/reproducible)
-[![Appveyor Build status](https://ci.appveyor.com/api/projects/status/2fxqhgk6miv2fytd/branch/master?svg=true)](https://ci.appveyor.com/project/achubaty/reproducible/branch/master)
-[![Coverage Status](https://coveralls.io/repos/github/PredictiveEcology/reproducible/badge.svg?branch=master)](https://coveralls.io/github/PredictiveEcology/reproducible?branch=master)
+[![R build status](https://github.com/PredictiveEcology/reproducible/workflows/R-CMD-check/badge.svg?branch=master)](https://github.com/PredictiveEcology/reproducible/actions)
+[![Codecov test coverage](https://codecov.io/gh/PredictiveEcology/reproducible/branch/master/graph/badge.svg)](https://codecov.io/gh/PredictiveEcology/reproducible?branch=master)
 
 **Install from CRAN:**
 
@@ -81,9 +81,8 @@ install_github("PredictiveEcology/reproducible", dependencies = TRUE)
 
 ### Development version
 
-[![Build Status](https://travis-ci.org/PredictiveEcology/reproducible.svg?branch=development)](https://travis-ci.org/PredictiveEcology/reproducible)
-[![Appveyor Build status](https://ci.appveyor.com/api/projects/status/2fxqhgk6miv2fytd/branch/development?svg=true)](https://ci.appveyor.com/project/achubaty/reproducible/branch/development)
-[![Coverage Status](https://coveralls.io/repos/github/PredictiveEcology/reproducible/badge.svg?branch=development)](https://coveralls.io/github/PredictiveEcology/reproducible?branch=development)
+[![R build status](https://github.com/PredictiveEcology/reproducible/workflows/R-CMD-check/badge.svg?branch=development)](https://github.com/PredictiveEcology/reproducible/actions)
+[![Codecov test coverage](https://codecov.io/gh/PredictiveEcology/reproducible/branch/development/graph/badge.svg)](https://codecov.io/gh/PredictiveEcology/reproducible?branch=development)
 
 **Install from GitHub:**
 

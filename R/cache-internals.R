@@ -1,5 +1,6 @@
 .CacheVerboseFn1 <- function(preDigest, fnDetails,
-                             startHashTime, modifiedDots, dotPipe, quick) {
+                             startHashTime, modifiedDots, dotPipe, quick,
+                             verbose = getOption("reproducible.verbose", 1)) {
   preDigestUnlist <- .unlistToCharacter(preDigest, 4)
   endHashTime <- Sys.time()
   verboseDF <- data.frame(
@@ -41,8 +42,8 @@
     .reproEnv$hashDetails <- hashDetails
     on.exit({
       assign("hashDetailsAll", .reproEnv$hashDetails, envir = .reproEnv)
-      print(.reproEnv$hashDetails)
-      message("The hashing details are available from .reproEnv$hashDetails")
+      messageDF(.reproEnv$hashDetails, colour = "blue")
+      messageCache("The hashing details are available from .reproEnv$hashDetails", verbose = verbose)
       rm("hashDetails", envir = .reproEnv)
     }, add = TRUE)
   }
@@ -130,8 +131,9 @@
 }
 
 
-.CacheSideEffectFn1 <- function(output, sideEffect, cacheRepo, quick, algo, FUN, ...) {
-  message("sideEffect argument is poorly tested. It may not function as desired")
+.CacheSideEffectFn1 <- function(output, sideEffect, cacheRepo, quick, algo, FUN,
+                                verbose = getOption("reproducible.verbose", 1), ...) {
+  messageCache("sideEffect argument is poorly tested. It may not function as desired")
   browser(expr = exists("sideE"))
   needDwd <- logical(0)
   fromCopy <- character(0)
@@ -182,7 +184,7 @@
     }
     #}
   } else {
-    message("  There was no record of files in sideEffects")
+    messageCache("  There was no record of files in sideEffects", verbose = verbose)
   }
 
   if (any(needDwd)) {
@@ -244,7 +246,7 @@
                          algo, preDigest, startCacheTime,
                          drv = getOption("reproducible.drv", RSQLite::SQLite()),
                          conn = getOption("reproducible.conn", NULL), ...) {
-  if (verbose > 1) {
+  if (verbose > 3) {
     startLoadTime <- Sys.time()
   }
 
@@ -274,7 +276,7 @@
     }
   }
 
-  if (verbose > 1) {
+  if (verbose > 3) {
     endLoadTime <- Sys.time()
     verboseDF <- data.frame(
       functionName = fnDetails$functionName,
@@ -291,7 +293,7 @@
 
   # Class-specific message
   browser(expr = exists("dddd"))
-  .cacheMessage(output, fnDetails$functionName, fromMemoise = fromMemoise)
+  .cacheMessage(output, fnDetails$functionName, fromMemoise = fromMemoise, verbose = verbose)
 
   # This is protected from multiple-write to SQL collisions
   # .addTagsRepo(isInRepo, cacheRepo, lastOne, drv, conn = conn)
@@ -300,7 +302,7 @@
 
   browser(expr = exists("._getFromRepo_1"))
   if (sideEffect != FALSE) {
-    .CacheSideEffectFn1(output, sideEffect, cacheRepo, quick, algo, FUN, ...)
+    .CacheSideEffectFn1(output, sideEffect, cacheRepo, quick, algo, FUN, verbose = verbose, ...)
   }
 
   # This allows for any class specific things
@@ -320,7 +322,7 @@
   #attr(output, ".Cache")$newCache <- FALSE
   if (!identical(attr(output, ".Cache")$newCache, FALSE)) stop("attributes are not correct 2")
 
-  if (verbose > 1) {
+  if (verbose > 3) {
     endCacheTime <- Sys.time()
     verboseDF <- data.frame(
       functionName = fnDetails$functionName,

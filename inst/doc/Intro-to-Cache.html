@@ -318,7 +318,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Introduction to Cache</h1>
 <h4 class="author">Eliot J. B. McIntire</h4>
-<h4 class="date">July 28 2020</h4>
+<h4 class="date">August 17 2020</h4>
 
 
 <div id="TOC">
@@ -360,7 +360,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb3-2"><a href="#cb3-2"></a></span>
 <span id="cb3-3"><a href="#cb3-3"></a>tmpDir &lt;-<span class="st"> </span><span class="kw">file.path</span>(<span class="kw">tempdir</span>(), <span class="st">&quot;reproducible_examples&quot;</span>, <span class="st">&quot;Cache&quot;</span>)</span>
 <span id="cb3-4"><a href="#cb3-4"></a><span class="kw">checkPath</span>(tmpDir, <span class="dt">create =</span> <span class="ot">TRUE</span>)</span></code></pre></div>
-<pre><code>## [1] &quot;C:/Users/EMCINT~1.L-V/AppData/Local/Temp/RtmpmIazo8/reproducible_examples/Cache&quot;</code></pre>
+<pre><code>## [1] &quot;C:/Users/EMCINT~1.L-V/AppData/Local/Temp/RtmpGUUAyW/reproducible_examples/Cache&quot;</code></pre>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>ras &lt;-<span class="st"> </span><span class="kw">raster</span>(<span class="kw">extent</span>(<span class="dv">0</span>, <span class="dv">1000</span>, <span class="dv">0</span>, <span class="dv">1000</span>), <span class="dt">vals =</span> <span class="dv">1</span><span class="op">:</span><span class="fl">1e6</span>, <span class="dt">res =</span> <span class="dv">1</span>)</span>
 <span id="cb5-2"><a href="#cb5-2"></a><span class="kw">crs</span>(ras) &lt;-<span class="st"> &quot;+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84&quot;</span></span>
 <span id="cb5-3"><a href="#cb5-3"></a></span>
@@ -369,26 +369,26 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb5-6"><a href="#cb5-6"></a><span class="co"># No Cache</span></span>
 <span id="cb5-7"><a href="#cb5-7"></a><span class="kw">system.time</span>(<span class="kw">suppressWarnings</span>(map1 &lt;-<span class="st"> </span><span class="kw">projectRaster</span>(ras, <span class="dt">crs =</span> newCRS))) <span class="co"># Warnings due to new PROJ</span></span></code></pre></div>
 <pre><code>##    user  system elapsed 
-##    3.28    0.55    4.31</code></pre>
+##    3.52    0.31    4.53</code></pre>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a><span class="co"># Try with memoise for this example -- for many simple cases, memoising will not be faster</span></span>
 <span id="cb7-2"><a href="#cb7-2"></a>opts &lt;-<span class="st"> </span><span class="kw">options</span>(<span class="st">&quot;reproducible.useMemoise&quot;</span> =<span class="st"> </span><span class="ot">TRUE</span>)</span>
 <span id="cb7-3"><a href="#cb7-3"></a><span class="co"># With Cache -- a little slower the first time because saving to disk</span></span>
 <span id="cb7-4"><a href="#cb7-4"></a><span class="kw">system.time</span>(<span class="kw">suppressWarnings</span>(map1 &lt;-<span class="st"> </span><span class="kw">Cache</span>(projectRaster, ras, <span class="dt">crs =</span> newCRS, <span class="dt">cacheRepo =</span> tmpDir,</span>
 <span id="cb7-5"><a href="#cb7-5"></a>                         <span class="dt">notOlderThan =</span> <span class="kw">Sys.time</span>())))</span></code></pre></div>
 <pre><code>##    user  system elapsed 
-##    4.53    0.64    5.83</code></pre>
+##    4.03    0.34    4.86</code></pre>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a><span class="co"># vastly faster the second time</span></span>
 <span id="cb9-2"><a href="#cb9-2"></a><span class="kw">system.time</span>(map2 &lt;-<span class="st"> </span><span class="kw">Cache</span>(projectRaster, ras, <span class="dt">crs =</span> newCRS, <span class="dt">cacheRepo =</span> tmpDir))</span></code></pre></div>
-<pre><code>##   ...(Object to retrieve (279dabecda1015c9.rds) is large: 6.5 Mb)</code></pre>
+<pre><code>##   ...(Object to retrieve (f2fc4c7fa19afa06.rds) is large: 6.5 Mb)</code></pre>
 <pre><code>##      loaded memoised result from previous projectRaster call,</code></pre>
 <pre><code>##    user  system elapsed 
-##    0.42    0.05    0.53</code></pre>
+##    0.36    0.06    0.44</code></pre>
 <div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a><span class="co"># may be faster the third time because of memoise; but this example is too simple to show</span></span>
 <span id="cb13-2"><a href="#cb13-2"></a><span class="kw">system.time</span>(map3 &lt;-<span class="st"> </span><span class="kw">Cache</span>(projectRaster, ras, <span class="dt">crs =</span> newCRS, <span class="dt">cacheRepo =</span> tmpDir))</span></code></pre></div>
-<pre><code>##   ...(Object to retrieve (279dabecda1015c9.rds) is large: 6.5 Mb)
+<pre><code>##   ...(Object to retrieve (f2fc4c7fa19afa06.rds) is large: 6.5 Mb)
 ##      loaded memoised result from previous projectRaster call,</code></pre>
 <pre><code>##    user  system elapsed 
-##    0.40    0.09    0.60</code></pre>
+##    0.43    0.05    0.50</code></pre>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">options</span>(opts)</span>
 <span id="cb16-2"><a href="#cb16-2"></a></span>
 <span id="cb16-3"><a href="#cb16-3"></a><span class="kw">all.equal</span>(map1, map2) <span class="co"># TRUE</span></span></code></pre></div>
@@ -432,17 +432,17 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb33-3"><a href="#cb33-3"></a></span>
 <span id="cb33-4"><a href="#cb33-4"></a><span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="kw">c</span>(<span class="st">&quot;objectName&quot;</span>))</span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  504 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  504 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 504 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 504 bytes</code></pre>
 <pre><code>##              cacheId              tagKey              tagValue
 ##  1: 3aef38d1fc02aee5          objectName                     b
 ##  2: 3aef38d1fc02aee5            function                 runif
 ##  3: 3aef38d1fc02aee5               class               numeric
 ##  4: 3aef38d1fc02aee5         object.size                  1008
-##  5: 3aef38d1fc02aee5            accessed   2020-07-28 22:25:03
+##  5: 3aef38d1fc02aee5            accessed   2020-08-17 10:17:06
 ##  6: 3aef38d1fc02aee5             inCloud                 FALSE
 ##  7: 3aef38d1fc02aee5          resultHash                      
-##  8: 3aef38d1fc02aee5   elapsedTimeDigest      0.003181219 secs
+##  8: 3aef38d1fc02aee5   elapsedTimeDigest      0.003007889 secs
 ##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun                0 secs
 ## 10: 3aef38d1fc02aee5      otherFunctions      vweave_rmarkdown
 ## 11: 3aef38d1fc02aee5      otherFunctions          process_file
@@ -455,15 +455,15 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 18: 3aef38d1fc02aee5      otherFunctions                handle
 ## 19: 3aef38d1fc02aee5           preDigest    n:7eef4eae85fd9229
 ## 20: 3aef38d1fc02aee5           preDigest .FUN:881ec847b7161f3c
-## 21: 3aef38d1fc02aee5           file.size                   168
+## 21: 3aef38d1fc02aee5           file.size                   169
 ## 22: f7bee22047b8d0c1          objectName                     a
 ## 23: f7bee22047b8d0c1            function                 rnorm
 ## 24: f7bee22047b8d0c1               class               numeric
 ## 25: f7bee22047b8d0c1         object.size                  1008
-## 26: f7bee22047b8d0c1            accessed   2020-07-28 22:25:03
+## 26: f7bee22047b8d0c1            accessed   2020-08-17 10:17:06
 ## 27: f7bee22047b8d0c1             inCloud                 FALSE
 ## 28: f7bee22047b8d0c1          resultHash                      
-## 29: f7bee22047b8d0c1   elapsedTimeDigest      0.002506971 secs
+## 29: f7bee22047b8d0c1   elapsedTimeDigest      0.001001835 secs
 ## 30: f7bee22047b8d0c1 elapsedTimeFirstRun                0 secs
 ## 31: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 32: f7bee22047b8d0c1      otherFunctions          process_file
@@ -476,65 +476,65 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 39: f7bee22047b8d0c1      otherFunctions                handle
 ## 40: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 41: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
-## 42: f7bee22047b8d0c1           file.size                   173
+## 42: f7bee22047b8d0c1           file.size                   174
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-07-28 22:25:03
-##  2: 2020-07-28 22:25:03
-##  3: 2020-07-28 22:25:03
-##  4: 2020-07-28 22:25:03
-##  5: 2020-07-28 22:25:03
-##  6: 2020-07-28 22:25:03
-##  7: 2020-07-28 22:25:03
-##  8: 2020-07-28 22:25:03
-##  9: 2020-07-28 22:25:03
-## 10: 2020-07-28 22:25:03
-## 11: 2020-07-28 22:25:03
-## 12: 2020-07-28 22:25:03
-## 13: 2020-07-28 22:25:03
-## 14: 2020-07-28 22:25:03
-## 15: 2020-07-28 22:25:03
-## 16: 2020-07-28 22:25:03
-## 17: 2020-07-28 22:25:03
-## 18: 2020-07-28 22:25:03
-## 19: 2020-07-28 22:25:03
-## 20: 2020-07-28 22:25:03
-## 21: 2020-07-28 22:25:03
-## 22: 2020-07-28 22:25:03
-## 23: 2020-07-28 22:25:03
-## 24: 2020-07-28 22:25:03
-## 25: 2020-07-28 22:25:03
-## 26: 2020-07-28 22:25:03
-## 27: 2020-07-28 22:25:03
-## 28: 2020-07-28 22:25:03
-## 29: 2020-07-28 22:25:03
-## 30: 2020-07-28 22:25:03
-## 31: 2020-07-28 22:25:03
-## 32: 2020-07-28 22:25:03
-## 33: 2020-07-28 22:25:03
-## 34: 2020-07-28 22:25:03
-## 35: 2020-07-28 22:25:03
-## 36: 2020-07-28 22:25:03
-## 37: 2020-07-28 22:25:03
-## 38: 2020-07-28 22:25:03
-## 39: 2020-07-28 22:25:03
-## 40: 2020-07-28 22:25:03
-## 41: 2020-07-28 22:25:03
-## 42: 2020-07-28 22:25:03
+##  1: 2020-08-17 10:17:06
+##  2: 2020-08-17 10:17:06
+##  3: 2020-08-17 10:17:06
+##  4: 2020-08-17 10:17:06
+##  5: 2020-08-17 10:17:06
+##  6: 2020-08-17 10:17:06
+##  7: 2020-08-17 10:17:06
+##  8: 2020-08-17 10:17:06
+##  9: 2020-08-17 10:17:06
+## 10: 2020-08-17 10:17:06
+## 11: 2020-08-17 10:17:06
+## 12: 2020-08-17 10:17:06
+## 13: 2020-08-17 10:17:06
+## 14: 2020-08-17 10:17:06
+## 15: 2020-08-17 10:17:06
+## 16: 2020-08-17 10:17:06
+## 17: 2020-08-17 10:17:06
+## 18: 2020-08-17 10:17:06
+## 19: 2020-08-17 10:17:06
+## 20: 2020-08-17 10:17:06
+## 21: 2020-08-17 10:17:06
+## 22: 2020-08-17 10:17:06
+## 23: 2020-08-17 10:17:06
+## 24: 2020-08-17 10:17:06
+## 25: 2020-08-17 10:17:06
+## 26: 2020-08-17 10:17:06
+## 27: 2020-08-17 10:17:06
+## 28: 2020-08-17 10:17:06
+## 29: 2020-08-17 10:17:06
+## 30: 2020-08-17 10:17:06
+## 31: 2020-08-17 10:17:06
+## 32: 2020-08-17 10:17:06
+## 33: 2020-08-17 10:17:06
+## 34: 2020-08-17 10:17:06
+## 35: 2020-08-17 10:17:06
+## 36: 2020-08-17 10:17:06
+## 37: 2020-08-17 10:17:06
+## 38: 2020-08-17 10:17:06
+## 39: 2020-08-17 10:17:06
+## 40: 2020-08-17 10:17:06
+## 41: 2020-08-17 10:17:06
+## 42: 2020-08-17 10:17:06
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1"></a><span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="kw">c</span>(<span class="st">&quot;^a$&quot;</span>)) <span class="co"># regular expression ... &quot;a&quot; exactly</span></span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  252 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  252 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 252 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
 <pre><code>##              cacheId              tagKey              tagValue
 ##  1: f7bee22047b8d0c1          objectName                     a
 ##  2: f7bee22047b8d0c1            function                 rnorm
 ##  3: f7bee22047b8d0c1               class               numeric
 ##  4: f7bee22047b8d0c1         object.size                  1008
-##  5: f7bee22047b8d0c1            accessed   2020-07-28 22:25:03
+##  5: f7bee22047b8d0c1            accessed   2020-08-17 10:17:06
 ##  6: f7bee22047b8d0c1             inCloud                 FALSE
 ##  7: f7bee22047b8d0c1          resultHash                      
-##  8: f7bee22047b8d0c1   elapsedTimeDigest      0.002506971 secs
+##  8: f7bee22047b8d0c1   elapsedTimeDigest      0.001001835 secs
 ##  9: f7bee22047b8d0c1 elapsedTimeFirstRun                0 secs
 ## 10: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 11: f7bee22047b8d0c1      otherFunctions          process_file
@@ -547,44 +547,44 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 18: f7bee22047b8d0c1      otherFunctions                handle
 ## 19: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 20: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
-## 21: f7bee22047b8d0c1           file.size                   173
+## 21: f7bee22047b8d0c1           file.size                   174
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-07-28 22:25:03
-##  2: 2020-07-28 22:25:03
-##  3: 2020-07-28 22:25:03
-##  4: 2020-07-28 22:25:03
-##  5: 2020-07-28 22:25:03
-##  6: 2020-07-28 22:25:03
-##  7: 2020-07-28 22:25:03
-##  8: 2020-07-28 22:25:03
-##  9: 2020-07-28 22:25:03
-## 10: 2020-07-28 22:25:03
-## 11: 2020-07-28 22:25:03
-## 12: 2020-07-28 22:25:03
-## 13: 2020-07-28 22:25:03
-## 14: 2020-07-28 22:25:03
-## 15: 2020-07-28 22:25:03
-## 16: 2020-07-28 22:25:03
-## 17: 2020-07-28 22:25:03
-## 18: 2020-07-28 22:25:03
-## 19: 2020-07-28 22:25:03
-## 20: 2020-07-28 22:25:03
-## 21: 2020-07-28 22:25:03
+##  1: 2020-08-17 10:17:06
+##  2: 2020-08-17 10:17:06
+##  3: 2020-08-17 10:17:06
+##  4: 2020-08-17 10:17:06
+##  5: 2020-08-17 10:17:06
+##  6: 2020-08-17 10:17:06
+##  7: 2020-08-17 10:17:06
+##  8: 2020-08-17 10:17:06
+##  9: 2020-08-17 10:17:06
+## 10: 2020-08-17 10:17:06
+## 11: 2020-08-17 10:17:06
+## 12: 2020-08-17 10:17:06
+## 13: 2020-08-17 10:17:06
+## 14: 2020-08-17 10:17:06
+## 15: 2020-08-17 10:17:06
+## 16: 2020-08-17 10:17:06
+## 17: 2020-08-17 10:17:06
+## 18: 2020-08-17 10:17:06
+## 19: 2020-08-17 10:17:06
+## 20: 2020-08-17 10:17:06
+## 21: 2020-08-17 10:17:06
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1"></a><span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="kw">c</span>(<span class="st">&quot;runif&quot;</span>)) <span class="co"># show only cached objects made during runif call</span></span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  252 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  252 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 252 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
 <pre><code>##              cacheId              tagKey              tagValue
 ##  1: 3aef38d1fc02aee5          objectName                     b
 ##  2: 3aef38d1fc02aee5            function                 runif
 ##  3: 3aef38d1fc02aee5               class               numeric
 ##  4: 3aef38d1fc02aee5         object.size                  1008
-##  5: 3aef38d1fc02aee5            accessed   2020-07-28 22:25:03
+##  5: 3aef38d1fc02aee5            accessed   2020-08-17 10:17:06
 ##  6: 3aef38d1fc02aee5             inCloud                 FALSE
 ##  7: 3aef38d1fc02aee5          resultHash                      
-##  8: 3aef38d1fc02aee5   elapsedTimeDigest      0.003181219 secs
+##  8: 3aef38d1fc02aee5   elapsedTimeDigest      0.003007889 secs
 ##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun                0 secs
 ## 10: 3aef38d1fc02aee5      otherFunctions      vweave_rmarkdown
 ## 11: 3aef38d1fc02aee5      otherFunctions          process_file
@@ -597,49 +597,49 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 18: 3aef38d1fc02aee5      otherFunctions                handle
 ## 19: 3aef38d1fc02aee5           preDigest    n:7eef4eae85fd9229
 ## 20: 3aef38d1fc02aee5           preDigest .FUN:881ec847b7161f3c
-## 21: 3aef38d1fc02aee5           file.size                   168
+## 21: 3aef38d1fc02aee5           file.size                   169
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-07-28 22:25:03
-##  2: 2020-07-28 22:25:03
-##  3: 2020-07-28 22:25:03
-##  4: 2020-07-28 22:25:03
-##  5: 2020-07-28 22:25:03
-##  6: 2020-07-28 22:25:03
-##  7: 2020-07-28 22:25:03
-##  8: 2020-07-28 22:25:03
-##  9: 2020-07-28 22:25:03
-## 10: 2020-07-28 22:25:03
-## 11: 2020-07-28 22:25:03
-## 12: 2020-07-28 22:25:03
-## 13: 2020-07-28 22:25:03
-## 14: 2020-07-28 22:25:03
-## 15: 2020-07-28 22:25:03
-## 16: 2020-07-28 22:25:03
-## 17: 2020-07-28 22:25:03
-## 18: 2020-07-28 22:25:03
-## 19: 2020-07-28 22:25:03
-## 20: 2020-07-28 22:25:03
-## 21: 2020-07-28 22:25:03
+##  1: 2020-08-17 10:17:06
+##  2: 2020-08-17 10:17:06
+##  3: 2020-08-17 10:17:06
+##  4: 2020-08-17 10:17:06
+##  5: 2020-08-17 10:17:06
+##  6: 2020-08-17 10:17:06
+##  7: 2020-08-17 10:17:06
+##  8: 2020-08-17 10:17:06
+##  9: 2020-08-17 10:17:06
+## 10: 2020-08-17 10:17:06
+## 11: 2020-08-17 10:17:06
+## 12: 2020-08-17 10:17:06
+## 13: 2020-08-17 10:17:06
+## 14: 2020-08-17 10:17:06
+## 15: 2020-08-17 10:17:06
+## 16: 2020-08-17 10:17:06
+## 17: 2020-08-17 10:17:06
+## 18: 2020-08-17 10:17:06
+## 19: 2020-08-17 10:17:06
+## 20: 2020-08-17 10:17:06
+## 21: 2020-08-17 10:17:06
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1"></a><span class="kw">clearCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="kw">c</span>(<span class="st">&quot;runif&quot;</span>), <span class="dt">ask =</span> <span class="ot">FALSE</span>) <span class="co"># remove only cached objects made during runif call</span></span></code></pre></div>
 <pre><code>## Loading required namespace: googledrive</code></pre>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  252 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  252 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 252 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
 <div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1"></a><span class="kw">showCache</span>(tmpDir) <span class="co"># only those made during rnorm call</span></span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  804 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  804 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 804 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 804 bytes</code></pre>
 <pre><code>##              cacheId              tagKey              tagValue
 ##  1: f11fb1a2880f8060            function                 rnorm
 ##  2: f11fb1a2880f8060               class               numeric
 ##  3: f11fb1a2880f8060         object.size                  1104
-##  4: f11fb1a2880f8060            accessed   2020-07-28 22:25:02
+##  4: f11fb1a2880f8060            accessed   2020-08-17 10:17:06
 ##  5: f11fb1a2880f8060             inCloud                 FALSE
 ##  6: f11fb1a2880f8060          resultHash                      
-##  7: f11fb1a2880f8060   elapsedTimeDigest      0.003908157 secs
-##  8: f11fb1a2880f8060 elapsedTimeFirstRun       0.00111413 secs
+##  7: f11fb1a2880f8060   elapsedTimeDigest      0.002001047 secs
+##  8: f11fb1a2880f8060 elapsedTimeFirstRun                0 secs
 ##  9: f11fb1a2880f8060      otherFunctions      vweave_rmarkdown
 ## 10: f11fb1a2880f8060      otherFunctions          process_file
 ## 11: f11fb1a2880f8060      otherFunctions         process_group
@@ -652,18 +652,18 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 18: f11fb1a2880f8060           preDigest    n:c5775c3b366fb719
 ## 19: f11fb1a2880f8060           preDigest mean:15620f138033a66c
 ## 20: f11fb1a2880f8060           preDigest .FUN:4f604aa46882b368
-## 21: f11fb1a2880f8060           file.size                   223
-## 22: f11fb1a2880f8060            accessed   2020-07-28 22:25:02
-## 23: f11fb1a2880f8060     elapsedTimeLoad       0.01859307 secs
-## 24: f11fb1a2880f8060            accessed   2020-07-28 22:25:02
-## 25: f11fb1a2880f8060            accessed   2020-07-28 22:25:02
+## 21: f11fb1a2880f8060           file.size                   224
+## 22: f11fb1a2880f8060            accessed   2020-08-17 10:17:06
+## 23: f11fb1a2880f8060     elapsedTimeLoad       0.01003695 secs
+## 24: f11fb1a2880f8060            accessed   2020-08-17 10:17:06
+## 25: f11fb1a2880f8060            accessed   2020-08-17 10:17:06
 ## 26: c16f0e2c57596069            function &#39;rnorm&#39; pipe sequence
 ## 27: c16f0e2c57596069               class               numeric
 ## 28: c16f0e2c57596069         object.size                  1104
-## 29: c16f0e2c57596069            accessed   2020-07-28 22:25:02
+## 29: c16f0e2c57596069            accessed   2020-08-17 10:17:06
 ## 30: c16f0e2c57596069             inCloud                 FALSE
 ## 31: c16f0e2c57596069          resultHash                      
-## 32: c16f0e2c57596069   elapsedTimeDigest      0.003791094 secs
+## 32: c16f0e2c57596069   elapsedTimeDigest      0.002012968 secs
 ## 33: c16f0e2c57596069 elapsedTimeFirstRun                0 secs
 ## 34: c16f0e2c57596069      otherFunctions      vweave_rmarkdown
 ## 35: c16f0e2c57596069      otherFunctions          process_file
@@ -679,15 +679,15 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 45: c16f0e2c57596069           preDigest    n:c5775c3b366fb719
 ## 46: c16f0e2c57596069           preDigest mean:152602b8ff81e5bb
 ## 47: c16f0e2c57596069           preDigest .FUN:4f604aa46882b368
-## 48: c16f0e2c57596069           file.size                   224
+## 48: c16f0e2c57596069           file.size                   223
 ## 49: f7bee22047b8d0c1          objectName                     a
 ## 50: f7bee22047b8d0c1            function                 rnorm
 ## 51: f7bee22047b8d0c1               class               numeric
 ## 52: f7bee22047b8d0c1         object.size                  1008
-## 53: f7bee22047b8d0c1            accessed   2020-07-28 22:25:03
+## 53: f7bee22047b8d0c1            accessed   2020-08-17 10:17:06
 ## 54: f7bee22047b8d0c1             inCloud                 FALSE
 ## 55: f7bee22047b8d0c1          resultHash                      
-## 56: f7bee22047b8d0c1   elapsedTimeDigest      0.002506971 secs
+## 56: f7bee22047b8d0c1   elapsedTimeDigest      0.001001835 secs
 ## 57: f7bee22047b8d0c1 elapsedTimeFirstRun                0 secs
 ## 58: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 59: f7bee22047b8d0c1      otherFunctions          process_file
@@ -700,78 +700,78 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 66: f7bee22047b8d0c1      otherFunctions                handle
 ## 67: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 68: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
-## 69: f7bee22047b8d0c1           file.size                   173
+## 69: f7bee22047b8d0c1           file.size                   174
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-07-28 22:25:02
-##  2: 2020-07-28 22:25:02
-##  3: 2020-07-28 22:25:02
-##  4: 2020-07-28 22:25:02
-##  5: 2020-07-28 22:25:02
-##  6: 2020-07-28 22:25:02
-##  7: 2020-07-28 22:25:02
-##  8: 2020-07-28 22:25:02
-##  9: 2020-07-28 22:25:02
-## 10: 2020-07-28 22:25:02
-## 11: 2020-07-28 22:25:02
-## 12: 2020-07-28 22:25:02
-## 13: 2020-07-28 22:25:02
-## 14: 2020-07-28 22:25:02
-## 15: 2020-07-28 22:25:02
-## 16: 2020-07-28 22:25:02
-## 17: 2020-07-28 22:25:02
-## 18: 2020-07-28 22:25:02
-## 19: 2020-07-28 22:25:02
-## 20: 2020-07-28 22:25:02
-## 21: 2020-07-28 22:25:02
-## 22: 2020-07-28 22:25:02
-## 23: 2020-07-28 22:25:02
-## 24: 2020-07-28 22:25:02
-## 25: 2020-07-28 22:25:02
-## 26: 2020-07-28 22:25:02
-## 27: 2020-07-28 22:25:02
-## 28: 2020-07-28 22:25:02
-## 29: 2020-07-28 22:25:02
-## 30: 2020-07-28 22:25:02
-## 31: 2020-07-28 22:25:02
-## 32: 2020-07-28 22:25:02
-## 33: 2020-07-28 22:25:02
-## 34: 2020-07-28 22:25:02
-## 35: 2020-07-28 22:25:02
-## 36: 2020-07-28 22:25:02
-## 37: 2020-07-28 22:25:02
-## 38: 2020-07-28 22:25:02
-## 39: 2020-07-28 22:25:02
-## 40: 2020-07-28 22:25:02
-## 41: 2020-07-28 22:25:02
-## 42: 2020-07-28 22:25:02
-## 43: 2020-07-28 22:25:02
-## 44: 2020-07-28 22:25:02
-## 45: 2020-07-28 22:25:02
-## 46: 2020-07-28 22:25:02
-## 47: 2020-07-28 22:25:02
-## 48: 2020-07-28 22:25:02
-## 49: 2020-07-28 22:25:03
-## 50: 2020-07-28 22:25:03
-## 51: 2020-07-28 22:25:03
-## 52: 2020-07-28 22:25:03
-## 53: 2020-07-28 22:25:03
-## 54: 2020-07-28 22:25:03
-## 55: 2020-07-28 22:25:03
-## 56: 2020-07-28 22:25:03
-## 57: 2020-07-28 22:25:03
-## 58: 2020-07-28 22:25:03
-## 59: 2020-07-28 22:25:03
-## 60: 2020-07-28 22:25:03
-## 61: 2020-07-28 22:25:03
-## 62: 2020-07-28 22:25:03
-## 63: 2020-07-28 22:25:03
-## 64: 2020-07-28 22:25:03
-## 65: 2020-07-28 22:25:03
-## 66: 2020-07-28 22:25:03
-## 67: 2020-07-28 22:25:03
-## 68: 2020-07-28 22:25:03
-## 69: 2020-07-28 22:25:03
+##  1: 2020-08-17 10:17:06
+##  2: 2020-08-17 10:17:06
+##  3: 2020-08-17 10:17:06
+##  4: 2020-08-17 10:17:06
+##  5: 2020-08-17 10:17:06
+##  6: 2020-08-17 10:17:06
+##  7: 2020-08-17 10:17:06
+##  8: 2020-08-17 10:17:06
+##  9: 2020-08-17 10:17:06
+## 10: 2020-08-17 10:17:06
+## 11: 2020-08-17 10:17:06
+## 12: 2020-08-17 10:17:06
+## 13: 2020-08-17 10:17:06
+## 14: 2020-08-17 10:17:06
+## 15: 2020-08-17 10:17:06
+## 16: 2020-08-17 10:17:06
+## 17: 2020-08-17 10:17:06
+## 18: 2020-08-17 10:17:06
+## 19: 2020-08-17 10:17:06
+## 20: 2020-08-17 10:17:06
+## 21: 2020-08-17 10:17:06
+## 22: 2020-08-17 10:17:06
+## 23: 2020-08-17 10:17:06
+## 24: 2020-08-17 10:17:06
+## 25: 2020-08-17 10:17:06
+## 26: 2020-08-17 10:17:06
+## 27: 2020-08-17 10:17:06
+## 28: 2020-08-17 10:17:06
+## 29: 2020-08-17 10:17:06
+## 30: 2020-08-17 10:17:06
+## 31: 2020-08-17 10:17:06
+## 32: 2020-08-17 10:17:06
+## 33: 2020-08-17 10:17:06
+## 34: 2020-08-17 10:17:06
+## 35: 2020-08-17 10:17:06
+## 36: 2020-08-17 10:17:06
+## 37: 2020-08-17 10:17:06
+## 38: 2020-08-17 10:17:06
+## 39: 2020-08-17 10:17:06
+## 40: 2020-08-17 10:17:06
+## 41: 2020-08-17 10:17:06
+## 42: 2020-08-17 10:17:06
+## 43: 2020-08-17 10:17:06
+## 44: 2020-08-17 10:17:06
+## 45: 2020-08-17 10:17:06
+## 46: 2020-08-17 10:17:06
+## 47: 2020-08-17 10:17:06
+## 48: 2020-08-17 10:17:06
+## 49: 2020-08-17 10:17:06
+## 50: 2020-08-17 10:17:06
+## 51: 2020-08-17 10:17:06
+## 52: 2020-08-17 10:17:06
+## 53: 2020-08-17 10:17:06
+## 54: 2020-08-17 10:17:06
+## 55: 2020-08-17 10:17:06
+## 56: 2020-08-17 10:17:06
+## 57: 2020-08-17 10:17:06
+## 58: 2020-08-17 10:17:06
+## 59: 2020-08-17 10:17:06
+## 60: 2020-08-17 10:17:06
+## 61: 2020-08-17 10:17:06
+## 62: 2020-08-17 10:17:06
+## 63: 2020-08-17 10:17:06
+## 64: 2020-08-17 10:17:06
+## 65: 2020-08-17 10:17:06
+## 66: 2020-08-17 10:17:06
+## 67: 2020-08-17 10:17:06
+## 68: 2020-08-17 10:17:06
+## 69: 2020-08-17 10:17:06
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1"></a><span class="kw">clearCache</span>(tmpDir, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</span></code></pre></div>
 </div>
@@ -787,34 +787,34 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <pre><code>##      loaded cached result from previous rnorm call,</code></pre>
 <div class="sourceCode" id="cb62"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1"></a>wholeCache &lt;-<span class="st"> </span><span class="kw">showCache</span>(tmpDir)</span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  504 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  504 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 504 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 504 bytes</code></pre>
 <div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1"></a><span class="co"># keep only items accessed &quot;recently&quot; (i.e., only objectName:a)</span></span>
 <span id="cb66-2"><a href="#cb66-2"></a>onlyRecentlyAccessed &lt;-<span class="st"> </span><span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="kw">max</span>(wholeCache[tagKey <span class="op">==</span><span class="st"> &quot;accessed&quot;</span>]<span class="op">$</span>tagValue))</span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  252 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  252 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 252 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
 <div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1"></a><span class="co"># inverse join with 2 data.tables ... using: a[!b]</span></span>
 <span id="cb70-2"><a href="#cb70-2"></a><span class="co"># i.e., return all of wholeCache that was not recently accessed</span></span>
 <span id="cb70-3"><a href="#cb70-3"></a><span class="co">#   Note: the two different ways to access -- old way with &quot;artifact&quot; will be deprecated</span></span>
 <span id="cb70-4"><a href="#cb70-4"></a>toRemove &lt;-<span class="st"> </span><span class="kw">unique</span>(wholeCache[<span class="op">!</span>onlyRecentlyAccessed, <span class="dt">on =</span> <span class="st">&quot;cacheId&quot;</span>], <span class="dt">by =</span> <span class="st">&quot;cacheId&quot;</span>)<span class="op">$</span>cacheId</span>
 <span id="cb70-5"><a href="#cb70-5"></a><span class="kw">clearCache</span>(tmpDir, toRemove, <span class="dt">ask =</span> <span class="ot">FALSE</span>) <span class="co"># remove ones not recently accessed</span></span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  252 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  252 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 252 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
 <div class="sourceCode" id="cb74"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1"></a><span class="kw">showCache</span>(tmpDir) <span class="co"># still has more recently accessed</span></span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  252 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  252 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 252 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
 <pre><code>##              cacheId              tagKey              tagValue
 ##  1: f7bee22047b8d0c1          objectName                     a
 ##  2: f7bee22047b8d0c1            function                 rnorm
 ##  3: f7bee22047b8d0c1               class               numeric
 ##  4: f7bee22047b8d0c1         object.size                  1008
-##  5: f7bee22047b8d0c1            accessed   2020-07-28 22:25:04
+##  5: f7bee22047b8d0c1            accessed   2020-08-17 10:17:08
 ##  6: f7bee22047b8d0c1             inCloud                 FALSE
 ##  7: f7bee22047b8d0c1          resultHash                      
-##  8: f7bee22047b8d0c1   elapsedTimeDigest      0.002066851 secs
+##  8: f7bee22047b8d0c1   elapsedTimeDigest      0.002006054 secs
 ##  9: f7bee22047b8d0c1 elapsedTimeFirstRun                0 secs
 ## 10: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 11: f7bee22047b8d0c1      otherFunctions          process_file
@@ -828,33 +828,33 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 19: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 20: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
 ## 21: f7bee22047b8d0c1           file.size                   174
-## 22: f7bee22047b8d0c1            accessed   2020-07-28 22:25:05
-## 23: f7bee22047b8d0c1     elapsedTimeLoad       0.02205992 secs
+## 22: f7bee22047b8d0c1            accessed   2020-08-17 10:17:09
+## 23: f7bee22047b8d0c1     elapsedTimeLoad        0.0140729 secs
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-07-28 22:25:04
-##  2: 2020-07-28 22:25:04
-##  3: 2020-07-28 22:25:04
-##  4: 2020-07-28 22:25:04
-##  5: 2020-07-28 22:25:04
-##  6: 2020-07-28 22:25:04
-##  7: 2020-07-28 22:25:04
-##  8: 2020-07-28 22:25:04
-##  9: 2020-07-28 22:25:04
-## 10: 2020-07-28 22:25:04
-## 11: 2020-07-28 22:25:04
-## 12: 2020-07-28 22:25:04
-## 13: 2020-07-28 22:25:04
-## 14: 2020-07-28 22:25:04
-## 15: 2020-07-28 22:25:04
-## 16: 2020-07-28 22:25:04
-## 17: 2020-07-28 22:25:04
-## 18: 2020-07-28 22:25:04
-## 19: 2020-07-28 22:25:04
-## 20: 2020-07-28 22:25:04
-## 21: 2020-07-28 22:25:04
-## 22: 2020-07-28 22:25:05
-## 23: 2020-07-28 22:25:05
+##  1: 2020-08-17 10:17:08
+##  2: 2020-08-17 10:17:08
+##  3: 2020-08-17 10:17:08
+##  4: 2020-08-17 10:17:08
+##  5: 2020-08-17 10:17:08
+##  6: 2020-08-17 10:17:08
+##  7: 2020-08-17 10:17:08
+##  8: 2020-08-17 10:17:08
+##  9: 2020-08-17 10:17:08
+## 10: 2020-08-17 10:17:08
+## 11: 2020-08-17 10:17:08
+## 12: 2020-08-17 10:17:08
+## 13: 2020-08-17 10:17:08
+## 14: 2020-08-17 10:17:08
+## 15: 2020-08-17 10:17:08
+## 16: 2020-08-17 10:17:08
+## 17: 2020-08-17 10:17:08
+## 18: 2020-08-17 10:17:08
+## 19: 2020-08-17 10:17:08
+## 20: 2020-08-17 10:17:08
+## 21: 2020-08-17 10:17:08
+## 22: 2020-08-17 10:17:09
+## 23: 2020-08-17 10:17:09
 ##             createdDate</code></pre>
 </div>
 <div id="example-3-using-keepcache" class="section level2">
@@ -868,17 +868,17 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb82-4"><a href="#cb82-4"></a>oneDay &lt;-<span class="st"> </span><span class="dv">60</span> <span class="op">*</span><span class="st"> </span><span class="dv">60</span> <span class="op">*</span><span class="st"> </span><span class="dv">24</span></span>
 <span id="cb82-5"><a href="#cb82-5"></a><span class="kw">keepCache</span>(tmpDir, <span class="dt">after =</span> <span class="kw">Sys.time</span>() <span class="op">-</span><span class="st"> </span>oneDay, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  504 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  504 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 504 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 504 bytes</code></pre>
 <pre><code>##              cacheId              tagKey              tagValue
 ##  1: f7bee22047b8d0c1          objectName                     a
 ##  2: f7bee22047b8d0c1            function                 rnorm
 ##  3: f7bee22047b8d0c1               class               numeric
 ##  4: f7bee22047b8d0c1         object.size                  1008
-##  5: f7bee22047b8d0c1            accessed   2020-07-28 22:25:04
+##  5: f7bee22047b8d0c1            accessed   2020-08-17 10:17:08
 ##  6: f7bee22047b8d0c1             inCloud                 FALSE
 ##  7: f7bee22047b8d0c1          resultHash                      
-##  8: f7bee22047b8d0c1   elapsedTimeDigest      0.002066851 secs
+##  8: f7bee22047b8d0c1   elapsedTimeDigest      0.002006054 secs
 ##  9: f7bee22047b8d0c1 elapsedTimeFirstRun                0 secs
 ## 10: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 11: f7bee22047b8d0c1      otherFunctions          process_file
@@ -892,17 +892,17 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 19: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 20: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
 ## 21: f7bee22047b8d0c1           file.size                   174
-## 22: f7bee22047b8d0c1            accessed   2020-07-28 22:25:05
-## 23: f7bee22047b8d0c1     elapsedTimeLoad       0.01604104 secs
-## 24: f7bee22047b8d0c1            accessed   2020-07-28 22:25:06
+## 22: f7bee22047b8d0c1            accessed   2020-08-17 10:17:09
+## 23: f7bee22047b8d0c1     elapsedTimeLoad       0.01102901 secs
+## 24: f7bee22047b8d0c1            accessed   2020-08-17 10:17:09
 ## 25: 3aef38d1fc02aee5          objectName                     b
 ## 26: 3aef38d1fc02aee5            function                 runif
 ## 27: 3aef38d1fc02aee5               class               numeric
 ## 28: 3aef38d1fc02aee5         object.size                  1008
-## 29: 3aef38d1fc02aee5            accessed   2020-07-28 22:25:06
+## 29: 3aef38d1fc02aee5            accessed   2020-08-17 10:17:09
 ## 30: 3aef38d1fc02aee5             inCloud                 FALSE
 ## 31: 3aef38d1fc02aee5          resultHash                      
-## 32: 3aef38d1fc02aee5   elapsedTimeDigest      0.002850056 secs
+## 32: 3aef38d1fc02aee5   elapsedTimeDigest      0.002005816 secs
 ## 33: 3aef38d1fc02aee5 elapsedTimeFirstRun                0 secs
 ## 34: 3aef38d1fc02aee5      otherFunctions      vweave_rmarkdown
 ## 35: 3aef38d1fc02aee5      otherFunctions          process_file
@@ -915,69 +915,69 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 42: 3aef38d1fc02aee5      otherFunctions                handle
 ## 43: 3aef38d1fc02aee5           preDigest    n:7eef4eae85fd9229
 ## 44: 3aef38d1fc02aee5           preDigest .FUN:881ec847b7161f3c
-## 45: 3aef38d1fc02aee5           file.size                   168
+## 45: 3aef38d1fc02aee5           file.size                   166
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-07-28 22:25:04
-##  2: 2020-07-28 22:25:04
-##  3: 2020-07-28 22:25:04
-##  4: 2020-07-28 22:25:04
-##  5: 2020-07-28 22:25:04
-##  6: 2020-07-28 22:25:04
-##  7: 2020-07-28 22:25:04
-##  8: 2020-07-28 22:25:04
-##  9: 2020-07-28 22:25:04
-## 10: 2020-07-28 22:25:04
-## 11: 2020-07-28 22:25:04
-## 12: 2020-07-28 22:25:04
-## 13: 2020-07-28 22:25:04
-## 14: 2020-07-28 22:25:04
-## 15: 2020-07-28 22:25:04
-## 16: 2020-07-28 22:25:04
-## 17: 2020-07-28 22:25:04
-## 18: 2020-07-28 22:25:04
-## 19: 2020-07-28 22:25:04
-## 20: 2020-07-28 22:25:04
-## 21: 2020-07-28 22:25:04
-## 22: 2020-07-28 22:25:05
-## 23: 2020-07-28 22:25:05
-## 24: 2020-07-28 22:25:06
-## 25: 2020-07-28 22:25:06
-## 26: 2020-07-28 22:25:06
-## 27: 2020-07-28 22:25:06
-## 28: 2020-07-28 22:25:06
-## 29: 2020-07-28 22:25:06
-## 30: 2020-07-28 22:25:06
-## 31: 2020-07-28 22:25:06
-## 32: 2020-07-28 22:25:06
-## 33: 2020-07-28 22:25:06
-## 34: 2020-07-28 22:25:06
-## 35: 2020-07-28 22:25:06
-## 36: 2020-07-28 22:25:06
-## 37: 2020-07-28 22:25:06
-## 38: 2020-07-28 22:25:06
-## 39: 2020-07-28 22:25:06
-## 40: 2020-07-28 22:25:06
-## 41: 2020-07-28 22:25:06
-## 42: 2020-07-28 22:25:06
-## 43: 2020-07-28 22:25:06
-## 44: 2020-07-28 22:25:06
-## 45: 2020-07-28 22:25:06
+##  1: 2020-08-17 10:17:08
+##  2: 2020-08-17 10:17:08
+##  3: 2020-08-17 10:17:08
+##  4: 2020-08-17 10:17:08
+##  5: 2020-08-17 10:17:08
+##  6: 2020-08-17 10:17:08
+##  7: 2020-08-17 10:17:08
+##  8: 2020-08-17 10:17:08
+##  9: 2020-08-17 10:17:08
+## 10: 2020-08-17 10:17:08
+## 11: 2020-08-17 10:17:08
+## 12: 2020-08-17 10:17:08
+## 13: 2020-08-17 10:17:08
+## 14: 2020-08-17 10:17:08
+## 15: 2020-08-17 10:17:08
+## 16: 2020-08-17 10:17:08
+## 17: 2020-08-17 10:17:08
+## 18: 2020-08-17 10:17:08
+## 19: 2020-08-17 10:17:08
+## 20: 2020-08-17 10:17:08
+## 21: 2020-08-17 10:17:08
+## 22: 2020-08-17 10:17:09
+## 23: 2020-08-17 10:17:09
+## 24: 2020-08-17 10:17:09
+## 25: 2020-08-17 10:17:09
+## 26: 2020-08-17 10:17:09
+## 27: 2020-08-17 10:17:09
+## 28: 2020-08-17 10:17:09
+## 29: 2020-08-17 10:17:09
+## 30: 2020-08-17 10:17:09
+## 31: 2020-08-17 10:17:09
+## 32: 2020-08-17 10:17:09
+## 33: 2020-08-17 10:17:09
+## 34: 2020-08-17 10:17:09
+## 35: 2020-08-17 10:17:09
+## 36: 2020-08-17 10:17:09
+## 37: 2020-08-17 10:17:09
+## 38: 2020-08-17 10:17:09
+## 39: 2020-08-17 10:17:09
+## 40: 2020-08-17 10:17:09
+## 41: 2020-08-17 10:17:09
+## 42: 2020-08-17 10:17:09
+## 43: 2020-08-17 10:17:09
+## 44: 2020-08-17 10:17:09
+## 45: 2020-08-17 10:17:09
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb87"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb87-1"><a href="#cb87-1"></a><span class="co"># Keep all Cache items created with an rnorm() call</span></span>
 <span id="cb87-2"><a href="#cb87-2"></a><span class="kw">keepCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;rnorm&quot;</span>, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  252 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  252 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 252 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
 <pre><code>##              cacheId              tagKey              tagValue
 ##  1: f7bee22047b8d0c1          objectName                     a
 ##  2: f7bee22047b8d0c1            function                 rnorm
 ##  3: f7bee22047b8d0c1               class               numeric
 ##  4: f7bee22047b8d0c1         object.size                  1008
-##  5: f7bee22047b8d0c1            accessed   2020-07-28 22:25:04
+##  5: f7bee22047b8d0c1            accessed   2020-08-17 10:17:08
 ##  6: f7bee22047b8d0c1             inCloud                 FALSE
 ##  7: f7bee22047b8d0c1          resultHash                      
-##  8: f7bee22047b8d0c1   elapsedTimeDigest      0.002066851 secs
+##  8: f7bee22047b8d0c1   elapsedTimeDigest      0.002006054 secs
 ##  9: f7bee22047b8d0c1 elapsedTimeFirstRun                0 secs
 ## 10: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 11: f7bee22047b8d0c1      otherFunctions          process_file
@@ -991,45 +991,45 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 19: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 20: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
 ## 21: f7bee22047b8d0c1           file.size                   174
-## 22: f7bee22047b8d0c1            accessed   2020-07-28 22:25:05
-## 23: f7bee22047b8d0c1     elapsedTimeLoad       0.01604104 secs
-## 24: f7bee22047b8d0c1            accessed   2020-07-28 22:25:06
+## 22: f7bee22047b8d0c1            accessed   2020-08-17 10:17:09
+## 23: f7bee22047b8d0c1     elapsedTimeLoad       0.01102901 secs
+## 24: f7bee22047b8d0c1            accessed   2020-08-17 10:17:09
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-07-28 22:25:04
-##  2: 2020-07-28 22:25:04
-##  3: 2020-07-28 22:25:04
-##  4: 2020-07-28 22:25:04
-##  5: 2020-07-28 22:25:04
-##  6: 2020-07-28 22:25:04
-##  7: 2020-07-28 22:25:04
-##  8: 2020-07-28 22:25:04
-##  9: 2020-07-28 22:25:04
-## 10: 2020-07-28 22:25:04
-## 11: 2020-07-28 22:25:04
-## 12: 2020-07-28 22:25:04
-## 13: 2020-07-28 22:25:04
-## 14: 2020-07-28 22:25:04
-## 15: 2020-07-28 22:25:04
-## 16: 2020-07-28 22:25:04
-## 17: 2020-07-28 22:25:04
-## 18: 2020-07-28 22:25:04
-## 19: 2020-07-28 22:25:04
-## 20: 2020-07-28 22:25:04
-## 21: 2020-07-28 22:25:04
-## 22: 2020-07-28 22:25:05
-## 23: 2020-07-28 22:25:05
-## 24: 2020-07-28 22:25:06
+##  1: 2020-08-17 10:17:08
+##  2: 2020-08-17 10:17:08
+##  3: 2020-08-17 10:17:08
+##  4: 2020-08-17 10:17:08
+##  5: 2020-08-17 10:17:08
+##  6: 2020-08-17 10:17:08
+##  7: 2020-08-17 10:17:08
+##  8: 2020-08-17 10:17:08
+##  9: 2020-08-17 10:17:08
+## 10: 2020-08-17 10:17:08
+## 11: 2020-08-17 10:17:08
+## 12: 2020-08-17 10:17:08
+## 13: 2020-08-17 10:17:08
+## 14: 2020-08-17 10:17:08
+## 15: 2020-08-17 10:17:08
+## 16: 2020-08-17 10:17:08
+## 17: 2020-08-17 10:17:08
+## 18: 2020-08-17 10:17:08
+## 19: 2020-08-17 10:17:08
+## 20: 2020-08-17 10:17:08
+## 21: 2020-08-17 10:17:08
+## 22: 2020-08-17 10:17:09
+## 23: 2020-08-17 10:17:09
+## 24: 2020-08-17 10:17:09
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb92"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb92-1"><a href="#cb92-1"></a><span class="co"># Remove all Cache items that happened within a rnorm() call</span></span>
 <span id="cb92-2"><a href="#cb92-2"></a><span class="kw">clearCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;rnorm&quot;</span>, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  252 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  252 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 252 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
 <div class="sourceCode" id="cb96"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb96-1"><a href="#cb96-1"></a><span class="kw">showCache</span>(tmpDir) <span class="co">## empty</span></span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  0 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  0 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 0 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 0 bytes</code></pre>
 <pre><code>## Empty data.table (0 rows and 4 cols): cacheId,tagKey,tagValue,createdDate</code></pre>
 <div class="sourceCode" id="cb101"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb101-1"><a href="#cb101-1"></a><span class="co"># Also, can set a time before caching happens and remove based on this</span></span>
 <span id="cb101-2"><a href="#cb101-2"></a><span class="co">#  --&gt; a useful, simple way to control Cache</span></span>
@@ -1039,17 +1039,17 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb101-6"><a href="#cb101-6"></a>ranNumsB &lt;-<span class="st"> </span><span class="kw">Cache</span>(rnorm, <span class="dv">5</span>, <span class="dt">cacheRepo =</span> tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;objectName:b&quot;</span>)</span>
 <span id="cb101-7"><a href="#cb101-7"></a><span class="kw">keepCache</span>(tmpDir, <span class="dt">after =</span> startTime, <span class="dt">ask =</span> <span class="ot">FALSE</span>) <span class="co"># keep only those newer than startTime</span></span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  256 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  256 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 256 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 256 bytes</code></pre>
 <pre><code>##              cacheId              tagKey              tagValue
 ##  1: 142b4176fe87d51d          objectName                     b
 ##  2: 142b4176fe87d51d            function                 rnorm
 ##  3: 142b4176fe87d51d               class               numeric
 ##  4: 142b4176fe87d51d         object.size                  1024
-##  5: 142b4176fe87d51d            accessed   2020-07-28 22:25:07
+##  5: 142b4176fe87d51d            accessed   2020-08-17 10:17:10
 ##  6: 142b4176fe87d51d             inCloud                 FALSE
 ##  7: 142b4176fe87d51d          resultHash                      
-##  8: 142b4176fe87d51d   elapsedTimeDigest      0.003008127 secs
+##  8: 142b4176fe87d51d   elapsedTimeDigest      0.001003027 secs
 ##  9: 142b4176fe87d51d elapsedTimeFirstRun                0 secs
 ## 10: 142b4176fe87d51d      otherFunctions      vweave_rmarkdown
 ## 11: 142b4176fe87d51d      otherFunctions          process_file
@@ -1065,27 +1065,27 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 21: 142b4176fe87d51d           file.size                   183
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-07-28 22:25:07
-##  2: 2020-07-28 22:25:07
-##  3: 2020-07-28 22:25:07
-##  4: 2020-07-28 22:25:07
-##  5: 2020-07-28 22:25:07
-##  6: 2020-07-28 22:25:07
-##  7: 2020-07-28 22:25:07
-##  8: 2020-07-28 22:25:07
-##  9: 2020-07-28 22:25:07
-## 10: 2020-07-28 22:25:07
-## 11: 2020-07-28 22:25:07
-## 12: 2020-07-28 22:25:07
-## 13: 2020-07-28 22:25:07
-## 14: 2020-07-28 22:25:07
-## 15: 2020-07-28 22:25:07
-## 16: 2020-07-28 22:25:07
-## 17: 2020-07-28 22:25:07
-## 18: 2020-07-28 22:25:07
-## 19: 2020-07-28 22:25:07
-## 20: 2020-07-28 22:25:07
-## 21: 2020-07-28 22:25:07
+##  1: 2020-08-17 10:17:10
+##  2: 2020-08-17 10:17:10
+##  3: 2020-08-17 10:17:10
+##  4: 2020-08-17 10:17:10
+##  5: 2020-08-17 10:17:10
+##  6: 2020-08-17 10:17:10
+##  7: 2020-08-17 10:17:10
+##  8: 2020-08-17 10:17:10
+##  9: 2020-08-17 10:17:10
+## 10: 2020-08-17 10:17:10
+## 11: 2020-08-17 10:17:10
+## 12: 2020-08-17 10:17:10
+## 13: 2020-08-17 10:17:10
+## 14: 2020-08-17 10:17:10
+## 15: 2020-08-17 10:17:10
+## 16: 2020-08-17 10:17:10
+## 17: 2020-08-17 10:17:10
+## 18: 2020-08-17 10:17:10
+## 19: 2020-08-17 10:17:10
+## 20: 2020-08-17 10:17:10
+## 21: 2020-08-17 10:17:10
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb106"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb106-1"><a href="#cb106-1"></a><span class="kw">clearCache</span>(tmpDir, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</span></code></pre></div>
 </div>
@@ -1098,17 +1098,17 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb107-5"><a href="#cb107-5"></a><span class="co"># show all objects (runif and rnorm in this case)</span></span>
 <span id="cb107-6"><a href="#cb107-6"></a><span class="kw">showCache</span>(tmpDir)</span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  504 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  504 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 504 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 504 bytes</code></pre>
 <pre><code>##              cacheId              tagKey              tagValue
 ##  1: 3aef38d1fc02aee5          objectName                     a
 ##  2: 3aef38d1fc02aee5            function                 runif
 ##  3: 3aef38d1fc02aee5               class               numeric
 ##  4: 3aef38d1fc02aee5         object.size                  1008
-##  5: 3aef38d1fc02aee5            accessed   2020-07-28 22:25:08
+##  5: 3aef38d1fc02aee5            accessed   2020-08-17 10:17:11
 ##  6: 3aef38d1fc02aee5             inCloud                 FALSE
 ##  7: 3aef38d1fc02aee5          resultHash                      
-##  8: 3aef38d1fc02aee5   elapsedTimeDigest      0.002007008 secs
+##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0009989738 secs
 ##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun                0 secs
 ## 10: 3aef38d1fc02aee5      otherFunctions      vweave_rmarkdown
 ## 11: 3aef38d1fc02aee5      otherFunctions          process_file
@@ -1121,15 +1121,15 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 18: 3aef38d1fc02aee5      otherFunctions                handle
 ## 19: 3aef38d1fc02aee5           preDigest    n:7eef4eae85fd9229
 ## 20: 3aef38d1fc02aee5           preDigest .FUN:881ec847b7161f3c
-## 21: 3aef38d1fc02aee5           file.size                   167
+## 21: 3aef38d1fc02aee5           file.size                   169
 ## 22: f7bee22047b8d0c1          objectName                     b
 ## 23: f7bee22047b8d0c1            function                 rnorm
 ## 24: f7bee22047b8d0c1               class               numeric
 ## 25: f7bee22047b8d0c1         object.size                  1008
-## 26: f7bee22047b8d0c1            accessed   2020-07-28 22:25:08
+## 26: f7bee22047b8d0c1            accessed   2020-08-17 10:17:11
 ## 27: f7bee22047b8d0c1             inCloud                 FALSE
 ## 28: f7bee22047b8d0c1          resultHash                      
-## 29: f7bee22047b8d0c1   elapsedTimeDigest      0.002909899 secs
+## 29: f7bee22047b8d0c1   elapsedTimeDigest      0.002005816 secs
 ## 30: f7bee22047b8d0c1 elapsedTimeFirstRun                0 secs
 ## 31: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 32: f7bee22047b8d0c1      otherFunctions          process_file
@@ -1142,73 +1142,73 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 39: f7bee22047b8d0c1      otherFunctions                handle
 ## 40: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 41: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
-## 42: f7bee22047b8d0c1           file.size                   174
+## 42: f7bee22047b8d0c1           file.size                   173
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-07-28 22:25:08
-##  2: 2020-07-28 22:25:08
-##  3: 2020-07-28 22:25:08
-##  4: 2020-07-28 22:25:08
-##  5: 2020-07-28 22:25:08
-##  6: 2020-07-28 22:25:08
-##  7: 2020-07-28 22:25:08
-##  8: 2020-07-28 22:25:08
-##  9: 2020-07-28 22:25:08
-## 10: 2020-07-28 22:25:08
-## 11: 2020-07-28 22:25:08
-## 12: 2020-07-28 22:25:08
-## 13: 2020-07-28 22:25:08
-## 14: 2020-07-28 22:25:08
-## 15: 2020-07-28 22:25:08
-## 16: 2020-07-28 22:25:08
-## 17: 2020-07-28 22:25:08
-## 18: 2020-07-28 22:25:08
-## 19: 2020-07-28 22:25:08
-## 20: 2020-07-28 22:25:08
-## 21: 2020-07-28 22:25:08
-## 22: 2020-07-28 22:25:08
-## 23: 2020-07-28 22:25:08
-## 24: 2020-07-28 22:25:08
-## 25: 2020-07-28 22:25:08
-## 26: 2020-07-28 22:25:08
-## 27: 2020-07-28 22:25:08
-## 28: 2020-07-28 22:25:08
-## 29: 2020-07-28 22:25:08
-## 30: 2020-07-28 22:25:08
-## 31: 2020-07-28 22:25:08
-## 32: 2020-07-28 22:25:08
-## 33: 2020-07-28 22:25:08
-## 34: 2020-07-28 22:25:08
-## 35: 2020-07-28 22:25:08
-## 36: 2020-07-28 22:25:08
-## 37: 2020-07-28 22:25:08
-## 38: 2020-07-28 22:25:08
-## 39: 2020-07-28 22:25:08
-## 40: 2020-07-28 22:25:08
-## 41: 2020-07-28 22:25:08
-## 42: 2020-07-28 22:25:08
+##  1: 2020-08-17 10:17:11
+##  2: 2020-08-17 10:17:11
+##  3: 2020-08-17 10:17:11
+##  4: 2020-08-17 10:17:11
+##  5: 2020-08-17 10:17:11
+##  6: 2020-08-17 10:17:11
+##  7: 2020-08-17 10:17:11
+##  8: 2020-08-17 10:17:11
+##  9: 2020-08-17 10:17:11
+## 10: 2020-08-17 10:17:11
+## 11: 2020-08-17 10:17:11
+## 12: 2020-08-17 10:17:11
+## 13: 2020-08-17 10:17:11
+## 14: 2020-08-17 10:17:11
+## 15: 2020-08-17 10:17:11
+## 16: 2020-08-17 10:17:11
+## 17: 2020-08-17 10:17:11
+## 18: 2020-08-17 10:17:11
+## 19: 2020-08-17 10:17:11
+## 20: 2020-08-17 10:17:11
+## 21: 2020-08-17 10:17:11
+## 22: 2020-08-17 10:17:11
+## 23: 2020-08-17 10:17:11
+## 24: 2020-08-17 10:17:11
+## 25: 2020-08-17 10:17:11
+## 26: 2020-08-17 10:17:11
+## 27: 2020-08-17 10:17:11
+## 28: 2020-08-17 10:17:11
+## 29: 2020-08-17 10:17:11
+## 30: 2020-08-17 10:17:11
+## 31: 2020-08-17 10:17:11
+## 32: 2020-08-17 10:17:11
+## 33: 2020-08-17 10:17:11
+## 34: 2020-08-17 10:17:11
+## 35: 2020-08-17 10:17:11
+## 36: 2020-08-17 10:17:11
+## 37: 2020-08-17 10:17:11
+## 38: 2020-08-17 10:17:11
+## 39: 2020-08-17 10:17:11
+## 40: 2020-08-17 10:17:11
+## 41: 2020-08-17 10:17:11
+## 42: 2020-08-17 10:17:11
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb112"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb112-1"><a href="#cb112-1"></a><span class="co"># show objects that are both runif and rnorm</span></span>
 <span id="cb112-2"><a href="#cb112-2"></a><span class="co"># (i.e., none in this case, because objecs are either or, not both)</span></span>
 <span id="cb112-3"><a href="#cb112-3"></a><span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="kw">c</span>(<span class="st">&quot;runif&quot;</span>, <span class="st">&quot;rnorm&quot;</span>)) <span class="co">## empty</span></span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  0 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  0 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 0 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 0 bytes</code></pre>
 <pre><code>## Empty data.table (0 rows and 4 cols): cacheId,tagKey,tagValue,createdDate</code></pre>
 <div class="sourceCode" id="cb117"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb117-1"><a href="#cb117-1"></a><span class="co"># show objects that are either runif or rnorm (&quot;or&quot; search)</span></span>
 <span id="cb117-2"><a href="#cb117-2"></a><span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;runif|rnorm&quot;</span>)</span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  504 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  504 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 504 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 504 bytes</code></pre>
 <pre><code>##              cacheId              tagKey              tagValue
 ##  1: 3aef38d1fc02aee5          objectName                     a
 ##  2: 3aef38d1fc02aee5            function                 runif
 ##  3: 3aef38d1fc02aee5               class               numeric
 ##  4: 3aef38d1fc02aee5         object.size                  1008
-##  5: 3aef38d1fc02aee5            accessed   2020-07-28 22:25:08
+##  5: 3aef38d1fc02aee5            accessed   2020-08-17 10:17:11
 ##  6: 3aef38d1fc02aee5             inCloud                 FALSE
 ##  7: 3aef38d1fc02aee5          resultHash                      
-##  8: 3aef38d1fc02aee5   elapsedTimeDigest      0.002007008 secs
+##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0009989738 secs
 ##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun                0 secs
 ## 10: 3aef38d1fc02aee5      otherFunctions      vweave_rmarkdown
 ## 11: 3aef38d1fc02aee5      otherFunctions          process_file
@@ -1221,15 +1221,15 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 18: 3aef38d1fc02aee5      otherFunctions                handle
 ## 19: 3aef38d1fc02aee5           preDigest    n:7eef4eae85fd9229
 ## 20: 3aef38d1fc02aee5           preDigest .FUN:881ec847b7161f3c
-## 21: 3aef38d1fc02aee5           file.size                   167
+## 21: 3aef38d1fc02aee5           file.size                   169
 ## 22: f7bee22047b8d0c1          objectName                     b
 ## 23: f7bee22047b8d0c1            function                 rnorm
 ## 24: f7bee22047b8d0c1               class               numeric
 ## 25: f7bee22047b8d0c1         object.size                  1008
-## 26: f7bee22047b8d0c1            accessed   2020-07-28 22:25:08
+## 26: f7bee22047b8d0c1            accessed   2020-08-17 10:17:11
 ## 27: f7bee22047b8d0c1             inCloud                 FALSE
 ## 28: f7bee22047b8d0c1          resultHash                      
-## 29: f7bee22047b8d0c1   elapsedTimeDigest      0.002909899 secs
+## 29: f7bee22047b8d0c1   elapsedTimeDigest      0.002005816 secs
 ## 30: f7bee22047b8d0c1 elapsedTimeFirstRun                0 secs
 ## 31: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 32: f7bee22047b8d0c1      otherFunctions          process_file
@@ -1242,66 +1242,66 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 39: f7bee22047b8d0c1      otherFunctions                handle
 ## 40: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 41: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
-## 42: f7bee22047b8d0c1           file.size                   174
+## 42: f7bee22047b8d0c1           file.size                   173
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-07-28 22:25:08
-##  2: 2020-07-28 22:25:08
-##  3: 2020-07-28 22:25:08
-##  4: 2020-07-28 22:25:08
-##  5: 2020-07-28 22:25:08
-##  6: 2020-07-28 22:25:08
-##  7: 2020-07-28 22:25:08
-##  8: 2020-07-28 22:25:08
-##  9: 2020-07-28 22:25:08
-## 10: 2020-07-28 22:25:08
-## 11: 2020-07-28 22:25:08
-## 12: 2020-07-28 22:25:08
-## 13: 2020-07-28 22:25:08
-## 14: 2020-07-28 22:25:08
-## 15: 2020-07-28 22:25:08
-## 16: 2020-07-28 22:25:08
-## 17: 2020-07-28 22:25:08
-## 18: 2020-07-28 22:25:08
-## 19: 2020-07-28 22:25:08
-## 20: 2020-07-28 22:25:08
-## 21: 2020-07-28 22:25:08
-## 22: 2020-07-28 22:25:08
-## 23: 2020-07-28 22:25:08
-## 24: 2020-07-28 22:25:08
-## 25: 2020-07-28 22:25:08
-## 26: 2020-07-28 22:25:08
-## 27: 2020-07-28 22:25:08
-## 28: 2020-07-28 22:25:08
-## 29: 2020-07-28 22:25:08
-## 30: 2020-07-28 22:25:08
-## 31: 2020-07-28 22:25:08
-## 32: 2020-07-28 22:25:08
-## 33: 2020-07-28 22:25:08
-## 34: 2020-07-28 22:25:08
-## 35: 2020-07-28 22:25:08
-## 36: 2020-07-28 22:25:08
-## 37: 2020-07-28 22:25:08
-## 38: 2020-07-28 22:25:08
-## 39: 2020-07-28 22:25:08
-## 40: 2020-07-28 22:25:08
-## 41: 2020-07-28 22:25:08
-## 42: 2020-07-28 22:25:08
+##  1: 2020-08-17 10:17:11
+##  2: 2020-08-17 10:17:11
+##  3: 2020-08-17 10:17:11
+##  4: 2020-08-17 10:17:11
+##  5: 2020-08-17 10:17:11
+##  6: 2020-08-17 10:17:11
+##  7: 2020-08-17 10:17:11
+##  8: 2020-08-17 10:17:11
+##  9: 2020-08-17 10:17:11
+## 10: 2020-08-17 10:17:11
+## 11: 2020-08-17 10:17:11
+## 12: 2020-08-17 10:17:11
+## 13: 2020-08-17 10:17:11
+## 14: 2020-08-17 10:17:11
+## 15: 2020-08-17 10:17:11
+## 16: 2020-08-17 10:17:11
+## 17: 2020-08-17 10:17:11
+## 18: 2020-08-17 10:17:11
+## 19: 2020-08-17 10:17:11
+## 20: 2020-08-17 10:17:11
+## 21: 2020-08-17 10:17:11
+## 22: 2020-08-17 10:17:11
+## 23: 2020-08-17 10:17:11
+## 24: 2020-08-17 10:17:11
+## 25: 2020-08-17 10:17:11
+## 26: 2020-08-17 10:17:11
+## 27: 2020-08-17 10:17:11
+## 28: 2020-08-17 10:17:11
+## 29: 2020-08-17 10:17:11
+## 30: 2020-08-17 10:17:11
+## 31: 2020-08-17 10:17:11
+## 32: 2020-08-17 10:17:11
+## 33: 2020-08-17 10:17:11
+## 34: 2020-08-17 10:17:11
+## 35: 2020-08-17 10:17:11
+## 36: 2020-08-17 10:17:11
+## 37: 2020-08-17 10:17:11
+## 38: 2020-08-17 10:17:11
+## 39: 2020-08-17 10:17:11
+## 40: 2020-08-17 10:17:11
+## 41: 2020-08-17 10:17:11
+## 42: 2020-08-17 10:17:11
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb122"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb122-1"><a href="#cb122-1"></a><span class="co"># keep only objects that are either runif or rnorm (&quot;or&quot; search)</span></span>
 <span id="cb122-2"><a href="#cb122-2"></a><span class="kw">keepCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;runif|rnorm&quot;</span>, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  504 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  504 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 504 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 504 bytes</code></pre>
 <pre><code>##              cacheId              tagKey              tagValue
 ##  1: 3aef38d1fc02aee5          objectName                     a
 ##  2: 3aef38d1fc02aee5            function                 runif
 ##  3: 3aef38d1fc02aee5               class               numeric
 ##  4: 3aef38d1fc02aee5         object.size                  1008
-##  5: 3aef38d1fc02aee5            accessed   2020-07-28 22:25:08
+##  5: 3aef38d1fc02aee5            accessed   2020-08-17 10:17:11
 ##  6: 3aef38d1fc02aee5             inCloud                 FALSE
 ##  7: 3aef38d1fc02aee5          resultHash                      
-##  8: 3aef38d1fc02aee5   elapsedTimeDigest      0.002007008 secs
+##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0009989738 secs
 ##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun                0 secs
 ## 10: 3aef38d1fc02aee5      otherFunctions      vweave_rmarkdown
 ## 11: 3aef38d1fc02aee5      otherFunctions          process_file
@@ -1314,15 +1314,15 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 18: 3aef38d1fc02aee5      otherFunctions                handle
 ## 19: 3aef38d1fc02aee5           preDigest    n:7eef4eae85fd9229
 ## 20: 3aef38d1fc02aee5           preDigest .FUN:881ec847b7161f3c
-## 21: 3aef38d1fc02aee5           file.size                   167
+## 21: 3aef38d1fc02aee5           file.size                   169
 ## 22: f7bee22047b8d0c1          objectName                     b
 ## 23: f7bee22047b8d0c1            function                 rnorm
 ## 24: f7bee22047b8d0c1               class               numeric
 ## 25: f7bee22047b8d0c1         object.size                  1008
-## 26: f7bee22047b8d0c1            accessed   2020-07-28 22:25:08
+## 26: f7bee22047b8d0c1            accessed   2020-08-17 10:17:11
 ## 27: f7bee22047b8d0c1             inCloud                 FALSE
 ## 28: f7bee22047b8d0c1          resultHash                      
-## 29: f7bee22047b8d0c1   elapsedTimeDigest      0.002909899 secs
+## 29: f7bee22047b8d0c1   elapsedTimeDigest      0.002005816 secs
 ## 30: f7bee22047b8d0c1 elapsedTimeFirstRun                0 secs
 ## 31: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 32: f7bee22047b8d0c1      otherFunctions          process_file
@@ -1335,51 +1335,51 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 39: f7bee22047b8d0c1      otherFunctions                handle
 ## 40: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 41: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
-## 42: f7bee22047b8d0c1           file.size                   174
+## 42: f7bee22047b8d0c1           file.size                   173
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-07-28 22:25:08
-##  2: 2020-07-28 22:25:08
-##  3: 2020-07-28 22:25:08
-##  4: 2020-07-28 22:25:08
-##  5: 2020-07-28 22:25:08
-##  6: 2020-07-28 22:25:08
-##  7: 2020-07-28 22:25:08
-##  8: 2020-07-28 22:25:08
-##  9: 2020-07-28 22:25:08
-## 10: 2020-07-28 22:25:08
-## 11: 2020-07-28 22:25:08
-## 12: 2020-07-28 22:25:08
-## 13: 2020-07-28 22:25:08
-## 14: 2020-07-28 22:25:08
-## 15: 2020-07-28 22:25:08
-## 16: 2020-07-28 22:25:08
-## 17: 2020-07-28 22:25:08
-## 18: 2020-07-28 22:25:08
-## 19: 2020-07-28 22:25:08
-## 20: 2020-07-28 22:25:08
-## 21: 2020-07-28 22:25:08
-## 22: 2020-07-28 22:25:08
-## 23: 2020-07-28 22:25:08
-## 24: 2020-07-28 22:25:08
-## 25: 2020-07-28 22:25:08
-## 26: 2020-07-28 22:25:08
-## 27: 2020-07-28 22:25:08
-## 28: 2020-07-28 22:25:08
-## 29: 2020-07-28 22:25:08
-## 30: 2020-07-28 22:25:08
-## 31: 2020-07-28 22:25:08
-## 32: 2020-07-28 22:25:08
-## 33: 2020-07-28 22:25:08
-## 34: 2020-07-28 22:25:08
-## 35: 2020-07-28 22:25:08
-## 36: 2020-07-28 22:25:08
-## 37: 2020-07-28 22:25:08
-## 38: 2020-07-28 22:25:08
-## 39: 2020-07-28 22:25:08
-## 40: 2020-07-28 22:25:08
-## 41: 2020-07-28 22:25:08
-## 42: 2020-07-28 22:25:08
+##  1: 2020-08-17 10:17:11
+##  2: 2020-08-17 10:17:11
+##  3: 2020-08-17 10:17:11
+##  4: 2020-08-17 10:17:11
+##  5: 2020-08-17 10:17:11
+##  6: 2020-08-17 10:17:11
+##  7: 2020-08-17 10:17:11
+##  8: 2020-08-17 10:17:11
+##  9: 2020-08-17 10:17:11
+## 10: 2020-08-17 10:17:11
+## 11: 2020-08-17 10:17:11
+## 12: 2020-08-17 10:17:11
+## 13: 2020-08-17 10:17:11
+## 14: 2020-08-17 10:17:11
+## 15: 2020-08-17 10:17:11
+## 16: 2020-08-17 10:17:11
+## 17: 2020-08-17 10:17:11
+## 18: 2020-08-17 10:17:11
+## 19: 2020-08-17 10:17:11
+## 20: 2020-08-17 10:17:11
+## 21: 2020-08-17 10:17:11
+## 22: 2020-08-17 10:17:11
+## 23: 2020-08-17 10:17:11
+## 24: 2020-08-17 10:17:11
+## 25: 2020-08-17 10:17:11
+## 26: 2020-08-17 10:17:11
+## 27: 2020-08-17 10:17:11
+## 28: 2020-08-17 10:17:11
+## 29: 2020-08-17 10:17:11
+## 30: 2020-08-17 10:17:11
+## 31: 2020-08-17 10:17:11
+## 32: 2020-08-17 10:17:11
+## 33: 2020-08-17 10:17:11
+## 34: 2020-08-17 10:17:11
+## 35: 2020-08-17 10:17:11
+## 36: 2020-08-17 10:17:11
+## 37: 2020-08-17 10:17:11
+## 38: 2020-08-17 10:17:11
+## 39: 2020-08-17 10:17:11
+## 40: 2020-08-17 10:17:11
+## 41: 2020-08-17 10:17:11
+## 42: 2020-08-17 10:17:11
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb127"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb127-1"><a href="#cb127-1"></a><span class="kw">clearCache</span>(tmpDir, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</span></code></pre></div>
 </div>
@@ -1406,7 +1406,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb128-19"><a href="#cb128-19"></a>  <span class="co"># project raster generates warnings when run non-interactively</span></span>
 <span id="cb128-20"><a href="#cb128-20"></a>  <span class="kw">Cache</span>(projectRaster, ras, <span class="dt">crs =</span> <span class="kw">crs</span>(ras), <span class="dt">res =</span> <span class="dv">5</span>, <span class="dt">cacheRepo =</span> tmpDir)</span>
 <span id="cb128-21"><a href="#cb128-21"></a>)</span></code></pre></div>
-<pre><code>##   ...(Object to retrieve (779592260d3525be.rds))</code></pre>
+<pre><code>##   ...(Object to retrieve (10ccaf9498e3969f.rds))</code></pre>
 <pre><code>##      loaded cached result from previous projectRaster call,</code></pre>
 <div class="sourceCode" id="cb131"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb131-1"><a href="#cb131-1"></a><span class="co"># recovered cached version is same as non-cached version</span></span>
 <span id="cb131-2"><a href="#cb131-2"></a><span class="kw">all.equal</span>(notCached, reRun) <span class="co">## TRUE</span></span></code></pre></div>
@@ -1435,7 +1435,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb133-18"><a href="#cb133-18"></a><span class="co">#   Cache calls, unless individually overridden ... here inner</span></span>
 <span id="cb133-19"><a href="#cb133-19"></a><span class="co">#   uses tmpdir2 repository</span></span>
 <span id="cb133-20"><a href="#cb133-20"></a><span class="kw">Cache</span>(outer, <span class="dt">n =</span> <span class="dv">2</span>, <span class="dt">cacheRepo =</span> tmpdir1, <span class="dt">notOlderThan =</span> <span class="kw">Sys.time</span>())</span></code></pre></div>
-<pre><code>## [1]  0.4973089 -0.7926770  2.0354376
+<pre><code>## [1] -0.6734045  1.9814237  1.0468197
 ## attr(,&quot;.Cache&quot;)
 ## attr(,&quot;.Cache&quot;)$newCache
 ## [1] TRUE
@@ -1446,16 +1446,16 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## [1] &quot;&quot;</code></pre>
 <div class="sourceCode" id="cb135"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb135-1"><a href="#cb135-1"></a><span class="kw">showCache</span>(tmpdir1) <span class="co"># 2 function calls</span></span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  504 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  504 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 504 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 504 bytes</code></pre>
 <pre><code>##              cacheId              tagKey              tagValue
 ##  1: 4ac2b7c0f42d1e46            function                 rnorm
 ##  2: 4ac2b7c0f42d1e46               class               numeric
 ##  3: 4ac2b7c0f42d1e46         object.size                  1008
-##  4: 4ac2b7c0f42d1e46            accessed   2020-07-28 22:25:09
+##  4: 4ac2b7c0f42d1e46            accessed   2020-08-17 10:17:12
 ##  5: 4ac2b7c0f42d1e46             inCloud                 FALSE
 ##  6: 4ac2b7c0f42d1e46          resultHash                      
-##  7: 4ac2b7c0f42d1e46   elapsedTimeDigest      0.005012035 secs
+##  7: 4ac2b7c0f42d1e46   elapsedTimeDigest      0.002004862 secs
 ##  8: 4ac2b7c0f42d1e46 elapsedTimeFirstRun                0 secs
 ##  9: 4ac2b7c0f42d1e46      otherFunctions      vweave_rmarkdown
 ## 10: 4ac2b7c0f42d1e46      otherFunctions          process_file
@@ -1469,15 +1469,15 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 18: 4ac2b7c0f42d1e46           preDigest    n:7f12988bd88a0fb8
 ## 19: 4ac2b7c0f42d1e46           preDigest mean:22413394efd9f6a3
 ## 20: 4ac2b7c0f42d1e46           preDigest .FUN:4f604aa46882b368
-## 21: 4ac2b7c0f42d1e46           file.size                   165
+## 21: 4ac2b7c0f42d1e46           file.size                   164
 ## 22: a7af5367c13aba8f            function                 outer
 ## 23: a7af5367c13aba8f               class               numeric
 ## 24: a7af5367c13aba8f         object.size                  1008
-## 25: a7af5367c13aba8f            accessed   2020-07-28 22:25:09
+## 25: a7af5367c13aba8f            accessed   2020-08-17 10:17:12
 ## 26: a7af5367c13aba8f             inCloud                 FALSE
 ## 27: a7af5367c13aba8f          resultHash                      
-## 28: a7af5367c13aba8f   elapsedTimeDigest      0.002005816 secs
-## 29: a7af5367c13aba8f elapsedTimeFirstRun         0.318769 secs
+## 28: a7af5367c13aba8f   elapsedTimeDigest      0.002004147 secs
+## 29: a7af5367c13aba8f elapsedTimeFirstRun        0.2382002 secs
 ## 30: a7af5367c13aba8f      otherFunctions      vweave_rmarkdown
 ## 31: a7af5367c13aba8f      otherFunctions          process_file
 ## 32: a7af5367c13aba8f      otherFunctions         process_group
@@ -1489,64 +1489,64 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 38: a7af5367c13aba8f      otherFunctions                handle
 ## 39: a7af5367c13aba8f           preDigest    n:82dc709f2b91918a
 ## 40: a7af5367c13aba8f           preDigest .FUN:892a6afc47a63a90
-## 41: a7af5367c13aba8f           file.size                   165
+## 41: a7af5367c13aba8f           file.size                   164
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-07-28 22:25:09
-##  2: 2020-07-28 22:25:09
-##  3: 2020-07-28 22:25:09
-##  4: 2020-07-28 22:25:09
-##  5: 2020-07-28 22:25:09
-##  6: 2020-07-28 22:25:09
-##  7: 2020-07-28 22:25:09
-##  8: 2020-07-28 22:25:09
-##  9: 2020-07-28 22:25:09
-## 10: 2020-07-28 22:25:09
-## 11: 2020-07-28 22:25:09
-## 12: 2020-07-28 22:25:09
-## 13: 2020-07-28 22:25:09
-## 14: 2020-07-28 22:25:09
-## 15: 2020-07-28 22:25:09
-## 16: 2020-07-28 22:25:09
-## 17: 2020-07-28 22:25:09
-## 18: 2020-07-28 22:25:09
-## 19: 2020-07-28 22:25:09
-## 20: 2020-07-28 22:25:09
-## 21: 2020-07-28 22:25:09
-## 22: 2020-07-28 22:25:09
-## 23: 2020-07-28 22:25:09
-## 24: 2020-07-28 22:25:09
-## 25: 2020-07-28 22:25:09
-## 26: 2020-07-28 22:25:09
-## 27: 2020-07-28 22:25:09
-## 28: 2020-07-28 22:25:09
-## 29: 2020-07-28 22:25:09
-## 30: 2020-07-28 22:25:09
-## 31: 2020-07-28 22:25:09
-## 32: 2020-07-28 22:25:09
-## 33: 2020-07-28 22:25:09
-## 34: 2020-07-28 22:25:09
-## 35: 2020-07-28 22:25:09
-## 36: 2020-07-28 22:25:09
-## 37: 2020-07-28 22:25:09
-## 38: 2020-07-28 22:25:09
-## 39: 2020-07-28 22:25:09
-## 40: 2020-07-28 22:25:09
-## 41: 2020-07-28 22:25:09
+##  1: 2020-08-17 10:17:12
+##  2: 2020-08-17 10:17:12
+##  3: 2020-08-17 10:17:12
+##  4: 2020-08-17 10:17:12
+##  5: 2020-08-17 10:17:12
+##  6: 2020-08-17 10:17:12
+##  7: 2020-08-17 10:17:12
+##  8: 2020-08-17 10:17:12
+##  9: 2020-08-17 10:17:12
+## 10: 2020-08-17 10:17:12
+## 11: 2020-08-17 10:17:12
+## 12: 2020-08-17 10:17:12
+## 13: 2020-08-17 10:17:12
+## 14: 2020-08-17 10:17:12
+## 15: 2020-08-17 10:17:12
+## 16: 2020-08-17 10:17:12
+## 17: 2020-08-17 10:17:12
+## 18: 2020-08-17 10:17:12
+## 19: 2020-08-17 10:17:12
+## 20: 2020-08-17 10:17:12
+## 21: 2020-08-17 10:17:12
+## 22: 2020-08-17 10:17:12
+## 23: 2020-08-17 10:17:12
+## 24: 2020-08-17 10:17:12
+## 25: 2020-08-17 10:17:12
+## 26: 2020-08-17 10:17:12
+## 27: 2020-08-17 10:17:12
+## 28: 2020-08-17 10:17:12
+## 29: 2020-08-17 10:17:12
+## 30: 2020-08-17 10:17:12
+## 31: 2020-08-17 10:17:12
+## 32: 2020-08-17 10:17:12
+## 33: 2020-08-17 10:17:12
+## 34: 2020-08-17 10:17:12
+## 35: 2020-08-17 10:17:12
+## 36: 2020-08-17 10:17:12
+## 37: 2020-08-17 10:17:12
+## 38: 2020-08-17 10:17:12
+## 39: 2020-08-17 10:17:12
+## 40: 2020-08-17 10:17:12
+## 41: 2020-08-17 10:17:12
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb140"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb140-1"><a href="#cb140-1"></a><span class="kw">showCache</span>(tmpdir2) <span class="co"># 1 function call</span></span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  252 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  252 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 252 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 252 bytes</code></pre>
 <pre><code>##              cacheId              tagKey              tagValue
 ##  1: 33ceb4fb525fd08f            function                 inner
 ##  2: 33ceb4fb525fd08f               class               numeric
 ##  3: 33ceb4fb525fd08f         object.size                  1008
-##  4: 33ceb4fb525fd08f            accessed   2020-07-28 22:25:09
+##  4: 33ceb4fb525fd08f            accessed   2020-08-17 10:17:12
 ##  5: 33ceb4fb525fd08f             inCloud                 FALSE
 ##  6: 33ceb4fb525fd08f          resultHash                      
-##  7: 33ceb4fb525fd08f   elapsedTimeDigest      0.003010988 secs
-##  8: 33ceb4fb525fd08f elapsedTimeFirstRun        0.1006901 secs
+##  7: 33ceb4fb525fd08f   elapsedTimeDigest      0.003006935 secs
+##  8: 33ceb4fb525fd08f elapsedTimeFirstRun       0.07775903 secs
 ##  9: 33ceb4fb525fd08f      otherFunctions      vweave_rmarkdown
 ## 10: 33ceb4fb525fd08f      otherFunctions          process_file
 ## 11: 33ceb4fb525fd08f      otherFunctions         process_group
@@ -1558,28 +1558,28 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 17: 33ceb4fb525fd08f      otherFunctions                handle
 ## 18: 33ceb4fb525fd08f           preDigest mean:22413394efd9f6a3
 ## 19: 33ceb4fb525fd08f           preDigest .FUN:87e2c30917a34d25
-## 20: 33ceb4fb525fd08f           file.size                   165
+## 20: 33ceb4fb525fd08f           file.size                   164
 ##             createdDate
-##  1: 2020-07-28 22:25:09
-##  2: 2020-07-28 22:25:09
-##  3: 2020-07-28 22:25:09
-##  4: 2020-07-28 22:25:09
-##  5: 2020-07-28 22:25:09
-##  6: 2020-07-28 22:25:09
-##  7: 2020-07-28 22:25:09
-##  8: 2020-07-28 22:25:09
-##  9: 2020-07-28 22:25:09
-## 10: 2020-07-28 22:25:09
-## 11: 2020-07-28 22:25:09
-## 12: 2020-07-28 22:25:09
-## 13: 2020-07-28 22:25:09
-## 14: 2020-07-28 22:25:09
-## 15: 2020-07-28 22:25:09
-## 16: 2020-07-28 22:25:09
-## 17: 2020-07-28 22:25:09
-## 18: 2020-07-28 22:25:09
-## 19: 2020-07-28 22:25:09
-## 20: 2020-07-28 22:25:09</code></pre>
+##  1: 2020-08-17 10:17:12
+##  2: 2020-08-17 10:17:12
+##  3: 2020-08-17 10:17:12
+##  4: 2020-08-17 10:17:12
+##  5: 2020-08-17 10:17:12
+##  6: 2020-08-17 10:17:12
+##  7: 2020-08-17 10:17:12
+##  8: 2020-08-17 10:17:12
+##  9: 2020-08-17 10:17:12
+## 10: 2020-08-17 10:17:12
+## 11: 2020-08-17 10:17:12
+## 12: 2020-08-17 10:17:12
+## 13: 2020-08-17 10:17:12
+## 14: 2020-08-17 10:17:12
+## 15: 2020-08-17 10:17:12
+## 16: 2020-08-17 10:17:12
+## 17: 2020-08-17 10:17:12
+## 18: 2020-08-17 10:17:12
+## 19: 2020-08-17 10:17:12
+## 20: 2020-08-17 10:17:12</code></pre>
 <div class="sourceCode" id="cb145"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb145-1"><a href="#cb145-1"></a><span class="co"># userTags get appended</span></span>
 <span id="cb145-2"><a href="#cb145-2"></a><span class="co"># all items have the outer tag propagate, plus inner ones only have inner ones</span></span>
 <span id="cb145-3"><a href="#cb145-3"></a><span class="kw">clearCache</span>(tmpdir1, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</span>
@@ -1595,18 +1595,18 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb145-13"><a href="#cb145-13"></a>aa &lt;-<span class="st"> </span><span class="kw">Cache</span>(outer, <span class="dt">n =</span> <span class="dv">2</span>, <span class="dt">cacheRepo =</span> tmpdir1, <span class="dt">userTags =</span> outerTag)</span>
 <span id="cb145-14"><a href="#cb145-14"></a><span class="kw">showCache</span>(tmpdir1) <span class="co"># rnorm function has outerTag and innerTag, inner and outer only have outerTag</span></span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  756 bytes</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  756 bytes</code></pre>
+<pre><code>##   Total (including Rasters): 756 bytes</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 756 bytes</code></pre>
 <pre><code>##              cacheId              tagKey              tagValue
 ##  1: 4ac2b7c0f42d1e46            innerTag              innerTag
 ##  2: 4ac2b7c0f42d1e46            outerTag              outerTag
 ##  3: 4ac2b7c0f42d1e46            function                 rnorm
 ##  4: 4ac2b7c0f42d1e46               class               numeric
 ##  5: 4ac2b7c0f42d1e46         object.size                  1008
-##  6: 4ac2b7c0f42d1e46            accessed   2020-07-28 22:25:10
+##  6: 4ac2b7c0f42d1e46            accessed   2020-08-17 10:17:12
 ##  7: 4ac2b7c0f42d1e46             inCloud                 FALSE
 ##  8: 4ac2b7c0f42d1e46          resultHash                      
-##  9: 4ac2b7c0f42d1e46   elapsedTimeDigest      0.002001047 secs
+##  9: 4ac2b7c0f42d1e46   elapsedTimeDigest      0.002506971 secs
 ## 10: 4ac2b7c0f42d1e46 elapsedTimeFirstRun                0 secs
 ## 11: 4ac2b7c0f42d1e46      otherFunctions      vweave_rmarkdown
 ## 12: 4ac2b7c0f42d1e46      otherFunctions          process_file
@@ -1625,11 +1625,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 25: b06af03d5a73dc7d            function                 inner
 ## 26: b06af03d5a73dc7d               class               numeric
 ## 27: b06af03d5a73dc7d         object.size                  1008
-## 28: b06af03d5a73dc7d            accessed   2020-07-28 22:25:10
+## 28: b06af03d5a73dc7d            accessed   2020-08-17 10:17:12
 ## 29: b06af03d5a73dc7d             inCloud                 FALSE
 ## 30: b06af03d5a73dc7d          resultHash                      
-## 31: b06af03d5a73dc7d   elapsedTimeDigest       0.00351119 secs
-## 32: b06af03d5a73dc7d elapsedTimeFirstRun       0.09576201 secs
+## 31: b06af03d5a73dc7d   elapsedTimeDigest      0.002507925 secs
+## 32: b06af03d5a73dc7d elapsedTimeFirstRun       0.07871199 secs
 ## 33: b06af03d5a73dc7d      otherFunctions      vweave_rmarkdown
 ## 34: b06af03d5a73dc7d      otherFunctions          process_file
 ## 35: b06af03d5a73dc7d      otherFunctions         process_group
@@ -1646,11 +1646,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 46: 88a34e1d033329e5            function                 outer
 ## 47: 88a34e1d033329e5               class               numeric
 ## 48: 88a34e1d033329e5         object.size                  1008
-## 49: 88a34e1d033329e5            accessed   2020-07-28 22:25:10
+## 49: 88a34e1d033329e5            accessed   2020-08-17 10:17:12
 ## 50: 88a34e1d033329e5             inCloud                 FALSE
 ## 51: 88a34e1d033329e5          resultHash                      
-## 52: 88a34e1d033329e5   elapsedTimeDigest      0.001909971 secs
-## 53: 88a34e1d033329e5 elapsedTimeFirstRun         0.182533 secs
+## 52: 88a34e1d033329e5   elapsedTimeDigest      0.002006054 secs
+## 53: 88a34e1d033329e5 elapsedTimeFirstRun        0.1534131 secs
 ## 54: 88a34e1d033329e5      otherFunctions      vweave_rmarkdown
 ## 55: 88a34e1d033329e5      otherFunctions          process_file
 ## 56: 88a34e1d033329e5      otherFunctions         process_group
@@ -1665,71 +1665,71 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 65: 88a34e1d033329e5           file.size                   165
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2020-07-28 22:25:10
-##  2: 2020-07-28 22:25:10
-##  3: 2020-07-28 22:25:10
-##  4: 2020-07-28 22:25:10
-##  5: 2020-07-28 22:25:10
-##  6: 2020-07-28 22:25:10
-##  7: 2020-07-28 22:25:10
-##  8: 2020-07-28 22:25:10
-##  9: 2020-07-28 22:25:10
-## 10: 2020-07-28 22:25:10
-## 11: 2020-07-28 22:25:10
-## 12: 2020-07-28 22:25:10
-## 13: 2020-07-28 22:25:10
-## 14: 2020-07-28 22:25:10
-## 15: 2020-07-28 22:25:10
-## 16: 2020-07-28 22:25:10
-## 17: 2020-07-28 22:25:10
-## 18: 2020-07-28 22:25:10
-## 19: 2020-07-28 22:25:10
-## 20: 2020-07-28 22:25:10
-## 21: 2020-07-28 22:25:10
-## 22: 2020-07-28 22:25:10
-## 23: 2020-07-28 22:25:10
-## 24: 2020-07-28 22:25:10
-## 25: 2020-07-28 22:25:10
-## 26: 2020-07-28 22:25:10
-## 27: 2020-07-28 22:25:10
-## 28: 2020-07-28 22:25:10
-## 29: 2020-07-28 22:25:10
-## 30: 2020-07-28 22:25:10
-## 31: 2020-07-28 22:25:10
-## 32: 2020-07-28 22:25:10
-## 33: 2020-07-28 22:25:10
-## 34: 2020-07-28 22:25:10
-## 35: 2020-07-28 22:25:10
-## 36: 2020-07-28 22:25:10
-## 37: 2020-07-28 22:25:10
-## 38: 2020-07-28 22:25:10
-## 39: 2020-07-28 22:25:10
-## 40: 2020-07-28 22:25:10
-## 41: 2020-07-28 22:25:10
-## 42: 2020-07-28 22:25:10
-## 43: 2020-07-28 22:25:10
-## 44: 2020-07-28 22:25:10
-## 45: 2020-07-28 22:25:10
-## 46: 2020-07-28 22:25:10
-## 47: 2020-07-28 22:25:10
-## 48: 2020-07-28 22:25:10
-## 49: 2020-07-28 22:25:10
-## 50: 2020-07-28 22:25:10
-## 51: 2020-07-28 22:25:10
-## 52: 2020-07-28 22:25:10
-## 53: 2020-07-28 22:25:10
-## 54: 2020-07-28 22:25:10
-## 55: 2020-07-28 22:25:10
-## 56: 2020-07-28 22:25:10
-## 57: 2020-07-28 22:25:10
-## 58: 2020-07-28 22:25:10
-## 59: 2020-07-28 22:25:10
-## 60: 2020-07-28 22:25:10
-## 61: 2020-07-28 22:25:10
-## 62: 2020-07-28 22:25:10
-## 63: 2020-07-28 22:25:10
-## 64: 2020-07-28 22:25:10
-## 65: 2020-07-28 22:25:10
+##  1: 2020-08-17 10:17:12
+##  2: 2020-08-17 10:17:12
+##  3: 2020-08-17 10:17:12
+##  4: 2020-08-17 10:17:12
+##  5: 2020-08-17 10:17:12
+##  6: 2020-08-17 10:17:12
+##  7: 2020-08-17 10:17:12
+##  8: 2020-08-17 10:17:12
+##  9: 2020-08-17 10:17:12
+## 10: 2020-08-17 10:17:12
+## 11: 2020-08-17 10:17:12
+## 12: 2020-08-17 10:17:12
+## 13: 2020-08-17 10:17:12
+## 14: 2020-08-17 10:17:12
+## 15: 2020-08-17 10:17:12
+## 16: 2020-08-17 10:17:12
+## 17: 2020-08-17 10:17:12
+## 18: 2020-08-17 10:17:12
+## 19: 2020-08-17 10:17:12
+## 20: 2020-08-17 10:17:12
+## 21: 2020-08-17 10:17:12
+## 22: 2020-08-17 10:17:12
+## 23: 2020-08-17 10:17:12
+## 24: 2020-08-17 10:17:12
+## 25: 2020-08-17 10:17:12
+## 26: 2020-08-17 10:17:12
+## 27: 2020-08-17 10:17:12
+## 28: 2020-08-17 10:17:12
+## 29: 2020-08-17 10:17:12
+## 30: 2020-08-17 10:17:12
+## 31: 2020-08-17 10:17:12
+## 32: 2020-08-17 10:17:12
+## 33: 2020-08-17 10:17:12
+## 34: 2020-08-17 10:17:12
+## 35: 2020-08-17 10:17:12
+## 36: 2020-08-17 10:17:12
+## 37: 2020-08-17 10:17:12
+## 38: 2020-08-17 10:17:12
+## 39: 2020-08-17 10:17:12
+## 40: 2020-08-17 10:17:12
+## 41: 2020-08-17 10:17:12
+## 42: 2020-08-17 10:17:12
+## 43: 2020-08-17 10:17:12
+## 44: 2020-08-17 10:17:12
+## 45: 2020-08-17 10:17:12
+## 46: 2020-08-17 10:17:12
+## 47: 2020-08-17 10:17:12
+## 48: 2020-08-17 10:17:12
+## 49: 2020-08-17 10:17:12
+## 50: 2020-08-17 10:17:12
+## 51: 2020-08-17 10:17:12
+## 52: 2020-08-17 10:17:12
+## 53: 2020-08-17 10:17:12
+## 54: 2020-08-17 10:17:12
+## 55: 2020-08-17 10:17:12
+## 56: 2020-08-17 10:17:12
+## 57: 2020-08-17 10:17:12
+## 58: 2020-08-17 10:17:12
+## 59: 2020-08-17 10:17:12
+## 60: 2020-08-17 10:17:12
+## 61: 2020-08-17 10:17:12
+## 62: 2020-08-17 10:17:12
+## 63: 2020-08-17 10:17:12
+## 64: 2020-08-17 10:17:12
+## 65: 2020-08-17 10:17:12
 ##             createdDate</code></pre>
 </div>
 <div id="cacheid" class="section level2">
@@ -1782,11 +1782,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <div class="sourceCode" id="cb162"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb162-1"><a href="#cb162-1"></a><span class="co"># As of reproducible version 1.0, there is a new backend directly using DBI</span></span>
 <span id="cb162-2"><a href="#cb162-2"></a>mapHash &lt;-<span class="st"> </span><span class="kw">unique</span>(<span class="kw">showCache</span>(tmpDir, <span class="dt">userTags =</span> <span class="st">&quot;projectRaster&quot;</span>)<span class="op">$</span>cacheId)</span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
-<pre><code>##   Total (including Rasters):  3.8 Kb</code></pre>
-<pre><code>##   Selected objects (not including Rasters):  3.8 Kb</code></pre>
+<pre><code>##   Total (including Rasters): 3.8 Kb</code></pre>
+<pre><code>##   Selected objects (not including Rasters): 3.8 Kb</code></pre>
 <div class="sourceCode" id="cb166"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb166-1"><a href="#cb166-1"></a>map &lt;-<span class="st"> </span><span class="kw">loadFromCache</span>(mapHash[<span class="dv">1</span>], <span class="dt">cachePath =</span> tmpDir)</span>
 <span id="cb166-2"><a href="#cb166-2"></a><span class="kw">plot</span>(map)</span></code></pre></div>
-<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAqAAAAEgCAMAAABcujGyAAAA+VBMVEUAAAAAADoAAGYAOjoAOpAAZrYFqAAMqgASrAAZrwAfsQAmswAttQA1uAA6AAA6ADo6AGY6Ojo6OpA6kNs7ugBDvQBMvwBTwQBcxABjxgBmAABmADpmtv9syAB0ygB9zQCFzwCP0QCQOgCQ2/+Z1ACh1gCs2AC02gC2ZgC2/7a2//+/3QDI3wDT4QDbkDrb2//b///c4wDm1hLm3Avm5ALnyiLnzxvowTPoxSvpuUPpvDzqtFbqtk3rsWfrsW7rsl3ssXjssn/ts4nttZHuuJruu6Tvvqzvw7XwyL3wzsfw08/x29jx4uDy6+r/tmb/25D//7b//9v///9VOJDSAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAJeUlEQVR4nO3d+UPiRhiH8exWe9fd1p52e2kPum1Te9/3faHw//8xJclLRJkwLzLMfBefzw8tlZQQfQwkMpNqCgirSj8BYBUChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChTQChbR1Aj0/Opz9c1xV1e3723o+wCVrB1rvnTa37m3tGQEL1g3U0mwzBbZu3UDPDtpAx5df5CvcFEnrc0i8B31wj7k+zav05l6XeKDNr9D+dH64tOHDaSFQF+lAp22jt05mB/IDfRIogWqvkEAJVHqFBEqg0iskUAKVXiGBEqj0CgmUQKVXSKAEKr1CAiVQ6RUSKIFKr5BACVR6hQRKoNIrJFAClV4hgRKo9AoJlEClV0igBCq9QgIl0PIrtGEfqR5OA4G6SAfafaK+MzDwmEAJtOAK7ZP07EEJVHSF50fNYLnlQMsN+kuGQF3EA51OR7dO2IMSqPAK6+qQQAn0GibHs1fYfrTluGqGXy7emL00371/5SvXWeHZwUMESqBrmxzPqqvbUesz42ZwcJNhf6N5A9keei985XornP0mECiBrqt73a270z+T42ZXOtq/uNHuOJs7F76y2QqDCJRAV7JdY1/rRbbj6rCdUOlSyATaI1CX1T/g+GROoy68sztNp7Mg+xvT+b8ufYVAewTqEgn0YTO02HxOmm5HOvtnf6P9alPlpa8QaI9AXSKBPmIGFhsvHiMR6FoI1CUS6KMmvNjFnF68xK+NQF0igT5mgovVF2dBAwdJ03mgHCQFEahLJNDHTWixeuHsZOg0kwXKaaYwAnWJBPqECSx2drA4Z2foRL29rm98on7lM0z7cBkRqEsk0CdNYLG6O+t062RyvN/9ZxdhffGHTXvjWW/2p87VzzDtw2VEoC6RQJ8y6TogUEOgLpFAnzUEmhyBukQCfc4QaHIE6hIJ9HlDoMkRqEsk0BcMgSZHoC6RQF80RQO99IHnzR9OBIG6RAJ9yaS7NN16//+oqg7Pnjkdvpgsgd7sQF8xhfago73TdtQcl0Ik0PC9r5oygbb7zSsfNrFHYdgxgTb3vmZKBdr8NXXy4ZQ9KIGG733dFHqJ7z8DxcVkCTR47xum1FF8PR/KPDSsk0BvdqBvGs6DJkegLpFA3zIEmhyBukQCfdsQaHIE6hIJ9B0TWiw29U1oMhwC7RGoSyTQ90xgsdjUN8HP2BNoj0BdIoG+b4JDPlZOfRMepUSgPQJ1iQT6gRlcbHDqm/A4TwLtEahLJNCPzOBig1PfhEfKE2iPQF0igc43b+jTTMNT34TnGiHQHoG6RAL9xKw/9Q2BRhCoSyTQj836U9/wEh9BoC6RQD836099w0FSBIG6RAL9zKw/9Q2nmSII1CUS6JfmGlPfcKJ+NQJ1iQT6hbnO1DehyXAItEegLpFAvzbFPg86+xVo30jUXKuTQAP3fmVKfaJ+tuc9P2p30ARKoIF7vzVlAu2OrybHe6cESqDBe78xBUd1TtvRxzWjOgk0cO8PpuQedNqcpGIPSqChe78zhUd1nh9VBEqggXu/N+WO4rsX+ckxgRJo4N4fTam5mXI/XEYE6hIJ9CfDoLnkCNQlEujPhkCTI1CXSKC/GAJNjkBdIoH+agg0OQJ1iQT6myHQ5AjUJRLo74ZAkyNQl0igfxgCTY5AXSKB/mkINDkCdYkE+pcZWOzsbv/3nRWfU2ZuphACdYkE+rcJL3Z+1P8BsrnUQTs8bvkGQz6CCNQlEug/JrjYbM94eYrueu90+QaD5sII1CUS6L8mtNi4OuxHu6+Yr4Fhx2EE6hIJ9D8zNLPIlUCre8s3mLghjEBdIoEGLN7fZ2e7yVmOSzeY+iaMQF02+wGPrxwkVfeWbxBoGIG6pAq0uarm7XdfPlm+wUt8GIG6JAu00Z8WXbyxwUHS+dHFOws+UU+g67sSaH+9wsUbm5xmGh7pwahOAnUYX5wH3e/eZy7f2OhEfTetzgoESqArtIG2ETWvxm2Eyzc2mptp+CKI13o4IQTqkv0HzEGSIVAXAi2FQF0ItBQCdSHQUgjUhUBLIVAXAi2FQF0ItBQCdSHQUgjUhUBLIVAXAi2FQF0ItBQCdSHQUgjUhUBLIVAXAi2FQF0ItBQCdSHQUgjUhUBLIVAX8UAnxyuHzBEogRZdYV3ZpebG1WF4CQIl0HIr7C+FuDBOdIOH00KgLtKBzi8mO10a4Byakwc7KVl5Ton3oOlk/k7s9uoe4Fe2Nd+D2i508D1oOrtdDIF6rffM55PfbH3/uevFEKiX7DPf7WII1Ev2me92MQTqJfvMd7sYAvWSfea7XQyBesk+890uhkC9ZJ/5bhdDoF4P7jPHjUCgkEagkEagkEagkEagkEagkEagkEagkEagkEagkEagkEagkKYaaDf6KXLp2lTGi1cv3bqsm9Zfiz3vNqajGujZnXzfzcvXf966nJvW/Dq0Uxhk3sZ0VAMdD07/lFw33H+UbZeWcdPaHWd3Cey825iOaqB1vu/l2UEz2r/Olk3GTWsmMGh/H3JvYzqqgY6enr1P2/rsEK3uJTfffi3jpjW6QDNvYzqigZ4fNXNDjLL8GLu3ZtneoOXctEZbZeZtTEg00E6e3/giP7x8OzMC3Z7undPW11Li5S/PpjV4iU+svniHlueETJEDiHznmjhI2obuG5rnNz7zKZicmzadr4nTTKm138tMRxKZT2Ln3LTp/FeBE/WpjWav9LneptV5/wyYc9P6fXXmbUxGNlCgQaCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQRqCQ9j+wEFtj1upk3QAAAABJRU5ErkJggg==" /><!-- --></p>
 <div class="sourceCode" id="cb167"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb167-1"><a href="#cb167-1"></a><span class="co">## cleanup</span></span>
 <span id="cb167-2"><a href="#cb167-2"></a><span class="kw">unlink</span>(<span class="kw">dirname</span>(tmpDir), <span class="dt">recursive =</span> <span class="ot">TRUE</span>)</span></code></pre></div>
 </div>

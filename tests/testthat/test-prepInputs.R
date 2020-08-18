@@ -1,7 +1,7 @@
 test_that("prepInputs doesn't work (part 1)", {
-  testthat::skip_on_cran()
-  testthat::skip_on_travis()
-  testthat::skip_on_appveyor()
+  skip_on_cran()
+
+  skip_on_ci()
 
   testInitOut <- testInit("raster", opts = list(
     "rasterTmpDir" = tempdir2(rndstr(1,6)),
@@ -28,9 +28,10 @@ test_that("prepInputs doesn't work (part 1)", {
   #######################################
   ### url  ######
   #######################################
+  url <- "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/zone/ecozone_shp.zip"
+
   mess <- capture_messages({
-    shpEcozone <- prepInputs(destinationPath = dPath,
-                             url = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/zone/ecozone_shp.zip")
+    shpEcozone <- prepInputs(destinationPath = dPath, url = url)
   })
   expect_true(any(grepl(mess, pattern = "ecozone_shp.zip")))
   expect_true(any(grepl(mess, pattern = "Appending")))
@@ -41,8 +42,7 @@ test_that("prepInputs doesn't work (part 1)", {
   unlink(dir(dPath, full.names = TRUE)[1:3])
   expect_error(raster::shapefile(file.path(dPath, "ecozone_shp.zip")))
   rm(shpEcozone)
-  shpEcozone1 <- prepInputs(destinationPath = dPath,
-                            url = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/zone/ecozone_shp.zip")
+  shpEcozone1 <- prepInputs(destinationPath = dPath, url = url)
   expect_true(is(shpEcozone1, "SpatialPolygons"))
   unlink(dPath, recursive = TRUE)
 
@@ -85,7 +85,8 @@ test_that("prepInputs doesn't work (part 1)", {
     "ecozones.shp",
     "ecozones.shx"
   )
-  warn <- suppressWarningsSpecific(falseWarnings = "attribute variables are assumed to be spatially constant",
+  warn <- suppressWarningsSpecific(
+    falseWarnings = "attribute variables are assumed to be spatially constant", {
     shpEcozoneSm <- Cache(
       prepInputs,
       url = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/zone/ecozone_shp.zip",
@@ -95,14 +96,15 @@ test_that("prepInputs doesn't work (part 1)", {
       fun = "shapefile",
       destinationPath = dPath,
       filename2 = "EcozoneFile.shp"
-    )) # passed to determineFilename
+    )
+  })
   expect_true(is(shpEcozoneSm, "SpatialPolygons"))
   expect_identical(extent(shpEcozoneSm), extent(StudyArea))
 
   unlink(dirname(ecozoneFilename), recursive = TRUE)
   # Test useCache = FALSE -- doesn't error and has no "loading from cache" or "loading from memoised"
   warn <- suppressWarningsSpecific(
-    falseWarnings = "attribute variables are assumed to be spatially constant",
+    falseWarnings = "attribute variables are assumed to be spatially constant", {
     mess <- capture_messages({
       shpEcozoneSm <- Cache(
         prepInputs,
@@ -116,7 +118,7 @@ test_that("prepInputs doesn't work (part 1)", {
         useCache = FALSE
       )
     })
-  )
+  })
   expect_false(all(grepl("loading", mess)))
 
   # Test useCache -- doesn't error and loads from cache
@@ -150,7 +152,7 @@ test_that("prepInputs doesn't work (part 1)", {
     destinationPath = asPath(dPath),
     studyArea = StudyArea,
     useCache = FALSE
-  )
+  ) ## TODO: searching for GDAL is slow on Windows
   # The above studyArea is "buffered" before spTransform because it is "unprojected". This means
   #  we make it a bit bigger so it doesn't crop the edges of the raster
   expect_is(LCC2005, "Raster")
@@ -158,7 +160,11 @@ test_that("prepInputs doesn't work (part 1)", {
   StudyAreaCRSLCC2005 <- spTransform(StudyArea, crs(LCC2005))
   expect_true(all(abs(extent(LCC2005)[1:4] -
                    round(extent(StudyAreaCRSLCC2005)[1:4] / 250, 0) * 250) <= res(LCC2005)))
-  expect_true(length(LCC2005@legend@colortable) == (maxValue(LCC2005) - minValue(LCC2005) + 1))
+
+  lcc <- LCC2005[] # speeds up the next line -- used to be maxValue and minValue -- but now these are
+                   #  incorrect due to changes in prepInputs that preserves original colortable
+  expect_equal(length(which(LCC2005@legend@colortable != "#000000")),
+               (max(lcc, na.rm = TRUE) - min(lcc, na.rm = TRUE)) + 1)
 
   #######################################
   ### url, targetFile, archive     ######
@@ -430,11 +436,11 @@ test_that("preProcess doesn't work", {
     testOnExit(testInitOut)
   }, add = TRUE)
 
-  testthat::skip_on_cran()
-  testthat::skip_on_travis()
-  testthat::skip_on_appveyor()
+  skip_on_cran()
 
-  testthat::skip_if_not(isInteractive())
+  skip_on_ci()
+
+  skip_if_not(isInteractive())
 
   # Note urlShapefiles1Zip, urlShapefilesZip, and urlTif1 are in helper-allEqual.R
 
@@ -1779,19 +1785,19 @@ test_that("rasters aren't properly resampled", {
     testOnExit(testInitOut)
   }, add = TRUE)
 
-  a <- raster(extent(0, 20, 0, 20), res = 2, vals = 1:100*4)
-  b <- raster(extent(0, 30, 0, 30), res = c(3,3), vals = 1:100)
+  a <- raster(extent(0, 20, 0, 20), res = 2, vals = as.integer(1:100*4))
+  b <- raster(extent(0, 30, 0, 30), res = c(3,3), vals = 1L:100L)
   #suppressWarnings({
     crs(a) <- crsToUse
     crs(b) <- crsToUse
     #}) ## TODO: temporary until raster fixes all crs issues
 
-  tiftemp1 <- tempfile(tmpdir = tmpdir, fileext = ".tif")
-  tiftemp2 <- tempfile(tmpdir = tmpdir, fileext = ".tif")
+  tiftemp1 <- normPath(tempfile(tmpdir = tmpdir, fileext = ".tif"))
+  tiftemp2 <- normPath(tempfile(tmpdir = tmpdir, fileext = ".tif"))
 
   suppressWarnings({
-    writeRaster(a, filename = tiftemp1)
-    writeRaster(b, filename = tiftemp2)
+    a <- writeRaster(a, filename = tiftemp1, datatype = "INT2U")
+    b <- writeRaster(b, filename = tiftemp2, datatype = "INT2U")
   }) ## TODO: temporary GDAL>6
 
   out <- prepInputs(targetFile = tiftemp1, rasterToMatch = raster(tiftemp2),
@@ -1799,9 +1805,9 @@ test_that("rasters aren't properly resampled", {
   expect_true(dataType(out) == "INT2U")
 
   # Test bilinear --> but keeps integer if it is integer
-  out2 <- prepInputs(targetFile = tiftemp1, rasterToMatch = raster(tiftemp2),
+  suppressWarnings(out2 <- prepInputs(targetFile = tiftemp1, rasterToMatch = raster(tiftemp2),
                      destinationPath = dirname(tiftemp1), method = "bilinear",
-                     filename2 = tempfile(tmpdir = tmpdir, fileext = ".tif"))
+                     filename2 = tempfile(tmpdir = tmpdir, fileext = ".tif"))) # about "raster layer has integer values"
   expect_true(dataType(out2) %in% c("INT2S", "INT2U")) # because of "bilinear", it can become negative
 
   c <- raster(extent(0, 20, 0, 20), res = 1, vals = runif(400, 0, 1))
@@ -1832,11 +1838,11 @@ test_that("System call gdal works", {
   ras2 <- raster(extent(0,8,0,8), res = 1, vals = 1:64)
   crs(ras2) <- crsToUse
 
-  raster::rasterOptions(todisk = TRUE) #to trigger GDAL
+  raster::rasterOptions(todisk = TRUE) # to trigger GDAL
 
   test1 <- prepInputs(targetFile = ras@file@name, destinationPath = tempdir2(rnStr),
-                      rasterToMatch = ras2, useCache = FALSE)
-  expect_true(file.exists(test1@file@name)) #exists on disk after gdalwarp
+                      rasterToMatch = ras2, useCache = FALSE, filename2 = TRUE)
+  expect_true(file.exists(test1@file@name)) # now (Aug 12, 2020) does not exist on disk after gdalwarp -- because no filename2
   expect_true(dataType(test1) == "INT1U") #properly resampled
 
   ras <- raster::setValues(ras, values = runif(n = ncell(ras), min = 1, max = 2))
@@ -1854,6 +1860,13 @@ test_that("System call gdal works", {
 test_that("System call gdal works using multicores for both projecting and masking", {
   skip_on_cran()
 
+  if (requireNamespace("gdalUtils", quietly = TRUE)) {
+    suppressWarnings(gdalUtils::gdal_setInstallation())
+  }
+
+  if (is.null(getOption("gdalUtils_gdalPath")))
+    skip("no GDAL installation found")
+
   testInitOut <- testInit("raster")
   on.exit({
     testOnExit(testInitOut)
@@ -1868,8 +1881,7 @@ test_that("System call gdal works using multicores for both projecting and maski
   ras2 <- raster(extent(0,8,0,8), res = 1, vals = 1:64)
   crs(ras2) <- crsToUse
 
-  coords <- structure(c(2, 6, 8, 6, 2, 2.2, 4, 5, 4.6, 2.2),
-                      .Dim = c(5L, 2L))
+  coords <- structure(c(2, 6, 8, 6, 2, 2.2, 4, 5, 4.6, 2.2), .Dim = c(5L, 2L))
   Sr1 <- Polygon(coords)
   Srs1 <- Polygons(list(Sr1), "s1")
   StudyArea <- SpatialPolygons(list(Srs1), 1L)
@@ -1879,28 +1891,25 @@ test_that("System call gdal works using multicores for both projecting and maski
 
   # Passing a specific integer for cores
   test1 <- prepInputs(targetFile = ras@file@name, destinationPath = tempdir2(rnStr),
-                      rasterToMatch = ras2, useCache = FALSE, studyArea = StudyArea, cores = 2)
-  expect_true(file.exists(test1@file@name)) #exists on disk after gdalwarp
+                      rasterToMatch = ras2, useCache = FALSE, studyArea = StudyArea, cores = 2, filename2 = TRUE)
+  expect_true(file.exists(test1@file@name)) # now (Aug 12, 2020) does not exist on disk after gdalwarp -- because no filename2
   # Passing as float for cores
   test2 <- prepInputs(targetFile = ras@file@name, destinationPath = tempdir2(rnStr),
-                      rasterToMatch = ras2, useCache = FALSE, studyArea = StudyArea, cores = 2.3)
-  expect_true(file.exists(test2@file@name)) #exists on disk after gdalwarp
+                      rasterToMatch = ras2, useCache = FALSE, studyArea = StudyArea, cores = 2.3, filename2 = TRUE)
+  expect_true(file.exists(test2@file@name)) # now (Aug 12, 2020) does not exist on disk after gdalwarp -- because no filename2
   # Not passing cores
   test3 <- prepInputs(targetFile = ras@file@name, destinationPath = tempdir2(rnStr),
-                      rasterToMatch = ras2, useCache = FALSE, studyArea = StudyArea)
-  expect_true(file.exists(test3@file@name)) #exists on disk after gdalwarp
+                      rasterToMatch = ras2, useCache = FALSE, studyArea = StudyArea, filename2 = TRUE)
+  expect_true(file.exists(test3@file@name)) # now (Aug 12, 2020) does not exist on disk after gdalwarp -- because no filename2
   # Passing cores as AUTO
   test4 <- prepInputs(targetFile = ras@file@name, destinationPath = tempdir2(rnStr),
-                      rasterToMatch = ras2, useCache = FALSE, studyArea = StudyArea, cores = "AUTO")
-  expect_true(file.exists(test4@file@name)) #exists on disk after gdalwarp
+                      rasterToMatch = ras2, useCache = FALSE, studyArea = StudyArea, cores = "AUTO", filename2 = TRUE)
+  expect_true(file.exists(test4@file@name)) # now (Aug 12, 2020) does not exist on disk after gdalwarp -- because no filename2
   # Passing cores as any other character than 'AUTO'
   expect_error({
     test5 <- prepInputs(targetFile = ras@file@name, destinationPath = tempdir2(rnStr),
                         rasterToMatch = ras2, useCache = FALSE, studyArea = StudyArea, cores = "BLA")
   })
-
-  # ras <- raster::setValues(ras, values = runif(n = ncell(ras), min = 1, max = 2))
-  # ras <- writeRaster(ras, filename = tempfile(), format = "GTiff")
 
   on.exit(raster::rasterOptions(todisk = FALSE))
 })
@@ -1929,9 +1938,9 @@ test_that("System call gdal will make the rasters match for rasterStack", {
   raster::rasterOptions(todisk = TRUE) #to trigger GDAL
 
   test1 <- prepInputs(targetFile = ras1@file@name, destinationPath = tempdir2(rnStr),
-                      rasterToMatch = ras2, useCache = FALSE, method = 'ngb')
+                      rasterToMatch = ras2, useCache = FALSE, method = 'ngb', filename2 = TRUE)
 
-  expect_true(file.exists(test1@file@name)) #exists on disk after gdalwarp
+  expect_true(file.exists(test1@file@name)) # now (Aug 12, 2020) does not exist on disk after gdalwarp -- because no filename2
   expect_true(dataType(test1) == "INT1U")
   expect_identical(raster::res(ras2), raster::res(test1))
   expect_identical(raster::extent(ras2), raster::extent(test1))
@@ -1975,7 +1984,6 @@ test_that("cropInputs crops too closely when input projections are different", {
   RTM <- setValues(RTM, 2)
   out <- postProcess(x = x, rasterToMatch = RTM, filename2 = NULL)
   expect_null(out[is.na(out) & !is.na(RTM)])
-
 })
 
 test_that("message when files from archive are already present", {
@@ -2103,7 +2111,9 @@ test_that("writeOutputs with non-matching filename2", {
 
   r <- raster(extent(0,10,0,10), vals = rnorm(100))
   r <- writeRaster(r, file = tmpfile[1], overwrite = TRUE)
-  warn <- capture_warnings(r1 <- writeOutputs(r, filename2 = tmpfile[2]))
+  warn <- capture_warnings({
+    r1 <- writeOutputs(r, filename2 = tmpfile[2])
+  })
   expect_true(any(grepl("filename2 file type", warn)))
   r2 <- raster(filename(r1))
   vals1 <- r2[]
@@ -2115,8 +2125,14 @@ test_that("writeOutputs with non-matching filename2", {
   expect_true(identical(normPath(filename(r2)), normPath(filename(r1))))
 })
 
-
 test_that("new gdalwarp all in one with grd with factor", {
+  if (requireNamespace("gdalUtils")) {
+    suppressWarnings(gdalUtils::gdal_setInstallation())
+  }
+
+  if (is.null(getOption("gdalUtils_gdalPath")))
+    skip("no GDAL installation found")
+
   testInitOut <- testInit(c("raster"), tmpFileExt = c(".grd", ".tif"))
   on.exit({
     testOnExit(testInitOut)
@@ -2129,7 +2145,7 @@ test_that("new gdalwarp all in one with grd with factor", {
   StudyArea <- SpatialPolygons(list(Srs1), 1L)
   crs(StudyArea) <- crsToUse
 
-  r <- raster(extent(-130,-110,55,65), res = 1)
+  r <- raster(extent(-130, -110, 55, 65), res = 1)
   crs(r) <- crsToUse
   r[] <- sample(0:10, size = ncell(r), replace = TRUE)
   df <- data.frame(ID = 0:10, label = LETTERS[1:11])
@@ -2138,11 +2154,11 @@ test_that("new gdalwarp all in one with grd with factor", {
   # Check that the file-backed location is NOT in the cacheRepo for 1st or 2nd time.
   #  This invokes the new dealWithRastersOnRecovery fn
   rr <- postProcess(r, destinationPath = tmpdir,
-              studyArea = StudyArea, useCache = TRUE, useGDAL = "force")
+                    studyArea = StudyArea, useCache = TRUE, useGDAL = "force", filename2 = TRUE)
   rr1 <- Cache(postProcess, r, destinationPath = tmpdir,
-              studyArea = StudyArea, useCache = TRUE, useGDAL = "force", cacheRepo = tmpCache)
+               studyArea = StudyArea, useCache = TRUE, useGDAL = "force", cacheRepo = tmpCache, filename2 = TRUE)
   rr3 <- Cache(postProcess, r, destinationPath = tmpdir,
-               studyArea = StudyArea, useCache = TRUE, useGDAL = "force", cacheRepo = tmpCache)
+               studyArea = StudyArea, useCache = TRUE, useGDAL = "force", cacheRepo = tmpCache, filename2 = TRUE)
   expect_true(identical(dirname(Filenames(rr)), dirname(Filenames(rr1))))
   expect_true(identical(Filenames(rr1), Filenames(rr3)))
   expect_true(!identical(dirname(Filenames(rr)), tmpCache)) # used to be that the recovery path was Cache file
@@ -2154,7 +2170,7 @@ test_that("new gdalwarp all in one with grd with factor", {
   expect_true(identical(raster::levels(rr2), raster::levels(r)))
   expect_true(sum(abs(raster::extent(rr2)[1:4] - raster::extent(StudyArea)[1:4])) < 1)
   expect_true(!identical(filename(rr), filename(rr2)))
-  expect_true(grepl(".tif$", filename(rr)))
-  expect_true(grepl(".grd$", filename(rr2)))
 
+  expect_true(grepl(".tif$", filename(rr))) # now (Aug 12, 2020) does not exist on disk after gdalwarp -- because no filename2
+  expect_true(grepl(".grd$", filename(rr2)))
 })
