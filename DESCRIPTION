@@ -17,12 +17,12 @@ SystemRequirements: 'unrar' (Linux/macOS) or '7-Zip' (Windows) to work
         with '.rar' files.
 URL: https://reproducible.predictiveecology.org,
         https://github.com/PredictiveEcology/reproducible
-Date: 2020-08-14
-Version: 1.2.1
+Date: 2020-12-03
+Version: 1.2.4
 Authors@R: c(
     person("Eliot J B", "McIntire", email = "eliot.mcintire@canada.ca",
     role = c("aut", "cre"), comment = c(ORCID = "0000-0002-6914-8316")),
-    person("Alex M", "Chubaty", email = "alex.chubaty@gmail.com",
+    person("Alex M", "Chubaty", email = "achubaty@for-cast.ca",
     role = c("aut"), comment = c(ORCID = "0000-0001-7146-8135")),
     person("Tati", "Micheletti", email = "tati.micheletti@gmail.com",
     role = c("ctb"), comment = c(ORCID = "0000-0003-4838-8342")),
@@ -55,7 +55,7 @@ Collate: 'DBI.R' 'cache-helpers.R' 'cache-internals.R' 'cache-tools.R'
         'reproducible-deprecated.R' 'reproducible-package.R' 'search.R'
         'spatialObjects-class.R' 'zzz.R'
 NeedsCompilation: no
-Packaged: 2020-08-17 17:17:35 UTC; emcintir
+Packaged: 2020-12-03 18:03:06 UTC; emcintir
 Author: Eliot J B McIntire [aut, cre] (<https://orcid.org/0000-0002-6914-8316>),
   Alex M Chubaty [aut] (<https://orcid.org/0000-0001-7146-8135>),
   Tati Micheletti [ctb] (<https://orcid.org/0000-0003-4838-8342>),
@@ -65,4 +65,4 @@ Author: Eliot J B McIntire [aut, cre] (<https://orcid.org/0000-0002-6914-8316>),
     Minister of Natural Resources Canada [cph]
 Maintainer: Eliot J B McIntire <eliot.mcintire@canada.ca>
 Repository: CRAN
-Date/Publication: 2020-08-18 07:20:36 UTC
+Date/Publication: 2020-12-07 15:50:02 UTC
