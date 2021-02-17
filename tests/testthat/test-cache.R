@@ -148,9 +148,10 @@ test_that("test file-backed raster caching", {
       nOT <- Sys.time()
 
       for (i in 1:2) {
-        assign(paste0("b", i), system.time(
-          assign(paste0("a", i), Cache(rasterTobinary, a, cacheRepo = tmpCache, notOlderThan = nOT))
-        ))
+        strt <- Sys.time()
+        assign(paste0("a", i), Cache(rasterTobinary, a, cacheRepo = tmpCache, notOlderThan = nOT))
+        fin <- Sys.time()
+        assign(paste0("b", i), fin - strt)
         nOT <- Sys.time() - 100
       }
 
@@ -262,8 +263,8 @@ test_that("test memory backed raster robustDigest", {
 
   r <- raster(matrix(1:10, 2, 5))
   b <- brick(r, r)
-  b <- .writeRaster(b, file = tmpfile[1], overwrite = TRUE)
-  dig1 <- .robustDigest(b)
+  bb1 <- .writeRaster(b, file = tmpfile[1], overwrite = TRUE)
+  dig1 <- .robustDigest(bb1)
 
   expect_identical(dig, dig1)
 
@@ -886,16 +887,95 @@ test_that("test cache-helpers", {
   expect_true(identical(normalizePath(filename(b1$layer.1), winslash = "/", mustWork = FALSE),
                         normalizePath(file.path(tmpCache, "rasters", basename(filename(r))), winslash = "/", mustWork = FALSE)))
 
-  # Give them same name -- but will create a next numeric
-  r1 <- .writeRaster(r1, filename = tmpfile, overwrite = TRUE)
+  # Give them single file -- 2 layer stack; like a brick, but a stack
+  r[] <- r[]
+  r1[] <- r1[]
   b <- raster::stack(r, r1)
-  expect_true(identical(b$layer.1@file@name, b$layer.2@file@name))
-  b1 <- .prepareFileBackedRaster(b, tmpCache)
 
-  # there are 2 file names now
-  expect_true(length(unique(filePathSansExt(Filenames(b1)))) == 2)
+  b <- .writeRaster(b, filename = tmpfile, overwrite = TRUE)
+  b <- raster::stack(b)
+  expect_true(nlayers(b) == 2)
+  expect_true(identical(normPath(b$layer.1@file@name),
+                        normPath(b$layer.2@file@name)))
+
+  b1 <- .prepareFileBackedRaster(b, tmpCache)
+  expect_true(nlayers(b1) == 2)
+  b1a <- raster::stack(Filenames(b1)[1])
+  expect_true(nlayers(b1a) == 2)
 
 })
+
+test_that("test cache-helpers", {
+  testInitOut <- testInit("raster")
+  out <- reproducible::createCache(tmpCache)
+  on.exit({
+    testOnExit(testInitOut)
+  }, add = TRUE)
+
+  tmpfile <- tempfile(tmpdir = tmpdir, fileext = ".grd")
+  tmpfile2 <- tempfile(tmpdir = tmpdir, fileext = ".grd")
+  tmpfile3 <- tempfile(tmpdir = tmpdir, fileext = ".grd")
+  tmpfile1tif <- tempfile(tmpdir = tmpdir, fileext = ".tif")
+  tmpfile2tif <- tempfile(tmpdir = tmpdir, fileext = ".tif")
+  tmpfile3tif <- tempfile(tmpdir = tmpdir, fileext = ".tif")
+
+  r1 <- raster(extent(0,3,0,3), vals = 1)
+  r2 <- raster(extent(0,3,0,3), vals = 2)
+  r3 <- raster(extent(0,3,0,3), vals = 3)
+  r2 <- writeRaster(r1, filename = tmpfile2)
+  r3 <- writeRaster(r1, filename = tmpfile3)
+  r2tif <- suppressWarningsSpecific(falseWarning = proj6Warn,
+                                    writeRaster(r1, filename = tmpfile2tif))
+  r3tif <- suppressWarningsSpecific(falseWarning = proj6Warn,
+                           writeRaster(r1, filename = tmpfile3tif))
+
+  s1 <- raster::stack(r1, r1)
+  s2 <- raster::stack(r1, r2)
+  s3 <- raster::stack(r3, r2)
+  s1 <- raster::stack(r1, r1)
+  s2tif <- raster::stack(r1, r2tif)
+  s3tif <- raster::stack(r3tif, r2tif)
+
+
+
+  i <- 1
+  for (rr in list(r1, r2, r3, r2tif, r3tif, s1, s2, s3, s2tif, s3tif)) {
+    message(i); i <- i + 1
+
+    out2 <- .prepareFileBackedRaster(rr, repoDir = tmpCache)
+    test1 <- identical(out2, rr)
+    test2 <- identical(Filenames(out2), Filenames(rr))
+    test3 <- identical(Filenames(out2, allowMultiple = FALSE),
+                       Filenames(rr, allowMultiple = FALSE))
+    test4 <- identical(basename(Filenames(out2, allowMultiple = TRUE)),
+                       basename(Filenames(rr, allowMultiple = TRUE)))
+    test5 <- identical(length(Filenames(out2)), length(Filenames(rr)))
+    if (any(nchar(Filenames(out2)) > 0)) {
+      expect_false(test1 && test2 && test3)
+      expect_true(test4 && test5)
+    } else {
+      expect_true(test1 && test2 && test3 && test4 && test5)
+    }
+    unlink(Filenames(out2))
+  }
+
+  out2 <- .prepareFileBackedRaster(s2, repoDir = tmpCache)
+  out3 <- .prepareFileBackedRaster(s2, repoDir = tmpCache)
+  fn2 <- Filenames(out2)
+  fn3 <- Filenames(out3)
+  actualFiles <- nchar(fn2) > 0
+  bnfn2 <- basename(fn2[actualFiles])
+  bnfn3 <- basename(fn3[actualFiles])
+  bnfn2 <- unique(filePathSansExt(bnfn2))
+  bnfn3 <- unique(filePathSansExt(bnfn3))
+  sameFileBase <- grepl(pattern = bnfn2, x = bnfn3)
+  expect_true(sameFileBase)
+
+  unlink(Filenames(s2))
+  expect_error(out2 <- .prepareFileBackedRaster(s2, repoDir = tmpCache), "most likely")
+
+})
+
 
 test_that("test useCache = 'overwrite'", {
   testInitOut <- testInit(ask = FALSE)
@@ -935,17 +1015,19 @@ test_that("test rm large non-file-backed rasters", {
     if (!grepl("SQLite", class(getOption("reproducible.conn", NULL))))
       skip("This is not for non-SQLite")
 
-  testInitOut <- testInit(ask = FALSE,
-                          opts = list("reproducible.tempPath" = tempdir2(),
-                                      "reproducible.cachePath" = .reproducibleTempCacheDir()))
+  testInitOut <- testInit(ask = FALSE)
+
   on.exit({
     testOnExit(testInitOut)
   }, add = TRUE)
 
-  st0 <- system.time({
-    r <- Cache(raster, extent(0, 10000, 0, 10000), res = 1, vals = 1, userTags = "first")
-  })
-  st1 <- system.time(clearCache(userTags = "first", ask = FALSE))
+  opts11 <- options("reproducible.cacheSpeed" = "fast",
+                    "reproducible.cacheSaveFormat" = "qs")
+  on.exit(options(opts11), add = TRUE)
+
+  r <- Cache(raster, extent(0, 10000, 0, 10000), res = 1, vals = 1,
+             cacheRepo = tmpdir, userTags = "first")
+  st1 <- system.time(clearCache(tmpdir, userTags = "first", ask = FALSE ))
   expect_true(st1["user.self"] < 0.75) # This was > 2 seconds in old way
 })
 
@@ -1038,7 +1120,7 @@ test_that("test failed Cache recovery -- message to delete cacheId", {
     })
   })
   expect_true(grepl(paste0("(trying to recover).*(",ci,")"), err))
-  expect_true(grepl(paste0("cannot open compressed file"), warn))
+  expect_true(grepl(paste0("[cannot|failed to] open"), paste(warn, err)))
 
 })
 
@@ -1088,20 +1170,36 @@ test_that("test file link with duplicate Cache", {
   mess1 <- capture_messages({
     b <- Cache(sam, N, cacheRepo = tmpCache)
   })
+
+  # Change in RSQLite 2.2.2 -- there is now a random number used in dbAppend,
+  #   so this test no longer works after the second time -- running it a 3rd time
+  #   is sufficient for the test. The point it, if it is an identical result,
+  #   then there will be a file.link
   set.seed(123)
   mess2 <- capture_messages({
     d <- Cache(sample, N, cacheRepo = tmpCache)
   })
 
-  expect_true(grepl("A file with identical", mess2))
+  set.seed(123)
+  mess3 <- capture_messages({
+    g <- Cache(sam1, N, cacheRepo = tmpCache)
+  })
+
+  expect_true(grepl("A file with identical", mess3))
 
   set.seed(123)
   mess1 <- capture_messages({b <- Cache(sam, N, cacheRepo = tmpCache)})
   set.seed(123)
+  # Because of RSQLite 2.2.2 this 2nd time is not considered identical -- need 3rd time
   mess2 <- capture_messages({d <- Cache(sample, N, cacheRepo = tmpCache)})
+  clearCache(tmpCache, userTags = gsub("cacheId:", "", attr(b, "tags")))
+  set.seed(123)
+  mess2 <- capture_messages({d <- Cache(sam1, N, cacheRepo = tmpCache)})
   expect_true(any(grepl("loaded cached", mess2)))
   expect_true(any(grepl("loaded cached", mess1)))
-  out1 <- try(system2("du", tmpCache, stdout = TRUE), silent = TRUE)
+  # There are intermittent "status 5" warnings on next line on Windows -- not relevant here
+  warns <- capture_warnings(out1 <- try(system2("du", tmpCache, stdout = TRUE), silent = TRUE))
+  # out1 <- try(system2("du", tmpCache, stdout = TRUE), silent = TRUE)
   if (!is(out1, "try-error"))
     fs1 <- as.numeric(gsub("([[:digit:]]*).*", "\\1", out1))
 
@@ -1124,6 +1222,8 @@ test_that("test file link with duplicate Cache", {
   unlink(dir(CacheStorageDir(tmpCache), pattern = cacheIds[2], full.names = TRUE))
   set.seed(1234)
 
+#  ._saveToCache_1 <<- 1
+#  on.exit(rm(list = c("._saveToCache_1"), envir = .GlobalEnv), add = TRUE)
   warn <- capture_warnings({d1 <- Cache(sam1, N, cacheRepo = tmpCache)})
   expect_true(length(warn) == 0)
 })
