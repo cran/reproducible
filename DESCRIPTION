@@ -17,22 +17,36 @@ SystemRequirements: 'unrar' (Linux/macOS) or '7-Zip' (Windows) to work
         with '.rar' files.
 URL: https://reproducible.predictiveecology.org,
         https://github.com/PredictiveEcology/reproducible
-Date: 2021-02-11
-Version: 1.2.6
-Authors@R: c(
-    person("Eliot J B", "McIntire", email = "eliot.mcintire@canada.ca",
-    role = c("aut", "cre"), comment = c(ORCID = "0000-0002-6914-8316")),
-    person("Alex M", "Chubaty", email = "achubaty@for-cast.ca",
-    role = c("aut"), comment = c(ORCID = "0000-0001-7146-8135")),
-    person("Tati", "Micheletti", email = "tati.micheletti@gmail.com",
-    role = c("ctb"), comment = c(ORCID = "0000-0003-4838-8342")),
-    person("Ceres", "Barros", email = "cbarros@mail.ubc.ca",
-    role = c("ctb"), comment = c(ORCID = "0000-0003-4036-977X")),
-    person("Ian", "Eddy", email = "ian.eddy@canada.com",
-    role = c("ctb"), comment = c(ORCID = "0000-0001-7397-2116")),
-    person("Her Majesty the Queen in Right of Canada, as represented by the Minister of Natural Resources Canada",
-    role = "cph")
-    )
+Date: 2021-05-22
+Version: 1.2.7
+Authors@R: 
+    c(person(given = "Eliot J B",
+             family = "McIntire",
+             role = c("aut", "cre"),
+             email = "eliot.mcintire@canada.ca",
+             comment = c(ORCID = "0000-0002-6914-8316")),
+      person(given = "Alex M",
+             family = "Chubaty",
+             role = "aut",
+             email = "achubaty@for-cast.ca",
+             comment = c(ORCID = "0000-0001-7146-8135")),
+      person(given = "Tati",
+             family = "Micheletti",
+             role = "ctb",
+             email = "tati.micheletti@gmail.com",
+             comment = c(ORCID = "0000-0003-4838-8342")),
+      person(given = "Ceres",
+             family = "Barros",
+             role = "ctb",
+             email = "cbarros@mail.ubc.ca",
+             comment = c(ORCID = "0000-0003-4036-977X")),
+      person(given = "Ian",
+             family = "Eddy",
+             role = "ctb",
+             email = "ian.eddy@canada.com",
+             comment = c(ORCID = "0000-0001-7397-2116")),
+      person(given = "Her Majesty the Queen in Right of Canada, as represented by the Minister of Natural Resources Canada",
+             role = "cph"))
 Depends: R (>= 3.5)
 Imports: data.table (>= 1.10.4), DBI, digest, fpCompare, glue,
         magrittr, methods, Require, raster, RSQLite, rlang, sp (>=
@@ -55,7 +69,7 @@ Collate: 'DBI.R' 'cache-helpers.R' 'cache-internals.R' 'cache-tools.R'
         'reproducible-deprecated.R' 'reproducible-package.R' 'search.R'
         'spatialObjects-class.R' 'zzz.R'
 NeedsCompilation: no
-Packaged: 2021-02-16 19:28:52 UTC; emcintir
+Packaged: 2021-05-25 01:56:44 UTC; achubaty
 Author: Eliot J B McIntire [aut, cre] (<https://orcid.org/0000-0002-6914-8316>),
   Alex M Chubaty [aut] (<https://orcid.org/0000-0001-7146-8135>),
   Tati Micheletti [ctb] (<https://orcid.org/0000-0003-4838-8342>),
@@ -65,4 +79,4 @@ Author: Eliot J B McIntire [aut, cre] (<https://orcid.org/0000-0002-6914-8316>),
     Minister of Natural Resources Canada [cph]
 Maintainer: Eliot J B McIntire <eliot.mcintire@canada.ca>
 Repository: CRAN
-Date/Publication: 2021-02-17 17:20:02 UTC
+Date/Publication: 2021-05-28 17:40:02 UTC
