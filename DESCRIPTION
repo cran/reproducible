@@ -17,8 +17,8 @@ SystemRequirements: 'unrar' (Linux/macOS) or '7-Zip' (Windows) to work
         with '.rar' files.
 URL: https://reproducible.predictiveecology.org,
         https://github.com/PredictiveEcology/reproducible
-Date: 2021-09-26
-Version: 1.2.8
+Date: 2022-08-14
+Version: 1.2.10
 Authors@R: 
     c(person(given = "Eliot J B",
              family = "McIntire",
@@ -43,33 +43,34 @@ Authors@R:
       person(given = "Ian",
              family = "Eddy",
              role = "ctb",
-             email = "ian.eddy@canada.com",
+             email = "ian.eddy@nrcan-rncan.gc.ca",
              comment = c(ORCID = "0000-0001-7397-2116")),
       person(given = "Her Majesty the Queen in Right of Canada, as represented by the Minister of Natural Resources Canada",
              role = "cph"))
-Depends: R (>= 3.6)
-Imports: data.table (>= 1.10.4), DBI, digest, fpCompare, gdalUtilities,
-        glue, magrittr, methods, Require, raster, RSQLite, rlang, sp
-        (>= 1.4-2), utils
-Suggests: covr, crayon, fastdigest, fasterize, future, gdalUtils,
-        googledrive, httr, lwgeom, qs, knitr, parallel, RCurl (>=
-        1.95-4.8), rgdal, rgeos, rmarkdown, sf, stats, terra, testthat
+Depends: R (>= 4.0)
+Imports: data.table (>= 1.10.4), DBI, digest, fpCompare, glue, lobstr,
+        magrittr, methods, Require, raster (>= 3.5-15), RSQLite, rlang,
+        sp (>= 1.4-2), utils
+Suggests: covr, crayon, fastdigest, fasterize, future, googledrive,
+        httr, lwgeom, qs, knitr, parallel, RCurl (>= 1.95-4.8), rgdal,
+        rmarkdown, sf, stats, terra (>= 1.5-17), testthat
 Encoding: UTF-8
 Language: en-CA
 License: GPL-3
 VignetteBuilder: knitr, rmarkdown
 BugReports: https://github.com/PredictiveEcology/reproducible/issues
 ByteCompile: yes
-RoxygenNote: 7.1.1
 Collate: 'DBI.R' 'cache-helpers.R' 'cache-internals.R' 'cache-tools.R'
         'robustDigest.R' 'cache.R' 'checksums.R' 'cloud.R' 'cloudOld.R'
         'convertPaths.R' 'copy.R' 'download.R' 'gis.R' 'git.R'
         'helpers.R' 'objectSize.R' 'options.R' 'packages.R' 'pipe.R'
-        'postProcess.R' 'preProcess.R' 'prepInputs.R' 'reexports.R'
-        'reproducible-deprecated.R' 'reproducible-package.R' 'search.R'
-        'spatialObjects-class.R' 'zzz.R'
+        'postProcess.R' 'postProcessTerra.R' 'preProcess.R'
+        'prepInputs.R' 'reexports.R' 'reproducible-deprecated.R'
+        'reproducible-package.R' 'search.R' 'spatialObjects-class.R'
+        'zzz.R'
+RoxygenNote: 7.2.1
 NeedsCompilation: no
-Packaged: 2021-09-26 16:04:36 UTC; emcintir
+Packaged: 2022-08-16 15:24:15 UTC; achubaty
 Author: Eliot J B McIntire [aut, cre] (<https://orcid.org/0000-0002-6914-8316>),
   Alex M Chubaty [aut] (<https://orcid.org/0000-0001-7146-8135>),
   Tati Micheletti [ctb] (<https://orcid.org/0000-0003-4838-8342>),
@@ -79,4 +80,4 @@ Author: Eliot J B McIntire [aut, cre] (<https://orcid.org/0000-0002-6914-8316>),
     Minister of Natural Resources Canada [cph]
 Maintainer: Eliot J B McIntire <eliot.mcintire@canada.ca>
 Repository: CRAN
-Date/Publication: 2021-09-26 16:40:04 UTC
+Date/Publication: 2022-08-17 08:50:02 UTC
