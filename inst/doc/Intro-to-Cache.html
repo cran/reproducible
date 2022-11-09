@@ -121,13 +121,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   for (var i = 0; i < sheets.length; i++) {
     if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
     try { var rules = sheets[i].cssRules; } catch (e) { continue; }
-    for (var j = 0; j < rules.length; j++) {
+    var j = 0;
+    while (j < rules.length) {
       var rule = rules[j];
       // check if there is a div.sourceCode rule
-      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
       var style = rule.style.cssText;
       // check if color or background-color is set
-      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
       // replace div.sourceCode by a pre.sourceCode rule
       sheets[i].deleteRule(j);
       sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
@@ -333,7 +340,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Introduction to Cache</h1>
 <h4 class="author">Eliot J. B. McIntire</h4>
-<h4 class="date">August 16 2022</h4>
+<h4 class="date">November 07 2022</h4>
 
 
 <div id="TOC">
@@ -420,7 +427,7 @@ caching</h2>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>tmpDir <span class="ot">&lt;-</span> <span class="fu">file.path</span>(<span class="fu">tempdir</span>(), <span class="st">&quot;reproducible_examples&quot;</span>, <span class="st">&quot;Cache&quot;</span>)</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">checkPath</span>(tmpDir, <span class="at">create =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
-<pre><code>## [1] &quot;/tmp/RtmpWKofw4/reproducible_examples/Cache&quot;</code></pre>
+<pre><code>## [1] &quot;/tmp/RtmpDjFPTN/reproducible_examples/Cache&quot;</code></pre>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ras <span class="ot">&lt;-</span> <span class="fu">raster</span>(<span class="fu">extent</span>(<span class="dv">0</span>, <span class="dv">1000</span>, <span class="dv">0</span>, <span class="dv">1000</span>), <span class="at">vals =</span> <span class="dv">1</span><span class="sc">:</span><span class="fl">1e6</span>, <span class="at">res =</span> <span class="dv">1</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">crs</span>(ras) <span class="ot">&lt;-</span> <span class="st">&quot;+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84&quot;</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -429,26 +436,26 @@ caching</h2>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># No Cache</span></span>
 <span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">suppressWarnings</span>(map1 <span class="ot">&lt;-</span> <span class="fu">projectRaster</span>(ras, <span class="at">crs =</span> newCRS))) <span class="co"># Warnings due to new PROJ</span></span></code></pre></div>
 <pre><code>##    user  system elapsed 
-##   1.787   0.169   1.958</code></pre>
+##   2.887   0.242   3.131</code></pre>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Try with memoise for this example -- for many simple cases, memoising will not be faster</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>opts <span class="ot">&lt;-</span> <span class="fu">options</span>(<span class="st">&quot;reproducible.useMemoise&quot;</span> <span class="ot">=</span> <span class="cn">TRUE</span>)</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># With Cache -- a little slower the first time because saving to disk</span></span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">suppressWarnings</span>(map1 <span class="ot">&lt;-</span> <span class="fu">Cache</span>(projectRaster, ras, <span class="at">crs =</span> newCRS, <span class="at">cacheRepo =</span> tmpDir,</span>
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>                         <span class="at">notOlderThan =</span> <span class="fu">Sys.time</span>())))</span></code></pre></div>
 <pre><code>##    user  system elapsed 
-##   1.859   0.054   1.920</code></pre>
+##   2.772   0.229   3.008</code></pre>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># vastly faster the second time</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(map2 <span class="ot">&lt;-</span> <span class="fu">Cache</span>(projectRaster, ras, <span class="at">crs =</span> newCRS, <span class="at">cacheRepo =</span> tmpDir))</span></code></pre></div>
-<pre><code>##   ...(Object to retrieve (7eed2ff11d587cb1.rds) is large: 6.5 Mb)</code></pre>
+<pre><code>##   ...(Object to retrieve (c9370bd403e2a7b3.rds) is large: 6.5 Mb)</code></pre>
 <pre><code>##      loaded memoised result from previous projectRaster call</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.227   0.000   0.233</code></pre>
+##   0.221   0.000   0.224</code></pre>
 <div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># may be faster the third time because of memoise; but this example is too simple to show</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(map3 <span class="ot">&lt;-</span> <span class="fu">Cache</span>(projectRaster, ras, <span class="at">crs =</span> newCRS, <span class="at">cacheRepo =</span> tmpDir))</span></code></pre></div>
-<pre><code>##   ...(Object to retrieve (7eed2ff11d587cb1.rds) is large: 6.5 Mb)
+<pre><code>##   ...(Object to retrieve (c9370bd403e2a7b3.rds) is large: 6.5 Mb)
 ##      loaded memoised result from previous projectRaster call</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.019   0.004   0.032</code></pre>
+##   0.020   0.001   0.023</code></pre>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(opts)</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">all.equal</span>(map1, map2) <span class="co"># TRUE</span></span></code></pre></div>
@@ -497,11 +504,11 @@ cache use with tags</h2>
 ##  2: 3aef38d1fc02aee5            function                 runif
 ##  3: 3aef38d1fc02aee5               class               numeric
 ##  4: 3aef38d1fc02aee5         object.size                  1008
-##  5: 3aef38d1fc02aee5            accessed   2022-08-16 09:24:12
+##  5: 3aef38d1fc02aee5            accessed   2022-11-07 10:08:07
 ##  6: 3aef38d1fc02aee5             inCloud                 FALSE
 ##  7: 3aef38d1fc02aee5          resultHash                      
-##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0002286434 secs
-##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun     1.883507e-05 secs
+##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0002422333 secs
+##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun     1.978874e-05 secs
 ## 10: 3aef38d1fc02aee5      otherFunctions      vweave_rmarkdown
 ## 11: 3aef38d1fc02aee5      otherFunctions          process_file
 ## 12: 3aef38d1fc02aee5      otherFunctions         process_group
@@ -515,15 +522,15 @@ cache use with tags</h2>
 ## 20: 3aef38d1fc02aee5      otherFunctions                handle
 ## 21: 3aef38d1fc02aee5           preDigest    n:7eef4eae85fd9229
 ## 22: 3aef38d1fc02aee5           preDigest .FUN:881ec847b7161f3c
-## 23: 3aef38d1fc02aee5           file.size                   166
+## 23: 3aef38d1fc02aee5           file.size                   170
 ## 24: f7bee22047b8d0c1          objectName                     a
 ## 25: f7bee22047b8d0c1            function                 rnorm
 ## 26: f7bee22047b8d0c1               class               numeric
 ## 27: f7bee22047b8d0c1         object.size                  1008
-## 28: f7bee22047b8d0c1            accessed   2022-08-16 09:24:12
+## 28: f7bee22047b8d0c1            accessed   2022-11-07 10:08:07
 ## 29: f7bee22047b8d0c1             inCloud                 FALSE
 ## 30: f7bee22047b8d0c1          resultHash                      
-## 31: f7bee22047b8d0c1   elapsedTimeDigest     0.0002276897 secs
+## 31: f7bee22047b8d0c1   elapsedTimeDigest     0.0002355576 secs
 ## 32: f7bee22047b8d0c1 elapsedTimeFirstRun     2.026558e-05 secs
 ## 33: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 34: f7bee22047b8d0c1      otherFunctions          process_file
@@ -538,55 +545,55 @@ cache use with tags</h2>
 ## 43: f7bee22047b8d0c1      otherFunctions                handle
 ## 44: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 45: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
-## 46: f7bee22047b8d0c1           file.size                   175
+## 46: f7bee22047b8d0c1           file.size                   174
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2022-08-16 09:24:12
-##  2: 2022-08-16 09:24:12
-##  3: 2022-08-16 09:24:12
-##  4: 2022-08-16 09:24:12
-##  5: 2022-08-16 09:24:12
-##  6: 2022-08-16 09:24:12
-##  7: 2022-08-16 09:24:12
-##  8: 2022-08-16 09:24:12
-##  9: 2022-08-16 09:24:12
-## 10: 2022-08-16 09:24:12
-## 11: 2022-08-16 09:24:12
-## 12: 2022-08-16 09:24:12
-## 13: 2022-08-16 09:24:12
-## 14: 2022-08-16 09:24:12
-## 15: 2022-08-16 09:24:12
-## 16: 2022-08-16 09:24:12
-## 17: 2022-08-16 09:24:12
-## 18: 2022-08-16 09:24:12
-## 19: 2022-08-16 09:24:12
-## 20: 2022-08-16 09:24:12
-## 21: 2022-08-16 09:24:12
-## 22: 2022-08-16 09:24:12
-## 23: 2022-08-16 09:24:12
-## 24: 2022-08-16 09:24:12
-## 25: 2022-08-16 09:24:12
-## 26: 2022-08-16 09:24:12
-## 27: 2022-08-16 09:24:12
-## 28: 2022-08-16 09:24:12
-## 29: 2022-08-16 09:24:12
-## 30: 2022-08-16 09:24:12
-## 31: 2022-08-16 09:24:12
-## 32: 2022-08-16 09:24:12
-## 33: 2022-08-16 09:24:12
-## 34: 2022-08-16 09:24:12
-## 35: 2022-08-16 09:24:12
-## 36: 2022-08-16 09:24:12
-## 37: 2022-08-16 09:24:12
-## 38: 2022-08-16 09:24:12
-## 39: 2022-08-16 09:24:12
-## 40: 2022-08-16 09:24:12
-## 41: 2022-08-16 09:24:12
-## 42: 2022-08-16 09:24:12
-## 43: 2022-08-16 09:24:12
-## 44: 2022-08-16 09:24:12
-## 45: 2022-08-16 09:24:12
-## 46: 2022-08-16 09:24:12
+##  1: 2022-11-07 10:08:07
+##  2: 2022-11-07 10:08:07
+##  3: 2022-11-07 10:08:07
+##  4: 2022-11-07 10:08:07
+##  5: 2022-11-07 10:08:07
+##  6: 2022-11-07 10:08:07
+##  7: 2022-11-07 10:08:07
+##  8: 2022-11-07 10:08:07
+##  9: 2022-11-07 10:08:07
+## 10: 2022-11-07 10:08:07
+## 11: 2022-11-07 10:08:07
+## 12: 2022-11-07 10:08:07
+## 13: 2022-11-07 10:08:07
+## 14: 2022-11-07 10:08:07
+## 15: 2022-11-07 10:08:07
+## 16: 2022-11-07 10:08:07
+## 17: 2022-11-07 10:08:07
+## 18: 2022-11-07 10:08:07
+## 19: 2022-11-07 10:08:07
+## 20: 2022-11-07 10:08:07
+## 21: 2022-11-07 10:08:07
+## 22: 2022-11-07 10:08:07
+## 23: 2022-11-07 10:08:07
+## 24: 2022-11-07 10:08:07
+## 25: 2022-11-07 10:08:07
+## 26: 2022-11-07 10:08:07
+## 27: 2022-11-07 10:08:07
+## 28: 2022-11-07 10:08:07
+## 29: 2022-11-07 10:08:07
+## 30: 2022-11-07 10:08:07
+## 31: 2022-11-07 10:08:07
+## 32: 2022-11-07 10:08:07
+## 33: 2022-11-07 10:08:07
+## 34: 2022-11-07 10:08:07
+## 35: 2022-11-07 10:08:07
+## 36: 2022-11-07 10:08:07
+## 37: 2022-11-07 10:08:07
+## 38: 2022-11-07 10:08:07
+## 39: 2022-11-07 10:08:07
+## 40: 2022-11-07 10:08:07
+## 41: 2022-11-07 10:08:07
+## 42: 2022-11-07 10:08:07
+## 43: 2022-11-07 10:08:07
+## 44: 2022-11-07 10:08:07
+## 45: 2022-11-07 10:08:07
+## 46: 2022-11-07 10:08:07
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">showCache</span>(tmpDir, <span class="at">userTags =</span> <span class="fu">c</span>(<span class="st">&quot;^a$&quot;</span>)) <span class="co"># regular expression ... &quot;a&quot; exactly</span></span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
@@ -597,10 +604,10 @@ cache use with tags</h2>
 ##  2: f7bee22047b8d0c1            function                 rnorm
 ##  3: f7bee22047b8d0c1               class               numeric
 ##  4: f7bee22047b8d0c1         object.size                  1008
-##  5: f7bee22047b8d0c1            accessed   2022-08-16 09:24:12
+##  5: f7bee22047b8d0c1            accessed   2022-11-07 10:08:07
 ##  6: f7bee22047b8d0c1             inCloud                 FALSE
 ##  7: f7bee22047b8d0c1          resultHash                      
-##  8: f7bee22047b8d0c1   elapsedTimeDigest     0.0002276897 secs
+##  8: f7bee22047b8d0c1   elapsedTimeDigest     0.0002355576 secs
 ##  9: f7bee22047b8d0c1 elapsedTimeFirstRun     2.026558e-05 secs
 ## 10: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 11: f7bee22047b8d0c1      otherFunctions          process_file
@@ -615,32 +622,32 @@ cache use with tags</h2>
 ## 20: f7bee22047b8d0c1      otherFunctions                handle
 ## 21: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 22: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
-## 23: f7bee22047b8d0c1           file.size                   175
+## 23: f7bee22047b8d0c1           file.size                   174
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2022-08-16 09:24:12
-##  2: 2022-08-16 09:24:12
-##  3: 2022-08-16 09:24:12
-##  4: 2022-08-16 09:24:12
-##  5: 2022-08-16 09:24:12
-##  6: 2022-08-16 09:24:12
-##  7: 2022-08-16 09:24:12
-##  8: 2022-08-16 09:24:12
-##  9: 2022-08-16 09:24:12
-## 10: 2022-08-16 09:24:12
-## 11: 2022-08-16 09:24:12
-## 12: 2022-08-16 09:24:12
-## 13: 2022-08-16 09:24:12
-## 14: 2022-08-16 09:24:12
-## 15: 2022-08-16 09:24:12
-## 16: 2022-08-16 09:24:12
-## 17: 2022-08-16 09:24:12
-## 18: 2022-08-16 09:24:12
-## 19: 2022-08-16 09:24:12
-## 20: 2022-08-16 09:24:12
-## 21: 2022-08-16 09:24:12
-## 22: 2022-08-16 09:24:12
-## 23: 2022-08-16 09:24:12
+##  1: 2022-11-07 10:08:07
+##  2: 2022-11-07 10:08:07
+##  3: 2022-11-07 10:08:07
+##  4: 2022-11-07 10:08:07
+##  5: 2022-11-07 10:08:07
+##  6: 2022-11-07 10:08:07
+##  7: 2022-11-07 10:08:07
+##  8: 2022-11-07 10:08:07
+##  9: 2022-11-07 10:08:07
+## 10: 2022-11-07 10:08:07
+## 11: 2022-11-07 10:08:07
+## 12: 2022-11-07 10:08:07
+## 13: 2022-11-07 10:08:07
+## 14: 2022-11-07 10:08:07
+## 15: 2022-11-07 10:08:07
+## 16: 2022-11-07 10:08:07
+## 17: 2022-11-07 10:08:07
+## 18: 2022-11-07 10:08:07
+## 19: 2022-11-07 10:08:07
+## 20: 2022-11-07 10:08:07
+## 21: 2022-11-07 10:08:07
+## 22: 2022-11-07 10:08:07
+## 23: 2022-11-07 10:08:07
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">showCache</span>(tmpDir, <span class="at">userTags =</span> <span class="fu">c</span>(<span class="st">&quot;runif&quot;</span>)) <span class="co"># show only cached objects made during runif call</span></span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
@@ -651,11 +658,11 @@ cache use with tags</h2>
 ##  2: 3aef38d1fc02aee5            function                 runif
 ##  3: 3aef38d1fc02aee5               class               numeric
 ##  4: 3aef38d1fc02aee5         object.size                  1008
-##  5: 3aef38d1fc02aee5            accessed   2022-08-16 09:24:12
+##  5: 3aef38d1fc02aee5            accessed   2022-11-07 10:08:07
 ##  6: 3aef38d1fc02aee5             inCloud                 FALSE
 ##  7: 3aef38d1fc02aee5          resultHash                      
-##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0002286434 secs
-##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun     1.883507e-05 secs
+##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0002422333 secs
+##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun     1.978874e-05 secs
 ## 10: 3aef38d1fc02aee5      otherFunctions      vweave_rmarkdown
 ## 11: 3aef38d1fc02aee5      otherFunctions          process_file
 ## 12: 3aef38d1fc02aee5      otherFunctions         process_group
@@ -669,32 +676,32 @@ cache use with tags</h2>
 ## 20: 3aef38d1fc02aee5      otherFunctions                handle
 ## 21: 3aef38d1fc02aee5           preDigest    n:7eef4eae85fd9229
 ## 22: 3aef38d1fc02aee5           preDigest .FUN:881ec847b7161f3c
-## 23: 3aef38d1fc02aee5           file.size                   166
+## 23: 3aef38d1fc02aee5           file.size                   170
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2022-08-16 09:24:12
-##  2: 2022-08-16 09:24:12
-##  3: 2022-08-16 09:24:12
-##  4: 2022-08-16 09:24:12
-##  5: 2022-08-16 09:24:12
-##  6: 2022-08-16 09:24:12
-##  7: 2022-08-16 09:24:12
-##  8: 2022-08-16 09:24:12
-##  9: 2022-08-16 09:24:12
-## 10: 2022-08-16 09:24:12
-## 11: 2022-08-16 09:24:12
-## 12: 2022-08-16 09:24:12
-## 13: 2022-08-16 09:24:12
-## 14: 2022-08-16 09:24:12
-## 15: 2022-08-16 09:24:12
-## 16: 2022-08-16 09:24:12
-## 17: 2022-08-16 09:24:12
-## 18: 2022-08-16 09:24:12
-## 19: 2022-08-16 09:24:12
-## 20: 2022-08-16 09:24:12
-## 21: 2022-08-16 09:24:12
-## 22: 2022-08-16 09:24:12
-## 23: 2022-08-16 09:24:12
+##  1: 2022-11-07 10:08:07
+##  2: 2022-11-07 10:08:07
+##  3: 2022-11-07 10:08:07
+##  4: 2022-11-07 10:08:07
+##  5: 2022-11-07 10:08:07
+##  6: 2022-11-07 10:08:07
+##  7: 2022-11-07 10:08:07
+##  8: 2022-11-07 10:08:07
+##  9: 2022-11-07 10:08:07
+## 10: 2022-11-07 10:08:07
+## 11: 2022-11-07 10:08:07
+## 12: 2022-11-07 10:08:07
+## 13: 2022-11-07 10:08:07
+## 14: 2022-11-07 10:08:07
+## 15: 2022-11-07 10:08:07
+## 16: 2022-11-07 10:08:07
+## 17: 2022-11-07 10:08:07
+## 18: 2022-11-07 10:08:07
+## 19: 2022-11-07 10:08:07
+## 20: 2022-11-07 10:08:07
+## 21: 2022-11-07 10:08:07
+## 22: 2022-11-07 10:08:07
+## 23: 2022-11-07 10:08:07
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">clearCache</span>(tmpDir, <span class="at">userTags =</span> <span class="fu">c</span>(<span class="st">&quot;runif&quot;</span>), <span class="at">ask =</span> <span class="cn">FALSE</span>) <span class="co"># remove only cached objects made during runif call</span></span></code></pre></div>
 <pre><code>## Loading required namespace: googledrive</code></pre>
@@ -709,11 +716,11 @@ cache use with tags</h2>
 ##  1: f11fb1a2880f8060            function                 rnorm
 ##  2: f11fb1a2880f8060               class               numeric
 ##  3: f11fb1a2880f8060         object.size                  1104
-##  4: f11fb1a2880f8060            accessed   2022-08-16 09:24:11
+##  4: f11fb1a2880f8060            accessed   2022-11-07 10:08:07
 ##  5: f11fb1a2880f8060             inCloud                 FALSE
 ##  6: f11fb1a2880f8060          resultHash                      
-##  7: f11fb1a2880f8060   elapsedTimeDigest     0.0002639294 secs
-##  8: f11fb1a2880f8060 elapsedTimeFirstRun     4.291534e-05 secs
+##  7: f11fb1a2880f8060   elapsedTimeDigest     0.0002675056 secs
+##  8: f11fb1a2880f8060 elapsedTimeFirstRun     3.528595e-05 secs
 ##  9: f11fb1a2880f8060      otherFunctions      vweave_rmarkdown
 ## 10: f11fb1a2880f8060      otherFunctions          process_file
 ## 11: f11fb1a2880f8060      otherFunctions         process_group
@@ -728,18 +735,18 @@ cache use with tags</h2>
 ## 20: f11fb1a2880f8060           preDigest    n:c5775c3b366fb719
 ## 21: f11fb1a2880f8060           preDigest mean:15620f138033a66c
 ## 22: f11fb1a2880f8060           preDigest .FUN:4f604aa46882b368
-## 23: f11fb1a2880f8060           file.size                   223
-## 24: f11fb1a2880f8060            accessed   2022-08-16 09:24:12
-## 25: f11fb1a2880f8060     elapsedTimeLoad      0.002010107 secs
-## 26: f11fb1a2880f8060            accessed   2022-08-16 09:24:12
+## 23: f11fb1a2880f8060           file.size                   224
+## 24: f11fb1a2880f8060            accessed   2022-11-07 10:08:07
+## 25: f11fb1a2880f8060     elapsedTimeLoad      0.001978397 secs
+## 26: f11fb1a2880f8060            accessed   2022-11-07 10:08:07
 ## 27: c16f0e2c57596069            function                 rnorm
 ## 28: c16f0e2c57596069               class               numeric
 ## 29: c16f0e2c57596069         object.size                  1104
-## 30: c16f0e2c57596069            accessed   2022-08-16 09:24:12
+## 30: c16f0e2c57596069            accessed   2022-11-07 10:08:07
 ## 31: c16f0e2c57596069             inCloud                 FALSE
 ## 32: c16f0e2c57596069          resultHash                      
-## 33: c16f0e2c57596069   elapsedTimeDigest     0.0002536774 secs
-## 34: c16f0e2c57596069 elapsedTimeFirstRun     2.169609e-05 secs
+## 33: c16f0e2c57596069   elapsedTimeDigest     0.0002918243 secs
+## 34: c16f0e2c57596069 elapsedTimeFirstRun     2.241135e-05 secs
 ## 35: c16f0e2c57596069      otherFunctions      vweave_rmarkdown
 ## 36: c16f0e2c57596069      otherFunctions          process_file
 ## 37: c16f0e2c57596069      otherFunctions         process_group
@@ -754,15 +761,15 @@ cache use with tags</h2>
 ## 46: c16f0e2c57596069           preDigest    n:c5775c3b366fb719
 ## 47: c16f0e2c57596069           preDigest mean:152602b8ff81e5bb
 ## 48: c16f0e2c57596069           preDigest .FUN:4f604aa46882b368
-## 49: c16f0e2c57596069           file.size                   224
+## 49: c16f0e2c57596069           file.size                   223
 ## 50: f7bee22047b8d0c1          objectName                     a
 ## 51: f7bee22047b8d0c1            function                 rnorm
 ## 52: f7bee22047b8d0c1               class               numeric
 ## 53: f7bee22047b8d0c1         object.size                  1008
-## 54: f7bee22047b8d0c1            accessed   2022-08-16 09:24:12
+## 54: f7bee22047b8d0c1            accessed   2022-11-07 10:08:07
 ## 55: f7bee22047b8d0c1             inCloud                 FALSE
 ## 56: f7bee22047b8d0c1          resultHash                      
-## 57: f7bee22047b8d0c1   elapsedTimeDigest     0.0002276897 secs
+## 57: f7bee22047b8d0c1   elapsedTimeDigest     0.0002355576 secs
 ## 58: f7bee22047b8d0c1 elapsedTimeFirstRun     2.026558e-05 secs
 ## 59: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 60: f7bee22047b8d0c1      otherFunctions          process_file
@@ -777,81 +784,81 @@ cache use with tags</h2>
 ## 69: f7bee22047b8d0c1      otherFunctions                handle
 ## 70: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 71: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
-## 72: f7bee22047b8d0c1           file.size                   175
+## 72: f7bee22047b8d0c1           file.size                   174
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2022-08-16 09:24:12
-##  2: 2022-08-16 09:24:12
-##  3: 2022-08-16 09:24:12
-##  4: 2022-08-16 09:24:12
-##  5: 2022-08-16 09:24:12
-##  6: 2022-08-16 09:24:12
-##  7: 2022-08-16 09:24:12
-##  8: 2022-08-16 09:24:12
-##  9: 2022-08-16 09:24:12
-## 10: 2022-08-16 09:24:12
-## 11: 2022-08-16 09:24:12
-## 12: 2022-08-16 09:24:12
-## 13: 2022-08-16 09:24:12
-## 14: 2022-08-16 09:24:12
-## 15: 2022-08-16 09:24:12
-## 16: 2022-08-16 09:24:12
-## 17: 2022-08-16 09:24:12
-## 18: 2022-08-16 09:24:12
-## 19: 2022-08-16 09:24:12
-## 20: 2022-08-16 09:24:12
-## 21: 2022-08-16 09:24:12
-## 22: 2022-08-16 09:24:12
-## 23: 2022-08-16 09:24:12
-## 24: 2022-08-16 09:24:12
-## 25: 2022-08-16 09:24:12
-## 26: 2022-08-16 09:24:12
-## 27: 2022-08-16 09:24:12
-## 28: 2022-08-16 09:24:12
-## 29: 2022-08-16 09:24:12
-## 30: 2022-08-16 09:24:12
-## 31: 2022-08-16 09:24:12
-## 32: 2022-08-16 09:24:12
-## 33: 2022-08-16 09:24:12
-## 34: 2022-08-16 09:24:12
-## 35: 2022-08-16 09:24:12
-## 36: 2022-08-16 09:24:12
-## 37: 2022-08-16 09:24:12
-## 38: 2022-08-16 09:24:12
-## 39: 2022-08-16 09:24:12
-## 40: 2022-08-16 09:24:12
-## 41: 2022-08-16 09:24:12
-## 42: 2022-08-16 09:24:12
-## 43: 2022-08-16 09:24:12
-## 44: 2022-08-16 09:24:12
-## 45: 2022-08-16 09:24:12
-## 46: 2022-08-16 09:24:12
-## 47: 2022-08-16 09:24:12
-## 48: 2022-08-16 09:24:12
-## 49: 2022-08-16 09:24:12
-## 50: 2022-08-16 09:24:12
-## 51: 2022-08-16 09:24:12
-## 52: 2022-08-16 09:24:12
-## 53: 2022-08-16 09:24:12
-## 54: 2022-08-16 09:24:12
-## 55: 2022-08-16 09:24:12
-## 56: 2022-08-16 09:24:12
-## 57: 2022-08-16 09:24:12
-## 58: 2022-08-16 09:24:12
-## 59: 2022-08-16 09:24:12
-## 60: 2022-08-16 09:24:12
-## 61: 2022-08-16 09:24:12
-## 62: 2022-08-16 09:24:12
-## 63: 2022-08-16 09:24:12
-## 64: 2022-08-16 09:24:12
-## 65: 2022-08-16 09:24:12
-## 66: 2022-08-16 09:24:12
-## 67: 2022-08-16 09:24:12
-## 68: 2022-08-16 09:24:12
-## 69: 2022-08-16 09:24:12
-## 70: 2022-08-16 09:24:12
-## 71: 2022-08-16 09:24:12
-## 72: 2022-08-16 09:24:12
+##  1: 2022-11-07 10:08:07
+##  2: 2022-11-07 10:08:07
+##  3: 2022-11-07 10:08:07
+##  4: 2022-11-07 10:08:07
+##  5: 2022-11-07 10:08:07
+##  6: 2022-11-07 10:08:07
+##  7: 2022-11-07 10:08:07
+##  8: 2022-11-07 10:08:07
+##  9: 2022-11-07 10:08:07
+## 10: 2022-11-07 10:08:07
+## 11: 2022-11-07 10:08:07
+## 12: 2022-11-07 10:08:07
+## 13: 2022-11-07 10:08:07
+## 14: 2022-11-07 10:08:07
+## 15: 2022-11-07 10:08:07
+## 16: 2022-11-07 10:08:07
+## 17: 2022-11-07 10:08:07
+## 18: 2022-11-07 10:08:07
+## 19: 2022-11-07 10:08:07
+## 20: 2022-11-07 10:08:07
+## 21: 2022-11-07 10:08:07
+## 22: 2022-11-07 10:08:07
+## 23: 2022-11-07 10:08:07
+## 24: 2022-11-07 10:08:07
+## 25: 2022-11-07 10:08:07
+## 26: 2022-11-07 10:08:07
+## 27: 2022-11-07 10:08:07
+## 28: 2022-11-07 10:08:07
+## 29: 2022-11-07 10:08:07
+## 30: 2022-11-07 10:08:07
+## 31: 2022-11-07 10:08:07
+## 32: 2022-11-07 10:08:07
+## 33: 2022-11-07 10:08:07
+## 34: 2022-11-07 10:08:07
+## 35: 2022-11-07 10:08:07
+## 36: 2022-11-07 10:08:07
+## 37: 2022-11-07 10:08:07
+## 38: 2022-11-07 10:08:07
+## 39: 2022-11-07 10:08:07
+## 40: 2022-11-07 10:08:07
+## 41: 2022-11-07 10:08:07
+## 42: 2022-11-07 10:08:07
+## 43: 2022-11-07 10:08:07
+## 44: 2022-11-07 10:08:07
+## 45: 2022-11-07 10:08:07
+## 46: 2022-11-07 10:08:07
+## 47: 2022-11-07 10:08:07
+## 48: 2022-11-07 10:08:07
+## 49: 2022-11-07 10:08:07
+## 50: 2022-11-07 10:08:07
+## 51: 2022-11-07 10:08:07
+## 52: 2022-11-07 10:08:07
+## 53: 2022-11-07 10:08:07
+## 54: 2022-11-07 10:08:07
+## 55: 2022-11-07 10:08:07
+## 56: 2022-11-07 10:08:07
+## 57: 2022-11-07 10:08:07
+## 58: 2022-11-07 10:08:07
+## 59: 2022-11-07 10:08:07
+## 60: 2022-11-07 10:08:07
+## 61: 2022-11-07 10:08:07
+## 62: 2022-11-07 10:08:07
+## 63: 2022-11-07 10:08:07
+## 64: 2022-11-07 10:08:07
+## 65: 2022-11-07 10:08:07
+## 66: 2022-11-07 10:08:07
+## 67: 2022-11-07 10:08:07
+## 68: 2022-11-07 10:08:07
+## 69: 2022-11-07 10:08:07
+## 70: 2022-11-07 10:08:07
+## 71: 2022-11-07 10:08:07
+## 72: 2022-11-07 10:08:07
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="fu">clearCache</span>(tmpDir, <span class="at">ask =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
 </div>
@@ -892,11 +899,11 @@ cache use with tags</h2>
 ##  2: f7bee22047b8d0c1            function                 rnorm
 ##  3: f7bee22047b8d0c1               class               numeric
 ##  4: f7bee22047b8d0c1         object.size                  1008
-##  5: f7bee22047b8d0c1            accessed   2022-08-16 09:24:12
+##  5: f7bee22047b8d0c1            accessed   2022-11-07 10:08:07
 ##  6: f7bee22047b8d0c1             inCloud                 FALSE
 ##  7: f7bee22047b8d0c1          resultHash                      
-##  8: f7bee22047b8d0c1   elapsedTimeDigest     0.0002450943 secs
-##  9: f7bee22047b8d0c1 elapsedTimeFirstRun     2.193451e-05 secs
+##  8: f7bee22047b8d0c1   elapsedTimeDigest      0.000244379 secs
+##  9: f7bee22047b8d0c1 elapsedTimeFirstRun     2.360344e-05 secs
 ## 10: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 11: f7bee22047b8d0c1      otherFunctions          process_file
 ## 12: f7bee22047b8d0c1      otherFunctions         process_group
@@ -910,36 +917,36 @@ cache use with tags</h2>
 ## 20: f7bee22047b8d0c1      otherFunctions                handle
 ## 21: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 22: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
-## 23: f7bee22047b8d0c1           file.size                   174
-## 24: f7bee22047b8d0c1            accessed   2022-08-16 09:24:13
-## 25: f7bee22047b8d0c1     elapsedTimeLoad      0.008819103 secs
+## 23: f7bee22047b8d0c1           file.size                   175
+## 24: f7bee22047b8d0c1            accessed   2022-11-07 10:08:08
+## 25: f7bee22047b8d0c1     elapsedTimeLoad      0.002924681 secs
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2022-08-16 09:24:12
-##  2: 2022-08-16 09:24:12
-##  3: 2022-08-16 09:24:12
-##  4: 2022-08-16 09:24:12
-##  5: 2022-08-16 09:24:12
-##  6: 2022-08-16 09:24:12
-##  7: 2022-08-16 09:24:12
-##  8: 2022-08-16 09:24:12
-##  9: 2022-08-16 09:24:12
-## 10: 2022-08-16 09:24:12
-## 11: 2022-08-16 09:24:12
-## 12: 2022-08-16 09:24:12
-## 13: 2022-08-16 09:24:12
-## 14: 2022-08-16 09:24:12
-## 15: 2022-08-16 09:24:12
-## 16: 2022-08-16 09:24:12
-## 17: 2022-08-16 09:24:12
-## 18: 2022-08-16 09:24:12
-## 19: 2022-08-16 09:24:12
-## 20: 2022-08-16 09:24:12
-## 21: 2022-08-16 09:24:12
-## 22: 2022-08-16 09:24:12
-## 23: 2022-08-16 09:24:12
-## 24: 2022-08-16 09:24:13
-## 25: 2022-08-16 09:24:13
+##  1: 2022-11-07 10:08:07
+##  2: 2022-11-07 10:08:07
+##  3: 2022-11-07 10:08:07
+##  4: 2022-11-07 10:08:07
+##  5: 2022-11-07 10:08:07
+##  6: 2022-11-07 10:08:07
+##  7: 2022-11-07 10:08:07
+##  8: 2022-11-07 10:08:07
+##  9: 2022-11-07 10:08:07
+## 10: 2022-11-07 10:08:07
+## 11: 2022-11-07 10:08:07
+## 12: 2022-11-07 10:08:07
+## 13: 2022-11-07 10:08:07
+## 14: 2022-11-07 10:08:07
+## 15: 2022-11-07 10:08:07
+## 16: 2022-11-07 10:08:07
+## 17: 2022-11-07 10:08:07
+## 18: 2022-11-07 10:08:07
+## 19: 2022-11-07 10:08:07
+## 20: 2022-11-07 10:08:07
+## 21: 2022-11-07 10:08:07
+## 22: 2022-11-07 10:08:07
+## 23: 2022-11-07 10:08:07
+## 24: 2022-11-07 10:08:08
+## 25: 2022-11-07 10:08:08
 ##             createdDate</code></pre>
 </div>
 <div id="example-3-using-keepcache" class="section level2" number="1.6">
@@ -961,11 +968,11 @@ keepCache</h2>
 ##  2: f7bee22047b8d0c1            function                 rnorm
 ##  3: f7bee22047b8d0c1               class               numeric
 ##  4: f7bee22047b8d0c1         object.size                  1008
-##  5: f7bee22047b8d0c1            accessed   2022-08-16 09:24:12
+##  5: f7bee22047b8d0c1            accessed   2022-11-07 10:08:07
 ##  6: f7bee22047b8d0c1             inCloud                 FALSE
 ##  7: f7bee22047b8d0c1          resultHash                      
-##  8: f7bee22047b8d0c1   elapsedTimeDigest     0.0002450943 secs
-##  9: f7bee22047b8d0c1 elapsedTimeFirstRun     2.193451e-05 secs
+##  8: f7bee22047b8d0c1   elapsedTimeDigest      0.000244379 secs
+##  9: f7bee22047b8d0c1 elapsedTimeFirstRun     2.360344e-05 secs
 ## 10: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 11: f7bee22047b8d0c1      otherFunctions          process_file
 ## 12: f7bee22047b8d0c1      otherFunctions         process_group
@@ -979,19 +986,19 @@ keepCache</h2>
 ## 20: f7bee22047b8d0c1      otherFunctions                handle
 ## 21: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 22: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
-## 23: f7bee22047b8d0c1           file.size                   174
-## 24: f7bee22047b8d0c1            accessed   2022-08-16 09:24:13
-## 25: f7bee22047b8d0c1     elapsedTimeLoad      0.002529383 secs
-## 26: f7bee22047b8d0c1            accessed   2022-08-16 09:24:13
+## 23: f7bee22047b8d0c1           file.size                   175
+## 24: f7bee22047b8d0c1            accessed   2022-11-07 10:08:08
+## 25: f7bee22047b8d0c1     elapsedTimeLoad      0.002036095 secs
+## 26: f7bee22047b8d0c1            accessed   2022-11-07 10:08:08
 ## 27: 3aef38d1fc02aee5          objectName                     b
 ## 28: 3aef38d1fc02aee5            function                 runif
 ## 29: 3aef38d1fc02aee5               class               numeric
 ## 30: 3aef38d1fc02aee5         object.size                  1008
-## 31: 3aef38d1fc02aee5            accessed   2022-08-16 09:24:13
+## 31: 3aef38d1fc02aee5            accessed   2022-11-07 10:08:08
 ## 32: 3aef38d1fc02aee5             inCloud                 FALSE
 ## 33: 3aef38d1fc02aee5          resultHash                      
-## 34: 3aef38d1fc02aee5   elapsedTimeDigest     0.0002377033 secs
-## 35: 3aef38d1fc02aee5 elapsedTimeFirstRun     2.169609e-05 secs
+## 34: 3aef38d1fc02aee5   elapsedTimeDigest     0.0002388954 secs
+## 35: 3aef38d1fc02aee5 elapsedTimeFirstRun     2.098083e-05 secs
 ## 36: 3aef38d1fc02aee5      otherFunctions      vweave_rmarkdown
 ## 37: 3aef38d1fc02aee5      otherFunctions          process_file
 ## 38: 3aef38d1fc02aee5      otherFunctions         process_group
@@ -1005,58 +1012,58 @@ keepCache</h2>
 ## 46: 3aef38d1fc02aee5      otherFunctions                handle
 ## 47: 3aef38d1fc02aee5           preDigest    n:7eef4eae85fd9229
 ## 48: 3aef38d1fc02aee5           preDigest .FUN:881ec847b7161f3c
-## 49: 3aef38d1fc02aee5           file.size                   167
+## 49: 3aef38d1fc02aee5           file.size                   169
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2022-08-16 09:24:12
-##  2: 2022-08-16 09:24:12
-##  3: 2022-08-16 09:24:12
-##  4: 2022-08-16 09:24:12
-##  5: 2022-08-16 09:24:12
-##  6: 2022-08-16 09:24:12
-##  7: 2022-08-16 09:24:12
-##  8: 2022-08-16 09:24:12
-##  9: 2022-08-16 09:24:12
-## 10: 2022-08-16 09:24:12
-## 11: 2022-08-16 09:24:12
-## 12: 2022-08-16 09:24:12
-## 13: 2022-08-16 09:24:12
-## 14: 2022-08-16 09:24:12
-## 15: 2022-08-16 09:24:12
-## 16: 2022-08-16 09:24:12
-## 17: 2022-08-16 09:24:12
-## 18: 2022-08-16 09:24:12
-## 19: 2022-08-16 09:24:12
-## 20: 2022-08-16 09:24:12
-## 21: 2022-08-16 09:24:12
-## 22: 2022-08-16 09:24:12
-## 23: 2022-08-16 09:24:12
-## 24: 2022-08-16 09:24:13
-## 25: 2022-08-16 09:24:13
-## 26: 2022-08-16 09:24:13
-## 27: 2022-08-16 09:24:13
-## 28: 2022-08-16 09:24:13
-## 29: 2022-08-16 09:24:13
-## 30: 2022-08-16 09:24:13
-## 31: 2022-08-16 09:24:13
-## 32: 2022-08-16 09:24:13
-## 33: 2022-08-16 09:24:13
-## 34: 2022-08-16 09:24:13
-## 35: 2022-08-16 09:24:13
-## 36: 2022-08-16 09:24:13
-## 37: 2022-08-16 09:24:13
-## 38: 2022-08-16 09:24:13
-## 39: 2022-08-16 09:24:13
-## 40: 2022-08-16 09:24:13
-## 41: 2022-08-16 09:24:13
-## 42: 2022-08-16 09:24:13
-## 43: 2022-08-16 09:24:13
-## 44: 2022-08-16 09:24:13
-## 45: 2022-08-16 09:24:13
-## 46: 2022-08-16 09:24:13
-## 47: 2022-08-16 09:24:13
-## 48: 2022-08-16 09:24:13
-## 49: 2022-08-16 09:24:13
+##  1: 2022-11-07 10:08:07
+##  2: 2022-11-07 10:08:07
+##  3: 2022-11-07 10:08:07
+##  4: 2022-11-07 10:08:07
+##  5: 2022-11-07 10:08:07
+##  6: 2022-11-07 10:08:07
+##  7: 2022-11-07 10:08:07
+##  8: 2022-11-07 10:08:07
+##  9: 2022-11-07 10:08:07
+## 10: 2022-11-07 10:08:07
+## 11: 2022-11-07 10:08:07
+## 12: 2022-11-07 10:08:07
+## 13: 2022-11-07 10:08:07
+## 14: 2022-11-07 10:08:07
+## 15: 2022-11-07 10:08:07
+## 16: 2022-11-07 10:08:07
+## 17: 2022-11-07 10:08:07
+## 18: 2022-11-07 10:08:07
+## 19: 2022-11-07 10:08:07
+## 20: 2022-11-07 10:08:07
+## 21: 2022-11-07 10:08:07
+## 22: 2022-11-07 10:08:07
+## 23: 2022-11-07 10:08:07
+## 24: 2022-11-07 10:08:08
+## 25: 2022-11-07 10:08:08
+## 26: 2022-11-07 10:08:08
+## 27: 2022-11-07 10:08:08
+## 28: 2022-11-07 10:08:08
+## 29: 2022-11-07 10:08:08
+## 30: 2022-11-07 10:08:08
+## 31: 2022-11-07 10:08:08
+## 32: 2022-11-07 10:08:08
+## 33: 2022-11-07 10:08:08
+## 34: 2022-11-07 10:08:08
+## 35: 2022-11-07 10:08:08
+## 36: 2022-11-07 10:08:08
+## 37: 2022-11-07 10:08:08
+## 38: 2022-11-07 10:08:08
+## 39: 2022-11-07 10:08:08
+## 40: 2022-11-07 10:08:08
+## 41: 2022-11-07 10:08:08
+## 42: 2022-11-07 10:08:08
+## 43: 2022-11-07 10:08:08
+## 44: 2022-11-07 10:08:08
+## 45: 2022-11-07 10:08:08
+## 46: 2022-11-07 10:08:08
+## 47: 2022-11-07 10:08:08
+## 48: 2022-11-07 10:08:08
+## 49: 2022-11-07 10:08:08
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb83"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep all Cache items created with an rnorm() call</span></span>
 <span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a><span class="fu">keepCache</span>(tmpDir, <span class="at">userTags =</span> <span class="st">&quot;rnorm&quot;</span>, <span class="at">ask =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
@@ -1068,11 +1075,11 @@ keepCache</h2>
 ##  2: f7bee22047b8d0c1            function                 rnorm
 ##  3: f7bee22047b8d0c1               class               numeric
 ##  4: f7bee22047b8d0c1         object.size                  1008
-##  5: f7bee22047b8d0c1            accessed   2022-08-16 09:24:12
+##  5: f7bee22047b8d0c1            accessed   2022-11-07 10:08:07
 ##  6: f7bee22047b8d0c1             inCloud                 FALSE
 ##  7: f7bee22047b8d0c1          resultHash                      
-##  8: f7bee22047b8d0c1   elapsedTimeDigest     0.0002450943 secs
-##  9: f7bee22047b8d0c1 elapsedTimeFirstRun     2.193451e-05 secs
+##  8: f7bee22047b8d0c1   elapsedTimeDigest      0.000244379 secs
+##  9: f7bee22047b8d0c1 elapsedTimeFirstRun     2.360344e-05 secs
 ## 10: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 11: f7bee22047b8d0c1      otherFunctions          process_file
 ## 12: f7bee22047b8d0c1      otherFunctions         process_group
@@ -1086,38 +1093,38 @@ keepCache</h2>
 ## 20: f7bee22047b8d0c1      otherFunctions                handle
 ## 21: f7bee22047b8d0c1           preDigest    n:7eef4eae85fd9229
 ## 22: f7bee22047b8d0c1           preDigest .FUN:4f604aa46882b368
-## 23: f7bee22047b8d0c1           file.size                   174
-## 24: f7bee22047b8d0c1            accessed   2022-08-16 09:24:13
-## 25: f7bee22047b8d0c1     elapsedTimeLoad      0.002529383 secs
-## 26: f7bee22047b8d0c1            accessed   2022-08-16 09:24:13
+## 23: f7bee22047b8d0c1           file.size                   175
+## 24: f7bee22047b8d0c1            accessed   2022-11-07 10:08:08
+## 25: f7bee22047b8d0c1     elapsedTimeLoad      0.002036095 secs
+## 26: f7bee22047b8d0c1            accessed   2022-11-07 10:08:08
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2022-08-16 09:24:12
-##  2: 2022-08-16 09:24:12
-##  3: 2022-08-16 09:24:12
-##  4: 2022-08-16 09:24:12
-##  5: 2022-08-16 09:24:12
-##  6: 2022-08-16 09:24:12
-##  7: 2022-08-16 09:24:12
-##  8: 2022-08-16 09:24:12
-##  9: 2022-08-16 09:24:12
-## 10: 2022-08-16 09:24:12
-## 11: 2022-08-16 09:24:12
-## 12: 2022-08-16 09:24:12
-## 13: 2022-08-16 09:24:12
-## 14: 2022-08-16 09:24:12
-## 15: 2022-08-16 09:24:12
-## 16: 2022-08-16 09:24:12
-## 17: 2022-08-16 09:24:12
-## 18: 2022-08-16 09:24:12
-## 19: 2022-08-16 09:24:12
-## 20: 2022-08-16 09:24:12
-## 21: 2022-08-16 09:24:12
-## 22: 2022-08-16 09:24:12
-## 23: 2022-08-16 09:24:12
-## 24: 2022-08-16 09:24:13
-## 25: 2022-08-16 09:24:13
-## 26: 2022-08-16 09:24:13
+##  1: 2022-11-07 10:08:07
+##  2: 2022-11-07 10:08:07
+##  3: 2022-11-07 10:08:07
+##  4: 2022-11-07 10:08:07
+##  5: 2022-11-07 10:08:07
+##  6: 2022-11-07 10:08:07
+##  7: 2022-11-07 10:08:07
+##  8: 2022-11-07 10:08:07
+##  9: 2022-11-07 10:08:07
+## 10: 2022-11-07 10:08:07
+## 11: 2022-11-07 10:08:07
+## 12: 2022-11-07 10:08:07
+## 13: 2022-11-07 10:08:07
+## 14: 2022-11-07 10:08:07
+## 15: 2022-11-07 10:08:07
+## 16: 2022-11-07 10:08:07
+## 17: 2022-11-07 10:08:07
+## 18: 2022-11-07 10:08:07
+## 19: 2022-11-07 10:08:07
+## 20: 2022-11-07 10:08:07
+## 21: 2022-11-07 10:08:07
+## 22: 2022-11-07 10:08:07
+## 23: 2022-11-07 10:08:07
+## 24: 2022-11-07 10:08:08
+## 25: 2022-11-07 10:08:08
+## 26: 2022-11-07 10:08:08
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb88"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove all Cache items that happened within a rnorm() call</span></span>
 <span id="cb88-2"><a href="#cb88-2" aria-hidden="true" tabindex="-1"></a><span class="fu">clearCache</span>(tmpDir, <span class="at">userTags =</span> <span class="st">&quot;rnorm&quot;</span>, <span class="at">ask =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
@@ -1144,11 +1151,11 @@ keepCache</h2>
 ##  2: 142b4176fe87d51d            function                 rnorm
 ##  3: 142b4176fe87d51d               class               numeric
 ##  4: 142b4176fe87d51d         object.size                  1024
-##  5: 142b4176fe87d51d            accessed   2022-08-16 09:24:14
+##  5: 142b4176fe87d51d            accessed   2022-11-07 10:08:09
 ##  6: 142b4176fe87d51d             inCloud                 FALSE
 ##  7: 142b4176fe87d51d          resultHash                      
-##  8: 142b4176fe87d51d   elapsedTimeDigest     0.0002467632 secs
-##  9: 142b4176fe87d51d elapsedTimeFirstRun     2.455711e-05 secs
+##  8: 142b4176fe87d51d   elapsedTimeDigest     0.0003364086 secs
+##  9: 142b4176fe87d51d elapsedTimeFirstRun     2.717972e-05 secs
 ## 10: 142b4176fe87d51d      otherFunctions      vweave_rmarkdown
 ## 11: 142b4176fe87d51d      otherFunctions          process_file
 ## 12: 142b4176fe87d51d      otherFunctions         process_group
@@ -1165,29 +1172,29 @@ keepCache</h2>
 ## 23: 142b4176fe87d51d           file.size                   182
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2022-08-16 09:24:14
-##  2: 2022-08-16 09:24:14
-##  3: 2022-08-16 09:24:14
-##  4: 2022-08-16 09:24:14
-##  5: 2022-08-16 09:24:14
-##  6: 2022-08-16 09:24:14
-##  7: 2022-08-16 09:24:14
-##  8: 2022-08-16 09:24:14
-##  9: 2022-08-16 09:24:14
-## 10: 2022-08-16 09:24:14
-## 11: 2022-08-16 09:24:14
-## 12: 2022-08-16 09:24:14
-## 13: 2022-08-16 09:24:14
-## 14: 2022-08-16 09:24:14
-## 15: 2022-08-16 09:24:14
-## 16: 2022-08-16 09:24:14
-## 17: 2022-08-16 09:24:14
-## 18: 2022-08-16 09:24:14
-## 19: 2022-08-16 09:24:14
-## 20: 2022-08-16 09:24:14
-## 21: 2022-08-16 09:24:14
-## 22: 2022-08-16 09:24:14
-## 23: 2022-08-16 09:24:14
+##  1: 2022-11-07 10:08:09
+##  2: 2022-11-07 10:08:09
+##  3: 2022-11-07 10:08:09
+##  4: 2022-11-07 10:08:09
+##  5: 2022-11-07 10:08:09
+##  6: 2022-11-07 10:08:09
+##  7: 2022-11-07 10:08:09
+##  8: 2022-11-07 10:08:09
+##  9: 2022-11-07 10:08:09
+## 10: 2022-11-07 10:08:09
+## 11: 2022-11-07 10:08:09
+## 12: 2022-11-07 10:08:09
+## 13: 2022-11-07 10:08:09
+## 14: 2022-11-07 10:08:09
+## 15: 2022-11-07 10:08:09
+## 16: 2022-11-07 10:08:09
+## 17: 2022-11-07 10:08:09
+## 18: 2022-11-07 10:08:09
+## 19: 2022-11-07 10:08:09
+## 20: 2022-11-07 10:08:09
+## 21: 2022-11-07 10:08:09
+## 22: 2022-11-07 10:08:09
+## 23: 2022-11-07 10:08:09
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb102"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb102-1"><a href="#cb102-1" aria-hidden="true" tabindex="-1"></a><span class="fu">clearCache</span>(tmpDir, <span class="at">ask =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
 </div>
@@ -1208,11 +1215,11 @@ for multiple objects in the cache</h2>
 ##  2: 3aef38d1fc02aee5            function                 runif
 ##  3: 3aef38d1fc02aee5               class               numeric
 ##  4: 3aef38d1fc02aee5         object.size                  1008
-##  5: 3aef38d1fc02aee5            accessed   2022-08-16 09:24:14
+##  5: 3aef38d1fc02aee5            accessed   2022-11-07 10:08:10
 ##  6: 3aef38d1fc02aee5             inCloud                 FALSE
 ##  7: 3aef38d1fc02aee5          resultHash                      
-##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0003283024 secs
-##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun     2.861023e-05 secs
+##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0002617836 secs
+##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun     2.264977e-05 secs
 ## 10: 3aef38d1fc02aee5      otherFunctions      vweave_rmarkdown
 ## 11: 3aef38d1fc02aee5      otherFunctions          process_file
 ## 12: 3aef38d1fc02aee5      otherFunctions         process_group
@@ -1231,11 +1238,11 @@ for multiple objects in the cache</h2>
 ## 25: f7bee22047b8d0c1            function                 rnorm
 ## 26: f7bee22047b8d0c1               class               numeric
 ## 27: f7bee22047b8d0c1         object.size                  1008
-## 28: f7bee22047b8d0c1            accessed   2022-08-16 09:24:14
+## 28: f7bee22047b8d0c1            accessed   2022-11-07 10:08:10
 ## 29: f7bee22047b8d0c1             inCloud                 FALSE
 ## 30: f7bee22047b8d0c1          resultHash                      
-## 31: f7bee22047b8d0c1   elapsedTimeDigest     0.0002791882 secs
-## 32: f7bee22047b8d0c1 elapsedTimeFirstRun     2.574921e-05 secs
+## 31: f7bee22047b8d0c1   elapsedTimeDigest     0.0002465248 secs
+## 32: f7bee22047b8d0c1 elapsedTimeFirstRun     2.121925e-05 secs
 ## 33: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 34: f7bee22047b8d0c1      otherFunctions          process_file
 ## 35: f7bee22047b8d0c1      otherFunctions         process_group
@@ -1252,52 +1259,52 @@ for multiple objects in the cache</h2>
 ## 46: f7bee22047b8d0c1           file.size                   175
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2022-08-16 09:24:14
-##  2: 2022-08-16 09:24:14
-##  3: 2022-08-16 09:24:14
-##  4: 2022-08-16 09:24:14
-##  5: 2022-08-16 09:24:14
-##  6: 2022-08-16 09:24:14
-##  7: 2022-08-16 09:24:14
-##  8: 2022-08-16 09:24:14
-##  9: 2022-08-16 09:24:14
-## 10: 2022-08-16 09:24:14
-## 11: 2022-08-16 09:24:14
-## 12: 2022-08-16 09:24:14
-## 13: 2022-08-16 09:24:14
-## 14: 2022-08-16 09:24:14
-## 15: 2022-08-16 09:24:14
-## 16: 2022-08-16 09:24:14
-## 17: 2022-08-16 09:24:14
-## 18: 2022-08-16 09:24:14
-## 19: 2022-08-16 09:24:14
-## 20: 2022-08-16 09:24:14
-## 21: 2022-08-16 09:24:14
-## 22: 2022-08-16 09:24:14
-## 23: 2022-08-16 09:24:14
-## 24: 2022-08-16 09:24:14
-## 25: 2022-08-16 09:24:14
-## 26: 2022-08-16 09:24:14
-## 27: 2022-08-16 09:24:14
-## 28: 2022-08-16 09:24:14
-## 29: 2022-08-16 09:24:14
-## 30: 2022-08-16 09:24:14
-## 31: 2022-08-16 09:24:14
-## 32: 2022-08-16 09:24:14
-## 33: 2022-08-16 09:24:14
-## 34: 2022-08-16 09:24:14
-## 35: 2022-08-16 09:24:14
-## 36: 2022-08-16 09:24:14
-## 37: 2022-08-16 09:24:14
-## 38: 2022-08-16 09:24:14
-## 39: 2022-08-16 09:24:14
-## 40: 2022-08-16 09:24:14
-## 41: 2022-08-16 09:24:14
-## 42: 2022-08-16 09:24:14
-## 43: 2022-08-16 09:24:14
-## 44: 2022-08-16 09:24:14
-## 45: 2022-08-16 09:24:14
-## 46: 2022-08-16 09:24:14
+##  1: 2022-11-07 10:08:10
+##  2: 2022-11-07 10:08:10
+##  3: 2022-11-07 10:08:10
+##  4: 2022-11-07 10:08:10
+##  5: 2022-11-07 10:08:10
+##  6: 2022-11-07 10:08:10
+##  7: 2022-11-07 10:08:10
+##  8: 2022-11-07 10:08:10
+##  9: 2022-11-07 10:08:10
+## 10: 2022-11-07 10:08:10
+## 11: 2022-11-07 10:08:10
+## 12: 2022-11-07 10:08:10
+## 13: 2022-11-07 10:08:10
+## 14: 2022-11-07 10:08:10
+## 15: 2022-11-07 10:08:10
+## 16: 2022-11-07 10:08:10
+## 17: 2022-11-07 10:08:10
+## 18: 2022-11-07 10:08:10
+## 19: 2022-11-07 10:08:10
+## 20: 2022-11-07 10:08:10
+## 21: 2022-11-07 10:08:10
+## 22: 2022-11-07 10:08:10
+## 23: 2022-11-07 10:08:10
+## 24: 2022-11-07 10:08:10
+## 25: 2022-11-07 10:08:10
+## 26: 2022-11-07 10:08:10
+## 27: 2022-11-07 10:08:10
+## 28: 2022-11-07 10:08:10
+## 29: 2022-11-07 10:08:10
+## 30: 2022-11-07 10:08:10
+## 31: 2022-11-07 10:08:10
+## 32: 2022-11-07 10:08:10
+## 33: 2022-11-07 10:08:10
+## 34: 2022-11-07 10:08:10
+## 35: 2022-11-07 10:08:10
+## 36: 2022-11-07 10:08:10
+## 37: 2022-11-07 10:08:10
+## 38: 2022-11-07 10:08:10
+## 39: 2022-11-07 10:08:10
+## 40: 2022-11-07 10:08:10
+## 41: 2022-11-07 10:08:10
+## 42: 2022-11-07 10:08:10
+## 43: 2022-11-07 10:08:10
+## 44: 2022-11-07 10:08:10
+## 45: 2022-11-07 10:08:10
+## 46: 2022-11-07 10:08:10
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb108"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb108-1"><a href="#cb108-1" aria-hidden="true" tabindex="-1"></a><span class="co"># show objects that are both runif and rnorm</span></span>
 <span id="cb108-2"><a href="#cb108-2" aria-hidden="true" tabindex="-1"></a><span class="co"># (i.e., none in this case, because objecs are either or, not both)</span></span>
@@ -1316,11 +1323,11 @@ for multiple objects in the cache</h2>
 ##  2: 3aef38d1fc02aee5            function                 runif
 ##  3: 3aef38d1fc02aee5               class               numeric
 ##  4: 3aef38d1fc02aee5         object.size                  1008
-##  5: 3aef38d1fc02aee5            accessed   2022-08-16 09:24:14
+##  5: 3aef38d1fc02aee5            accessed   2022-11-07 10:08:10
 ##  6: 3aef38d1fc02aee5             inCloud                 FALSE
 ##  7: 3aef38d1fc02aee5          resultHash                      
-##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0003283024 secs
-##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun     2.861023e-05 secs
+##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0002617836 secs
+##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun     2.264977e-05 secs
 ## 10: 3aef38d1fc02aee5      otherFunctions      vweave_rmarkdown
 ## 11: 3aef38d1fc02aee5      otherFunctions          process_file
 ## 12: 3aef38d1fc02aee5      otherFunctions         process_group
@@ -1339,11 +1346,11 @@ for multiple objects in the cache</h2>
 ## 25: f7bee22047b8d0c1            function                 rnorm
 ## 26: f7bee22047b8d0c1               class               numeric
 ## 27: f7bee22047b8d0c1         object.size                  1008
-## 28: f7bee22047b8d0c1            accessed   2022-08-16 09:24:14
+## 28: f7bee22047b8d0c1            accessed   2022-11-07 10:08:10
 ## 29: f7bee22047b8d0c1             inCloud                 FALSE
 ## 30: f7bee22047b8d0c1          resultHash                      
-## 31: f7bee22047b8d0c1   elapsedTimeDigest     0.0002791882 secs
-## 32: f7bee22047b8d0c1 elapsedTimeFirstRun     2.574921e-05 secs
+## 31: f7bee22047b8d0c1   elapsedTimeDigest     0.0002465248 secs
+## 32: f7bee22047b8d0c1 elapsedTimeFirstRun     2.121925e-05 secs
 ## 33: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 34: f7bee22047b8d0c1      otherFunctions          process_file
 ## 35: f7bee22047b8d0c1      otherFunctions         process_group
@@ -1360,52 +1367,52 @@ for multiple objects in the cache</h2>
 ## 46: f7bee22047b8d0c1           file.size                   175
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2022-08-16 09:24:14
-##  2: 2022-08-16 09:24:14
-##  3: 2022-08-16 09:24:14
-##  4: 2022-08-16 09:24:14
-##  5: 2022-08-16 09:24:14
-##  6: 2022-08-16 09:24:14
-##  7: 2022-08-16 09:24:14
-##  8: 2022-08-16 09:24:14
-##  9: 2022-08-16 09:24:14
-## 10: 2022-08-16 09:24:14
-## 11: 2022-08-16 09:24:14
-## 12: 2022-08-16 09:24:14
-## 13: 2022-08-16 09:24:14
-## 14: 2022-08-16 09:24:14
-## 15: 2022-08-16 09:24:14
-## 16: 2022-08-16 09:24:14
-## 17: 2022-08-16 09:24:14
-## 18: 2022-08-16 09:24:14
-## 19: 2022-08-16 09:24:14
-## 20: 2022-08-16 09:24:14
-## 21: 2022-08-16 09:24:14
-## 22: 2022-08-16 09:24:14
-## 23: 2022-08-16 09:24:14
-## 24: 2022-08-16 09:24:14
-## 25: 2022-08-16 09:24:14
-## 26: 2022-08-16 09:24:14
-## 27: 2022-08-16 09:24:14
-## 28: 2022-08-16 09:24:14
-## 29: 2022-08-16 09:24:14
-## 30: 2022-08-16 09:24:14
-## 31: 2022-08-16 09:24:14
-## 32: 2022-08-16 09:24:14
-## 33: 2022-08-16 09:24:14
-## 34: 2022-08-16 09:24:14
-## 35: 2022-08-16 09:24:14
-## 36: 2022-08-16 09:24:14
-## 37: 2022-08-16 09:24:14
-## 38: 2022-08-16 09:24:14
-## 39: 2022-08-16 09:24:14
-## 40: 2022-08-16 09:24:14
-## 41: 2022-08-16 09:24:14
-## 42: 2022-08-16 09:24:14
-## 43: 2022-08-16 09:24:14
-## 44: 2022-08-16 09:24:14
-## 45: 2022-08-16 09:24:14
-## 46: 2022-08-16 09:24:14
+##  1: 2022-11-07 10:08:10
+##  2: 2022-11-07 10:08:10
+##  3: 2022-11-07 10:08:10
+##  4: 2022-11-07 10:08:10
+##  5: 2022-11-07 10:08:10
+##  6: 2022-11-07 10:08:10
+##  7: 2022-11-07 10:08:10
+##  8: 2022-11-07 10:08:10
+##  9: 2022-11-07 10:08:10
+## 10: 2022-11-07 10:08:10
+## 11: 2022-11-07 10:08:10
+## 12: 2022-11-07 10:08:10
+## 13: 2022-11-07 10:08:10
+## 14: 2022-11-07 10:08:10
+## 15: 2022-11-07 10:08:10
+## 16: 2022-11-07 10:08:10
+## 17: 2022-11-07 10:08:10
+## 18: 2022-11-07 10:08:10
+## 19: 2022-11-07 10:08:10
+## 20: 2022-11-07 10:08:10
+## 21: 2022-11-07 10:08:10
+## 22: 2022-11-07 10:08:10
+## 23: 2022-11-07 10:08:10
+## 24: 2022-11-07 10:08:10
+## 25: 2022-11-07 10:08:10
+## 26: 2022-11-07 10:08:10
+## 27: 2022-11-07 10:08:10
+## 28: 2022-11-07 10:08:10
+## 29: 2022-11-07 10:08:10
+## 30: 2022-11-07 10:08:10
+## 31: 2022-11-07 10:08:10
+## 32: 2022-11-07 10:08:10
+## 33: 2022-11-07 10:08:10
+## 34: 2022-11-07 10:08:10
+## 35: 2022-11-07 10:08:10
+## 36: 2022-11-07 10:08:10
+## 37: 2022-11-07 10:08:10
+## 38: 2022-11-07 10:08:10
+## 39: 2022-11-07 10:08:10
+## 40: 2022-11-07 10:08:10
+## 41: 2022-11-07 10:08:10
+## 42: 2022-11-07 10:08:10
+## 43: 2022-11-07 10:08:10
+## 44: 2022-11-07 10:08:10
+## 45: 2022-11-07 10:08:10
+## 46: 2022-11-07 10:08:10
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb118"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb118-1"><a href="#cb118-1" aria-hidden="true" tabindex="-1"></a><span class="co"># keep only objects that are either runif or rnorm (&quot;or&quot; search)</span></span>
 <span id="cb118-2"><a href="#cb118-2" aria-hidden="true" tabindex="-1"></a><span class="fu">keepCache</span>(tmpDir, <span class="at">userTags =</span> <span class="st">&quot;runif|rnorm&quot;</span>, <span class="at">ask =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
@@ -1417,11 +1424,11 @@ for multiple objects in the cache</h2>
 ##  2: 3aef38d1fc02aee5            function                 runif
 ##  3: 3aef38d1fc02aee5               class               numeric
 ##  4: 3aef38d1fc02aee5         object.size                  1008
-##  5: 3aef38d1fc02aee5            accessed   2022-08-16 09:24:14
+##  5: 3aef38d1fc02aee5            accessed   2022-11-07 10:08:10
 ##  6: 3aef38d1fc02aee5             inCloud                 FALSE
 ##  7: 3aef38d1fc02aee5          resultHash                      
-##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0003283024 secs
-##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun     2.861023e-05 secs
+##  8: 3aef38d1fc02aee5   elapsedTimeDigest     0.0002617836 secs
+##  9: 3aef38d1fc02aee5 elapsedTimeFirstRun     2.264977e-05 secs
 ## 10: 3aef38d1fc02aee5      otherFunctions      vweave_rmarkdown
 ## 11: 3aef38d1fc02aee5      otherFunctions          process_file
 ## 12: 3aef38d1fc02aee5      otherFunctions         process_group
@@ -1440,11 +1447,11 @@ for multiple objects in the cache</h2>
 ## 25: f7bee22047b8d0c1            function                 rnorm
 ## 26: f7bee22047b8d0c1               class               numeric
 ## 27: f7bee22047b8d0c1         object.size                  1008
-## 28: f7bee22047b8d0c1            accessed   2022-08-16 09:24:14
+## 28: f7bee22047b8d0c1            accessed   2022-11-07 10:08:10
 ## 29: f7bee22047b8d0c1             inCloud                 FALSE
 ## 30: f7bee22047b8d0c1          resultHash                      
-## 31: f7bee22047b8d0c1   elapsedTimeDigest     0.0002791882 secs
-## 32: f7bee22047b8d0c1 elapsedTimeFirstRun     2.574921e-05 secs
+## 31: f7bee22047b8d0c1   elapsedTimeDigest     0.0002465248 secs
+## 32: f7bee22047b8d0c1 elapsedTimeFirstRun     2.121925e-05 secs
 ## 33: f7bee22047b8d0c1      otherFunctions      vweave_rmarkdown
 ## 34: f7bee22047b8d0c1      otherFunctions          process_file
 ## 35: f7bee22047b8d0c1      otherFunctions         process_group
@@ -1461,52 +1468,52 @@ for multiple objects in the cache</h2>
 ## 46: f7bee22047b8d0c1           file.size                   175
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2022-08-16 09:24:14
-##  2: 2022-08-16 09:24:14
-##  3: 2022-08-16 09:24:14
-##  4: 2022-08-16 09:24:14
-##  5: 2022-08-16 09:24:14
-##  6: 2022-08-16 09:24:14
-##  7: 2022-08-16 09:24:14
-##  8: 2022-08-16 09:24:14
-##  9: 2022-08-16 09:24:14
-## 10: 2022-08-16 09:24:14
-## 11: 2022-08-16 09:24:14
-## 12: 2022-08-16 09:24:14
-## 13: 2022-08-16 09:24:14
-## 14: 2022-08-16 09:24:14
-## 15: 2022-08-16 09:24:14
-## 16: 2022-08-16 09:24:14
-## 17: 2022-08-16 09:24:14
-## 18: 2022-08-16 09:24:14
-## 19: 2022-08-16 09:24:14
-## 20: 2022-08-16 09:24:14
-## 21: 2022-08-16 09:24:14
-## 22: 2022-08-16 09:24:14
-## 23: 2022-08-16 09:24:14
-## 24: 2022-08-16 09:24:14
-## 25: 2022-08-16 09:24:14
-## 26: 2022-08-16 09:24:14
-## 27: 2022-08-16 09:24:14
-## 28: 2022-08-16 09:24:14
-## 29: 2022-08-16 09:24:14
-## 30: 2022-08-16 09:24:14
-## 31: 2022-08-16 09:24:14
-## 32: 2022-08-16 09:24:14
-## 33: 2022-08-16 09:24:14
-## 34: 2022-08-16 09:24:14
-## 35: 2022-08-16 09:24:14
-## 36: 2022-08-16 09:24:14
-## 37: 2022-08-16 09:24:14
-## 38: 2022-08-16 09:24:14
-## 39: 2022-08-16 09:24:14
-## 40: 2022-08-16 09:24:14
-## 41: 2022-08-16 09:24:14
-## 42: 2022-08-16 09:24:14
-## 43: 2022-08-16 09:24:14
-## 44: 2022-08-16 09:24:14
-## 45: 2022-08-16 09:24:14
-## 46: 2022-08-16 09:24:14
+##  1: 2022-11-07 10:08:10
+##  2: 2022-11-07 10:08:10
+##  3: 2022-11-07 10:08:10
+##  4: 2022-11-07 10:08:10
+##  5: 2022-11-07 10:08:10
+##  6: 2022-11-07 10:08:10
+##  7: 2022-11-07 10:08:10
+##  8: 2022-11-07 10:08:10
+##  9: 2022-11-07 10:08:10
+## 10: 2022-11-07 10:08:10
+## 11: 2022-11-07 10:08:10
+## 12: 2022-11-07 10:08:10
+## 13: 2022-11-07 10:08:10
+## 14: 2022-11-07 10:08:10
+## 15: 2022-11-07 10:08:10
+## 16: 2022-11-07 10:08:10
+## 17: 2022-11-07 10:08:10
+## 18: 2022-11-07 10:08:10
+## 19: 2022-11-07 10:08:10
+## 20: 2022-11-07 10:08:10
+## 21: 2022-11-07 10:08:10
+## 22: 2022-11-07 10:08:10
+## 23: 2022-11-07 10:08:10
+## 24: 2022-11-07 10:08:10
+## 25: 2022-11-07 10:08:10
+## 26: 2022-11-07 10:08:10
+## 27: 2022-11-07 10:08:10
+## 28: 2022-11-07 10:08:10
+## 29: 2022-11-07 10:08:10
+## 30: 2022-11-07 10:08:10
+## 31: 2022-11-07 10:08:10
+## 32: 2022-11-07 10:08:10
+## 33: 2022-11-07 10:08:10
+## 34: 2022-11-07 10:08:10
+## 35: 2022-11-07 10:08:10
+## 36: 2022-11-07 10:08:10
+## 37: 2022-11-07 10:08:10
+## 38: 2022-11-07 10:08:10
+## 39: 2022-11-07 10:08:10
+## 40: 2022-11-07 10:08:10
+## 41: 2022-11-07 10:08:10
+## 42: 2022-11-07 10:08:10
+## 43: 2022-11-07 10:08:10
+## 44: 2022-11-07 10:08:10
+## 45: 2022-11-07 10:08:10
+## 46: 2022-11-07 10:08:10
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb123"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb123-1"><a href="#cb123-1" aria-hidden="true" tabindex="-1"></a><span class="fu">clearCache</span>(tmpDir, <span class="at">ask =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
 </div>
@@ -1534,7 +1541,7 @@ caching to speed up rerunning expensive computations</h2>
 <span id="cb124-19"><a href="#cb124-19" aria-hidden="true" tabindex="-1"></a>  <span class="co"># project raster generates warnings when run non-interactively</span></span>
 <span id="cb124-20"><a href="#cb124-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">Cache</span>(projectRaster, ras, <span class="at">crs =</span> <span class="fu">crs</span>(ras), <span class="at">res =</span> <span class="dv">5</span>, <span class="at">cacheRepo =</span> tmpDir)</span>
 <span id="cb124-21"><a href="#cb124-21" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
-<pre><code>##   ...(Object to retrieve (2227f050d556cd94.rds))</code></pre>
+<pre><code>##   ...(Object to retrieve (b2d2e49261551d97.rds))</code></pre>
 <pre><code>##      loaded cached result from previous projectRaster call</code></pre>
 <div class="sourceCode" id="cb127"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb127-1"><a href="#cb127-1" aria-hidden="true" tabindex="-1"></a><span class="co"># recovered cached version is same as non-cached version</span></span>
 <span id="cb127-2"><a href="#cb127-2" aria-hidden="true" tabindex="-1"></a><span class="fu">all.equal</span>(notCached, reRun) <span class="do">## TRUE</span></span></code></pre></div>
@@ -1571,7 +1578,7 @@ there is a guarantee that it will work at any point.</p>
 <span id="cb129-18"><a href="#cb129-18" aria-hidden="true" tabindex="-1"></a><span class="co">#   Cache calls, unless individually overridden ... here inner</span></span>
 <span id="cb129-19"><a href="#cb129-19" aria-hidden="true" tabindex="-1"></a><span class="co">#   uses tmpdir2 repository</span></span>
 <span id="cb129-20"><a href="#cb129-20" aria-hidden="true" tabindex="-1"></a><span class="fu">Cache</span>(outer, <span class="at">n =</span> <span class="dv">2</span>, <span class="at">cacheRepo =</span> tmpdir1, <span class="at">notOlderThan =</span> <span class="fu">Sys.time</span>())</span></code></pre></div>
-<pre><code>## [1] -0.08844588  0.91316783  0.60450152
+<pre><code>## [1] -0.9739727  0.7859306 -1.2402474
 ## attr(,&quot;.Cache&quot;)
 ## attr(,&quot;.Cache&quot;)$newCache
 ## [1] TRUE
@@ -1588,10 +1595,10 @@ there is a guarantee that it will work at any point.</p>
 ##  1: 4ac2b7c0f42d1e46            function                 rnorm
 ##  2: 4ac2b7c0f42d1e46               class               numeric
 ##  3: 4ac2b7c0f42d1e46         object.size                  1008
-##  4: 4ac2b7c0f42d1e46            accessed   2022-08-16 09:24:14
+##  4: 4ac2b7c0f42d1e46            accessed   2022-11-07 10:08:10
 ##  5: 4ac2b7c0f42d1e46             inCloud                 FALSE
 ##  6: 4ac2b7c0f42d1e46          resultHash                      
-##  7: 4ac2b7c0f42d1e46   elapsedTimeDigest     0.0002577305 secs
+##  7: 4ac2b7c0f42d1e46   elapsedTimeDigest     0.0002820492 secs
 ##  8: 4ac2b7c0f42d1e46 elapsedTimeFirstRun     2.193451e-05 secs
 ##  9: 4ac2b7c0f42d1e46      otherFunctions      vweave_rmarkdown
 ## 10: 4ac2b7c0f42d1e46      otherFunctions          process_file
@@ -1607,15 +1614,15 @@ there is a guarantee that it will work at any point.</p>
 ## 20: 4ac2b7c0f42d1e46           preDigest    n:7f12988bd88a0fb8
 ## 21: 4ac2b7c0f42d1e46           preDigest mean:22413394efd9f6a3
 ## 22: 4ac2b7c0f42d1e46           preDigest .FUN:4f604aa46882b368
-## 23: 4ac2b7c0f42d1e46           file.size                   165
+## 23: 4ac2b7c0f42d1e46           file.size                   166
 ## 24: a7af5367c13aba8f            function                 outer
 ## 25: a7af5367c13aba8f               class               numeric
 ## 26: a7af5367c13aba8f         object.size                  1008
-## 27: a7af5367c13aba8f            accessed   2022-08-16 09:24:14
+## 27: a7af5367c13aba8f            accessed   2022-11-07 10:08:10
 ## 28: a7af5367c13aba8f             inCloud                 FALSE
 ## 29: a7af5367c13aba8f          resultHash                      
-## 30: a7af5367c13aba8f   elapsedTimeDigest     0.0002706051 secs
-## 31: a7af5367c13aba8f elapsedTimeFirstRun       0.03126216 secs
+## 30: a7af5367c13aba8f   elapsedTimeDigest     0.0002601147 secs
+## 31: a7af5367c13aba8f elapsedTimeFirstRun       0.03037143 secs
 ## 32: a7af5367c13aba8f      otherFunctions      vweave_rmarkdown
 ## 33: a7af5367c13aba8f      otherFunctions          process_file
 ## 34: a7af5367c13aba8f      otherFunctions         process_group
@@ -1629,54 +1636,54 @@ there is a guarantee that it will work at any point.</p>
 ## 42: a7af5367c13aba8f      otherFunctions                handle
 ## 43: a7af5367c13aba8f           preDigest    n:82dc709f2b91918a
 ## 44: a7af5367c13aba8f           preDigest .FUN:892a6afc47a63a90
-## 45: a7af5367c13aba8f           file.size                   165
+## 45: a7af5367c13aba8f           file.size                   166
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2022-08-16 09:24:14
-##  2: 2022-08-16 09:24:14
-##  3: 2022-08-16 09:24:14
-##  4: 2022-08-16 09:24:14
-##  5: 2022-08-16 09:24:14
-##  6: 2022-08-16 09:24:14
-##  7: 2022-08-16 09:24:14
-##  8: 2022-08-16 09:24:14
-##  9: 2022-08-16 09:24:14
-## 10: 2022-08-16 09:24:14
-## 11: 2022-08-16 09:24:14
-## 12: 2022-08-16 09:24:14
-## 13: 2022-08-16 09:24:14
-## 14: 2022-08-16 09:24:14
-## 15: 2022-08-16 09:24:14
-## 16: 2022-08-16 09:24:14
-## 17: 2022-08-16 09:24:14
-## 18: 2022-08-16 09:24:14
-## 19: 2022-08-16 09:24:14
-## 20: 2022-08-16 09:24:14
-## 21: 2022-08-16 09:24:14
-## 22: 2022-08-16 09:24:14
-## 23: 2022-08-16 09:24:14
-## 24: 2022-08-16 09:24:14
-## 25: 2022-08-16 09:24:14
-## 26: 2022-08-16 09:24:14
-## 27: 2022-08-16 09:24:14
-## 28: 2022-08-16 09:24:14
-## 29: 2022-08-16 09:24:14
-## 30: 2022-08-16 09:24:14
-## 31: 2022-08-16 09:24:14
-## 32: 2022-08-16 09:24:14
-## 33: 2022-08-16 09:24:14
-## 34: 2022-08-16 09:24:14
-## 35: 2022-08-16 09:24:14
-## 36: 2022-08-16 09:24:14
-## 37: 2022-08-16 09:24:14
-## 38: 2022-08-16 09:24:14
-## 39: 2022-08-16 09:24:14
-## 40: 2022-08-16 09:24:14
-## 41: 2022-08-16 09:24:14
-## 42: 2022-08-16 09:24:14
-## 43: 2022-08-16 09:24:14
-## 44: 2022-08-16 09:24:14
-## 45: 2022-08-16 09:24:14
+##  1: 2022-11-07 10:08:10
+##  2: 2022-11-07 10:08:10
+##  3: 2022-11-07 10:08:10
+##  4: 2022-11-07 10:08:10
+##  5: 2022-11-07 10:08:10
+##  6: 2022-11-07 10:08:10
+##  7: 2022-11-07 10:08:10
+##  8: 2022-11-07 10:08:10
+##  9: 2022-11-07 10:08:10
+## 10: 2022-11-07 10:08:10
+## 11: 2022-11-07 10:08:10
+## 12: 2022-11-07 10:08:10
+## 13: 2022-11-07 10:08:10
+## 14: 2022-11-07 10:08:10
+## 15: 2022-11-07 10:08:10
+## 16: 2022-11-07 10:08:10
+## 17: 2022-11-07 10:08:10
+## 18: 2022-11-07 10:08:10
+## 19: 2022-11-07 10:08:10
+## 20: 2022-11-07 10:08:10
+## 21: 2022-11-07 10:08:10
+## 22: 2022-11-07 10:08:10
+## 23: 2022-11-07 10:08:10
+## 24: 2022-11-07 10:08:10
+## 25: 2022-11-07 10:08:10
+## 26: 2022-11-07 10:08:10
+## 27: 2022-11-07 10:08:10
+## 28: 2022-11-07 10:08:10
+## 29: 2022-11-07 10:08:10
+## 30: 2022-11-07 10:08:10
+## 31: 2022-11-07 10:08:10
+## 32: 2022-11-07 10:08:10
+## 33: 2022-11-07 10:08:10
+## 34: 2022-11-07 10:08:10
+## 35: 2022-11-07 10:08:10
+## 36: 2022-11-07 10:08:10
+## 37: 2022-11-07 10:08:10
+## 38: 2022-11-07 10:08:10
+## 39: 2022-11-07 10:08:10
+## 40: 2022-11-07 10:08:10
+## 41: 2022-11-07 10:08:10
+## 42: 2022-11-07 10:08:10
+## 43: 2022-11-07 10:08:10
+## 44: 2022-11-07 10:08:10
+## 45: 2022-11-07 10:08:10
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb136"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb136-1"><a href="#cb136-1" aria-hidden="true" tabindex="-1"></a><span class="fu">showCache</span>(tmpdir2) <span class="co"># 1 function call</span></span></code></pre></div>
 <pre><code>## Cache size:</code></pre>
@@ -1686,11 +1693,11 @@ there is a guarantee that it will work at any point.</p>
 ##  1: 33ceb4fb525fd08f            function                 inner
 ##  2: 33ceb4fb525fd08f               class               numeric
 ##  3: 33ceb4fb525fd08f         object.size                  1008
-##  4: 33ceb4fb525fd08f            accessed   2022-08-16 09:24:14
+##  4: 33ceb4fb525fd08f            accessed   2022-11-07 10:08:10
 ##  5: 33ceb4fb525fd08f             inCloud                 FALSE
 ##  6: 33ceb4fb525fd08f          resultHash                      
-##  7: 33ceb4fb525fd08f   elapsedTimeDigest     0.0002763271 secs
-##  8: 33ceb4fb525fd08f elapsedTimeFirstRun       0.01143837 secs
+##  7: 33ceb4fb525fd08f   elapsedTimeDigest      0.000259161 secs
+##  8: 33ceb4fb525fd08f elapsedTimeFirstRun       0.01152158 secs
 ##  9: 33ceb4fb525fd08f      otherFunctions      vweave_rmarkdown
 ## 10: 33ceb4fb525fd08f      otherFunctions          process_file
 ## 11: 33ceb4fb525fd08f      otherFunctions         process_group
@@ -1704,31 +1711,31 @@ there is a guarantee that it will work at any point.</p>
 ## 19: 33ceb4fb525fd08f      otherFunctions                handle
 ## 20: 33ceb4fb525fd08f           preDigest mean:22413394efd9f6a3
 ## 21: 33ceb4fb525fd08f           preDigest .FUN:87e2c30917a34d25
-## 22: 33ceb4fb525fd08f           file.size                   165
+## 22: 33ceb4fb525fd08f           file.size                   166
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2022-08-16 09:24:14
-##  2: 2022-08-16 09:24:14
-##  3: 2022-08-16 09:24:14
-##  4: 2022-08-16 09:24:14
-##  5: 2022-08-16 09:24:14
-##  6: 2022-08-16 09:24:14
-##  7: 2022-08-16 09:24:14
-##  8: 2022-08-16 09:24:14
-##  9: 2022-08-16 09:24:14
-## 10: 2022-08-16 09:24:14
-## 11: 2022-08-16 09:24:14
-## 12: 2022-08-16 09:24:14
-## 13: 2022-08-16 09:24:14
-## 14: 2022-08-16 09:24:14
-## 15: 2022-08-16 09:24:14
-## 16: 2022-08-16 09:24:14
-## 17: 2022-08-16 09:24:14
-## 18: 2022-08-16 09:24:14
-## 19: 2022-08-16 09:24:14
-## 20: 2022-08-16 09:24:14
-## 21: 2022-08-16 09:24:14
-## 22: 2022-08-16 09:24:14
+##  1: 2022-11-07 10:08:10
+##  2: 2022-11-07 10:08:10
+##  3: 2022-11-07 10:08:10
+##  4: 2022-11-07 10:08:10
+##  5: 2022-11-07 10:08:10
+##  6: 2022-11-07 10:08:10
+##  7: 2022-11-07 10:08:10
+##  8: 2022-11-07 10:08:10
+##  9: 2022-11-07 10:08:10
+## 10: 2022-11-07 10:08:10
+## 11: 2022-11-07 10:08:10
+## 12: 2022-11-07 10:08:10
+## 13: 2022-11-07 10:08:10
+## 14: 2022-11-07 10:08:10
+## 15: 2022-11-07 10:08:10
+## 16: 2022-11-07 10:08:10
+## 17: 2022-11-07 10:08:10
+## 18: 2022-11-07 10:08:10
+## 19: 2022-11-07 10:08:10
+## 20: 2022-11-07 10:08:10
+## 21: 2022-11-07 10:08:10
+## 22: 2022-11-07 10:08:10
 ##             createdDate</code></pre>
 <div class="sourceCode" id="cb141"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb141-1"><a href="#cb141-1" aria-hidden="true" tabindex="-1"></a><span class="co"># userTags get appended</span></span>
 <span id="cb141-2"><a href="#cb141-2" aria-hidden="true" tabindex="-1"></a><span class="co"># all items have the outer tag propagate, plus inner ones only have inner ones</span></span>
@@ -1753,11 +1760,11 @@ there is a guarantee that it will work at any point.</p>
 ##  3: 4ac2b7c0f42d1e46            function                 rnorm
 ##  4: 4ac2b7c0f42d1e46               class               numeric
 ##  5: 4ac2b7c0f42d1e46         object.size                  1008
-##  6: 4ac2b7c0f42d1e46            accessed   2022-08-16 09:24:14
+##  6: 4ac2b7c0f42d1e46            accessed   2022-11-07 10:08:10
 ##  7: 4ac2b7c0f42d1e46             inCloud                 FALSE
 ##  8: 4ac2b7c0f42d1e46          resultHash                      
-##  9: 4ac2b7c0f42d1e46   elapsedTimeDigest     0.0002787113 secs
-## 10: 4ac2b7c0f42d1e46 elapsedTimeFirstRun     2.026558e-05 secs
+##  9: 4ac2b7c0f42d1e46   elapsedTimeDigest     0.0002396107 secs
+## 10: 4ac2b7c0f42d1e46 elapsedTimeFirstRun     2.074242e-05 secs
 ## 11: 4ac2b7c0f42d1e46      otherFunctions      vweave_rmarkdown
 ## 12: 4ac2b7c0f42d1e46      otherFunctions          process_file
 ## 13: 4ac2b7c0f42d1e46      otherFunctions         process_group
@@ -1777,11 +1784,11 @@ there is a guarantee that it will work at any point.</p>
 ## 27: b06af03d5a73dc7d            function                 inner
 ## 28: b06af03d5a73dc7d               class               numeric
 ## 29: b06af03d5a73dc7d         object.size                  1008
-## 30: b06af03d5a73dc7d            accessed   2022-08-16 09:24:14
+## 30: b06af03d5a73dc7d            accessed   2022-11-07 10:08:10
 ## 31: b06af03d5a73dc7d             inCloud                 FALSE
 ## 32: b06af03d5a73dc7d          resultHash                      
-## 33: b06af03d5a73dc7d   elapsedTimeDigest     0.0002954006 secs
-## 34: b06af03d5a73dc7d elapsedTimeFirstRun       0.01262546 secs
+## 33: b06af03d5a73dc7d   elapsedTimeDigest     0.0002398491 secs
+## 34: b06af03d5a73dc7d elapsedTimeFirstRun       0.01118755 secs
 ## 35: b06af03d5a73dc7d      otherFunctions      vweave_rmarkdown
 ## 36: b06af03d5a73dc7d      otherFunctions          process_file
 ## 37: b06af03d5a73dc7d      otherFunctions         process_group
@@ -1800,11 +1807,11 @@ there is a guarantee that it will work at any point.</p>
 ## 50: 88a34e1d033329e5            function                 outer
 ## 51: 88a34e1d033329e5               class               numeric
 ## 52: 88a34e1d033329e5         object.size                  1008
-## 53: 88a34e1d033329e5            accessed   2022-08-16 09:24:14
+## 53: 88a34e1d033329e5            accessed   2022-11-07 10:08:10
 ## 54: 88a34e1d033329e5             inCloud                 FALSE
 ## 55: 88a34e1d033329e5          resultHash                      
-## 56: 88a34e1d033329e5   elapsedTimeDigest     0.0002644062 secs
-## 57: 88a34e1d033329e5 elapsedTimeFirstRun       0.02417874 secs
+## 56: 88a34e1d033329e5   elapsedTimeDigest     0.0002436638 secs
+## 57: 88a34e1d033329e5 elapsedTimeFirstRun       0.02155232 secs
 ## 58: 88a34e1d033329e5      otherFunctions      vweave_rmarkdown
 ## 59: 88a34e1d033329e5      otherFunctions          process_file
 ## 60: 88a34e1d033329e5      otherFunctions         process_group
@@ -1821,77 +1828,77 @@ there is a guarantee that it will work at any point.</p>
 ## 71: 88a34e1d033329e5           file.size                   165
 ##              cacheId              tagKey              tagValue
 ##             createdDate
-##  1: 2022-08-16 09:24:14
-##  2: 2022-08-16 09:24:14
-##  3: 2022-08-16 09:24:14
-##  4: 2022-08-16 09:24:14
-##  5: 2022-08-16 09:24:14
-##  6: 2022-08-16 09:24:14
-##  7: 2022-08-16 09:24:14
-##  8: 2022-08-16 09:24:14
-##  9: 2022-08-16 09:24:14
-## 10: 2022-08-16 09:24:14
-## 11: 2022-08-16 09:24:14
-## 12: 2022-08-16 09:24:14
-## 13: 2022-08-16 09:24:14
-## 14: 2022-08-16 09:24:14
-## 15: 2022-08-16 09:24:14
-## 16: 2022-08-16 09:24:14
-## 17: 2022-08-16 09:24:14
-## 18: 2022-08-16 09:24:14
-## 19: 2022-08-16 09:24:14
-## 20: 2022-08-16 09:24:14
-## 21: 2022-08-16 09:24:14
-## 22: 2022-08-16 09:24:14
-## 23: 2022-08-16 09:24:14
-## 24: 2022-08-16 09:24:14
-## 25: 2022-08-16 09:24:14
-## 26: 2022-08-16 09:24:14
-## 27: 2022-08-16 09:24:14
-## 28: 2022-08-16 09:24:14
-## 29: 2022-08-16 09:24:14
-## 30: 2022-08-16 09:24:14
-## 31: 2022-08-16 09:24:14
-## 32: 2022-08-16 09:24:14
-## 33: 2022-08-16 09:24:14
-## 34: 2022-08-16 09:24:14
-## 35: 2022-08-16 09:24:14
-## 36: 2022-08-16 09:24:14
-## 37: 2022-08-16 09:24:14
-## 38: 2022-08-16 09:24:14
-## 39: 2022-08-16 09:24:14
-## 40: 2022-08-16 09:24:14
-## 41: 2022-08-16 09:24:14
-## 42: 2022-08-16 09:24:14
-## 43: 2022-08-16 09:24:14
-## 44: 2022-08-16 09:24:14
-## 45: 2022-08-16 09:24:14
-## 46: 2022-08-16 09:24:14
-## 47: 2022-08-16 09:24:14
-## 48: 2022-08-16 09:24:14
-## 49: 2022-08-16 09:24:14
-## 50: 2022-08-16 09:24:14
-## 51: 2022-08-16 09:24:14
-## 52: 2022-08-16 09:24:14
-## 53: 2022-08-16 09:24:14
-## 54: 2022-08-16 09:24:14
-## 55: 2022-08-16 09:24:14
-## 56: 2022-08-16 09:24:14
-## 57: 2022-08-16 09:24:14
-## 58: 2022-08-16 09:24:14
-## 59: 2022-08-16 09:24:14
-## 60: 2022-08-16 09:24:14
-## 61: 2022-08-16 09:24:14
-## 62: 2022-08-16 09:24:14
-## 63: 2022-08-16 09:24:14
-## 64: 2022-08-16 09:24:14
-## 65: 2022-08-16 09:24:14
-## 66: 2022-08-16 09:24:14
-## 67: 2022-08-16 09:24:14
-## 68: 2022-08-16 09:24:14
-## 69: 2022-08-16 09:24:14
-## 70: 2022-08-16 09:24:14
-## 71: 2022-08-16 09:24:14
+##  1: 2022-11-07 10:08:10
+##  2: 2022-11-07 10:08:10
+##  3: 2022-11-07 10:08:10
+##  4: 2022-11-07 10:08:10
+##  5: 2022-11-07 10:08:10
+##  6: 2022-11-07 10:08:10
+##  7: 2022-11-07 10:08:10
+##  8: 2022-11-07 10:08:10
+##  9: 2022-11-07 10:08:10
+## 10: 2022-11-07 10:08:10
+## 11: 2022-11-07 10:08:10
+## 12: 2022-11-07 10:08:10
+## 13: 2022-11-07 10:08:10
+## 14: 2022-11-07 10:08:10
+## 15: 2022-11-07 10:08:10
+## 16: 2022-11-07 10:08:10
+## 17: 2022-11-07 10:08:10
+## 18: 2022-11-07 10:08:10
+## 19: 2022-11-07 10:08:10
+## 20: 2022-11-07 10:08:10
+## 21: 2022-11-07 10:08:10
+## 22: 2022-11-07 10:08:10
+## 23: 2022-11-07 10:08:10
+## 24: 2022-11-07 10:08:10
+## 25: 2022-11-07 10:08:10
+## 26: 2022-11-07 10:08:10
+## 27: 2022-11-07 10:08:10
+## 28: 2022-11-07 10:08:10
+## 29: 2022-11-07 10:08:10
+## 30: 2022-11-07 10:08:10
+## 31: 2022-11-07 10:08:10
+## 32: 2022-11-07 10:08:10
+## 33: 2022-11-07 10:08:10
+## 34: 2022-11-07 10:08:10
+## 35: 2022-11-07 10:08:10
+## 36: 2022-11-07 10:08:10
+## 37: 2022-11-07 10:08:10
+## 38: 2022-11-07 10:08:10
+## 39: 2022-11-07 10:08:10
+## 40: 2022-11-07 10:08:10
+## 41: 2022-11-07 10:08:10
+## 42: 2022-11-07 10:08:10
+## 43: 2022-11-07 10:08:10
+## 44: 2022-11-07 10:08:10
+## 45: 2022-11-07 10:08:10
+## 46: 2022-11-07 10:08:10
+## 47: 2022-11-07 10:08:10
+## 48: 2022-11-07 10:08:10
+## 49: 2022-11-07 10:08:10
+## 50: 2022-11-07 10:08:10
+## 51: 2022-11-07 10:08:10
+## 52: 2022-11-07 10:08:10
+## 53: 2022-11-07 10:08:10
+## 54: 2022-11-07 10:08:10
+## 55: 2022-11-07 10:08:10
+## 56: 2022-11-07 10:08:10
+## 57: 2022-11-07 10:08:10
+## 58: 2022-11-07 10:08:10
+## 59: 2022-11-07 10:08:10
+## 60: 2022-11-07 10:08:10
+## 61: 2022-11-07 10:08:10
+## 62: 2022-11-07 10:08:10
+## 63: 2022-11-07 10:08:10
+## 64: 2022-11-07 10:08:10
+## 65: 2022-11-07 10:08:10
+## 66: 2022-11-07 10:08:10
+## 67: 2022-11-07 10:08:10
+## 68: 2022-11-07 10:08:10
+## 69: 2022-11-07 10:08:10
+## 70: 2022-11-07 10:08:10
+## 71: 2022-11-07 10:08:10
 ##             createdDate</code></pre>
 </div>
 <div id="cacheid" class="section level2" number="1.10">
