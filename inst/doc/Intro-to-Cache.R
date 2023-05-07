@@ -1,42 +1,39 @@
 ## ----function-level, echo=TRUE------------------------------------------------
-library(raster)
 library(reproducible)
 library(data.table)
-setDTthreads(1) # user can omit this with little effect
-
-tmpDir <- file.path(tempdir(), "reproducible_examples", "Cache")
-dir.create(tmpDir, recursive = TRUE)
-
-ras <- raster(extent(0, 1000, 0, 1000), vals = 1:1e6, res = 1)
-crs(ras) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
-
-newCRS <- "+init=epsg:4326" # A longlat crs
-
-# No Cache
-system.time(suppressWarnings(map1 <- projectRaster(ras, crs = newCRS))) # Warnings due to new PROJ
-
-# Try with memoise for this example -- for many simple cases, memoising will not be faster
-opts <- options("reproducible.useMemoise" = TRUE)
-# With Cache -- a little slower the first time because saving to disk
-system.time({
-  suppressWarnings({
-    map1 <- Cache(projectRaster, ras, crs = newCRS, cachePath = tmpDir, notOlderThan = Sys.time())
+if (requireNamespace("terra")) {
+  
+  tmpDir <- file.path(tempdir(), "reproducible_examples", "Cache")
+  dir.create(tmpDir, recursive = TRUE)
+  
+  ras <- terra::rast(terra::ext(0, 1000, 0, 1000), vals = 1:1e6, res = 1)
+  terra::crs(ras) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+  
+  newCRS <- "+init=epsg:4326" # A longlat crs
+  
+  # No Cache
+  system.time(suppressWarnings(map1 <- terra::project(ras, newCRS))) # Warnings due to new PROJ
+  
+  # Try with memoise for this example -- for many simple cases, memoising will not be faster
+  opts <- options("reproducible.useMemoise" = TRUE)
+  # With Cache -- a little slower the first time because saving to disk
+  system.time({
+    suppressWarnings({
+      map1 <- Cache(terra::project, ras, newCRS, cachePath = tmpDir, notOlderThan = Sys.time())
+    })
   })
-})
-
-# faster the second time
-system.time({
-  map2 <- Cache(projectRaster, ras, crs = newCRS, cachePath = tmpDir)
-})
-
-options(opts)
-
-all.equal(map1, map2) # TRUE
+  
+  # faster the second time
+  system.time({
+    map2 <- Cache(terra::project, ras, newCRS, cachePath = tmpDir)
+  })
+  
+  options(opts)
+  
+  all.equal(map1, map2, check.attributes = FALSE) # TRUE
+}
 
 ## -----------------------------------------------------------------------------
-library(raster)
-library(magrittr)
-
 try(clearCache(tmpDir, ask = FALSE), silent = TRUE) # just to make sure it is clear
 
 ranNumsA <- Cache(rnorm, 10, 16, cachePath = tmpDir)
@@ -130,30 +127,31 @@ keepCache(tmpDir, userTags = "runif|rnorm", ask = FALSE)
 clearCache(tmpDir, ask = FALSE)
 
 ## ----expensive-computations---------------------------------------------------
-ras <- raster(extent(0, 5, 0, 5), res = 1,
+ras <- terra::rast(terra::ext(0, 5, 0, 5), res = 1,
               vals = sample(1:5, replace = TRUE, size = 25),
               crs = "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +ellps=WGS84")
 
+rasCRS <- terra::crs(ras)
 # A slow operation, like GIS operation
 notCached <- suppressWarnings(
   # project raster generates warnings when run non-interactively
-  projectRaster(ras, crs = crs(ras), res = 5, cachePath = tmpDir)
+  terra::project(ras, rasCRS, res = 5)
 )
 
 cached <- suppressWarnings(
   # project raster generates warnings when run non-interactively
   # using quote works also
-  Cache(projectRaster, ras, crs = crs(ras), res = 5, cachePath = tmpDir)
+  Cache(terra::project, ras, rasCRS, res = 5, cachePath = tmpDir)
 )
 
 # second time is much faster
 reRun <- suppressWarnings(
   # project raster generates warnings when run non-interactively
-  Cache(projectRaster, ras, crs = crs(ras), res = 5, cachePath = tmpDir)
+  Cache(terra::project, ras, rasCRS, res = 5, cachePath = tmpDir)
 )
 
 # recovered cached version is same as non-cached version
-all.equal(notCached, reRun) ## TRUE
+all.equal(notCached, reRun, check.attributes = FALSE) ## TRUE
 
 ## ----nested-------------------------------------------------------------------
 ##########################
@@ -201,16 +199,16 @@ showCache(tmpdir1) # rnorm function has outerTag and innerTag, inner and outer o
 set.seed(1)
 Cache(rnorm, 1, cachePath = tmpdir1)
 # manually look at output attribute which shows cacheId: 7072c305d8c69df0
-Cache(rnorm, 1, cachePath = tmpdir1, cacheId = "7072c305d8c69df0") # same value
+Cache(rnorm, 1, cachePath = tmpdir1, cacheId = "422bae4ed2f770cc") # same value
 # override even with different inputs:
-Cache(rnorm, 2, cachePath = tmpdir1, cacheId = "7072c305d8c69df0")
+Cache(rnorm, 2, cachePath = tmpdir1, cacheId = "422bae4ed2f770cc")
 
 
 ## ----manual-cache-------------------------------------------------------------
 # As of reproducible version 1.0, there is a new backend directly using DBI
-mapHash <- unique(showCache(tmpDir, userTags = "projectRaster")$cacheId)
+mapHash <- unique(showCache(tmpDir, userTags = "project")$cacheId)
 map <- loadFromCache(mapHash[1], cachePath = tmpDir)
-plot(map)
+terra::plot(map)
 
 ## ----cleanup------------------------------------------------------------------
 ## cleanup

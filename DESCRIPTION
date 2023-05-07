@@ -1,12 +1,12 @@
 Package: reproducible
 Type: Package
-Title: A Set of Tools that Enhance Reproducibility of R Code
+Title: Enhance Reproducibility of R Code
 Description: A collection of high-level, machine- and OS-independent tools
     for making deeply reproducible and reusable content in R.
-    The two workhorse functions are 'Cache()' and 'prepInputs()'. `Cache()`
+    The two workhorse functions are Cache() and prepInputs(). Cache()
     allows for nested caching, is robust to environments and objects with
     environments (like functions), and has deals with some classes of 
-    file-backed R objects e.g., from `terra` and `raster` packages. 
+    file-backed R objects e.g., from terra and raster packages. 
     Both functions have been developed to 
     be foundational components of data retrieval
     and processing in continuous workflow situations. In both functions,
@@ -14,13 +14,13 @@ Description: A collection of high-level, machine- and OS-independent tools
     the same result, but faster at subsequent times by way of checksums
     and digesting. Several features are still under development, including
     cloud storage of cached objects, allowing for sharing between users. Several
-    advanced options are available, see '?reproducibleOptions()'.
+    advanced options are available, see ?reproducibleOptions().
 SystemRequirements: 'unrar' (Linux/macOS) or '7-Zip' (Windows) to work
         with '.rar' files.
 URL: https://reproducible.predictiveecology.org,
         https://github.com/PredictiveEcology/reproducible
-Date: 2022-12-21
-Version: 1.2.16
+Date: 2023-05-06
+Version: 2.0.2
 Authors@R: 
     c(person(given = "Eliot J B",
              family = "McIntire",
@@ -49,30 +49,30 @@ Authors@R:
              comment = c(ORCID = "0000-0001-7397-2116")),
       person(given = "His Majesty the King in Right of Canada, as represented by the Minister of Natural Resources Canada",
              role = "cph"))
-Depends: R (>= 4.0)
-Imports: data.table (>= 1.10.4), DBI, digest, fpCompare, glue, lobstr,
-        magrittr, methods, raster (>= 3.5-15), RSQLite, rlang, sp (>=
-        1.4-2), utils
-Suggests: covr, crayon, fastdigest, fasterize, future, googledrive,
-        httr, lwgeom, qs, knitr, parallel, RCurl (>= 1.95-4.8), rgdal,
-        rmarkdown, sf, stats, terra (>= 1.5-17), testthat
+Depends: R (>= 4.1)
+Imports: data.table (>= 1.10.4), digest, filelock, fpCompare, lobstr,
+        methods, stats, utils
+Suggests: covr, crayon, DBI, fastdigest, future, geodata, glue,
+        googledrive, httr, knitr, parallel, qs, raster (>= 3.5-15),
+        RCurl (>= 1.95-4.8), rlang, rmarkdown, RSQLite, sf, sp (>=
+        1.4-2), terra (>= 1.5-17), testthat, withr
 Encoding: UTF-8
 Language: en-CA
 License: GPL-3
 VignetteBuilder: knitr, rmarkdown
 BugReports: https://github.com/PredictiveEcology/reproducible/issues
 ByteCompile: yes
+RoxygenNote: 7.2.3
 Collate: 'DBI.R' 'cache-helpers.R' 'cache-internals.R' 'robustDigest.R'
-        'cache.R' 'checksums.R' 'cloud.R' 'cloudOld.R' 'convertPaths.R'
-        'copy.R' 'download.R' 'exportedMethods.R' 'gis.R' 'git.R'
-        'helpers.R' 'objectSize.R' 'options.R' 'packages.R' 'paths.R'
-        'pipe.R' 'postProcess.R' 'postProcessTerra.R' 'preProcess.R'
+        'cache.R' 'cacheGeo.R' 'checksums.R' 'cloud.R' 'convertPaths.R'
+        'copy.R' 'download.R' 'exportedMethods.R' 'gis.R' 'helpers.R'
+        'messages.R' 'objectSize.R' 'options.R' 'packages.R' 'paths.R'
+        'pipe.R' 'postProcess.R' 'postProcessTo.R' 'preProcess.R'
         'prepInputs.R' 'reproducible-deprecated.R'
         'reproducible-package.R' 'search.R' 'showCacheEtc.R'
-        'spatialObjects-class.R' 'zzz.R'
-RoxygenNote: 7.2.3
+        'spatialObjects-class.R' 'terra-migration.R' 'zzz.R'
 NeedsCompilation: no
-Packaged: 2022-12-22 05:54:25 UTC; achubaty
+Packaged: 2023-05-07 04:44:15 UTC; emcintir
 Author: Eliot J B McIntire [aut, cre] (<https://orcid.org/0000-0002-6914-8316>),
   Alex M Chubaty [aut] (<https://orcid.org/0000-0001-7146-8135>),
   Tati Micheletti [ctb] (<https://orcid.org/0000-0003-4838-8342>),
@@ -82,4 +82,4 @@ Author: Eliot J B McIntire [aut, cre] (<https://orcid.org/0000-0002-6914-8316>),
     of Natural Resources Canada [cph]
 Maintainer: Eliot J B McIntire <eliot.mcintire@canada.ca>
 Repository: CRAN
-Date/Publication: 2022-12-22 09:50:02 UTC
+Date/Publication: 2023-05-07 05:00:02 UTC
