@@ -14,7 +14,7 @@ test_that("prepInputs in a simple one double nested zip file, passing only desti
 
 test_that("prepInputs in a simple one double nested zip file, passing targetFile", {
   skip_on_cran()
-  testInitOut <- testInit("raster")
+  testInitOut <- testInit("terra")
   on.exit({
     testOnExit(testInitOut)
   }, add = TRUE)
@@ -30,7 +30,7 @@ test_that("prepInputs in a simple one double nested zip file, passing targetFile
 
 test_that("prepInputs in a two files double nested zip file, passing only destinationPath and url", {
   skip_on_cran()
-  testInitOut <- testInit("raster")
+  testInitOut <- testInit("terra")
   on.exit({
     testOnExit(testInitOut)
   }, add = TRUE)
@@ -44,7 +44,7 @@ test_that("prepInputs in a two files double nested zip file, passing only destin
 
 test_that("prepInputs in a two files double nested zip file, passing targetFile", {
   skip_on_cran()
-  testInitOut <- testInit("raster")
+  testInitOut <- testInit("terra")
   on.exit({
     testOnExit(testInitOut)
   }, add = TRUE)
@@ -64,7 +64,7 @@ test_that(
     "the second layer, and a shapefile in the first, not specifying the targetFile"
   ), {
     skip_on_cran()
-    testInitOut <- testInit("raster")
+    testInitOut <- testInit("terra")
     on.exit({
       testOnExit(testInitOut)
     }, add = TRUE)
@@ -86,7 +86,7 @@ test_that(
   paste0("prepInputs in a two files double nested zip file, with the wanted file in",
          "the second layer, and a shapefile in the first, specifying the targetFile"), {
            skip_on_cran()
-           testInitOut <- testInit("raster")
+           testInitOut <- testInit("terra")
            on.exit({
              testOnExit(testInitOut)
            }, add = TRUE)
@@ -105,9 +105,9 @@ test_that(
   paste("prepInputs in a two files double nested rar file,",
         "with the wanted file in the second layer, not specifying the targetFile"), {
           skip_on_cran()
-          skip_on_os("mac")
+          skip_if(isMac() && isCI())
 
-          testInitOut <- testInit("raster")
+          testInitOut <- testInit("terra")
           on.exit({
             testOnExit(testInitOut)
           }, add = TRUE)
@@ -141,8 +141,9 @@ test_that(
     "prepInputs in a two files double nested rar file, with the wanted file in",
     " the second layer, specifying the targetFile"), {
       skip_on_cran()
-      skip_on_os("mac")
-      testInitOut <- testInit("raster")
+      skip_if(isMac() && isCI())
+
+      testInitOut <- testInit("terra")
       on.exit({
         testOnExit(testInitOut)
       }, add = TRUE)
@@ -170,8 +171,8 @@ test_that(
 test_that(paste0("prepInputs in a two files double nested rar file, with the wanted file in",
                  "the second layer, not specifying the targetFile, passing the main archive"), {
                    skip_on_cran()
-                   skip_on_os("mac")
-                   testInitOut <- testInit("raster")
+                   skip_if(isMac() && isCI())
+                   testInitOut <- testInit("terra")
                    on.exit({
                      testOnExit(testInitOut)
                    }, add = TRUE)

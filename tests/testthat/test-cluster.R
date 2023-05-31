@@ -1,6 +1,8 @@
 test_that("test parallel collisions", {
   skip_on_cran() # testing multi-threaded things on CRAN
-  skip_on_os("mac")
+  # skip_on_os("mac")
+  skip_if_not_installed("parallel")
+
   startTime <- Sys.time()
 
   testInitOut <- testInit("parallel", tmpFileExt = c(".tif", ".grd", ".txt"))
@@ -8,10 +10,9 @@ test_that("test parallel collisions", {
     try(testOnExit(testInitOut), silent = TRUE)
   }, add = TRUE)
 
-  skip_if_not_installed("parallel")
   # make cluster -- note this works if cluster is FORK also, but for simplicity, using default
   #   which works on Linux, Mac, Windows
-  N <- min(2L, detectCores())
+  N <- min(2L, parallel::detectCores())
 
   if (useDBI())
     if (!file.exists(CacheDBFile(tmpdir))) {
@@ -33,7 +34,7 @@ test_that("test parallel collisions", {
         cat(m$message, file = fn, append = TRUE))
   }
   cl <- makeCluster(N)
-  on.exit(stopCluster(cl), add = TRUE)
+  on.exit(parallel::stopCluster(cl), add = TRUE)
 
   keepLog <- FALSE
   if (isWindows() && Sys.info()["user"] == "emcintir") {

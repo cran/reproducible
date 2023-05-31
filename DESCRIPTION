@@ -2,7 +2,7 @@ Package: reproducible
 Type: Package
 Title: Enhance Reproducibility of R Code
 Description: A collection of high-level, machine- and OS-independent tools
-    for making deeply reproducible and reusable content in R.
+    for making reproducible and reusable content in R.
     The two workhorse functions are Cache() and prepInputs(). Cache()
     allows for nested caching, is robust to environments and objects with
     environments (like functions), and has deals with some classes of 
@@ -19,8 +19,8 @@ SystemRequirements: 'unrar' (Linux/macOS) or '7-Zip' (Windows) to work
         with '.rar' files.
 URL: https://reproducible.predictiveecology.org,
         https://github.com/PredictiveEcology/reproducible
-Date: 2023-05-06
-Version: 2.0.2
+Date: 2023-05-30
+Version: 2.0.4
 Authors@R: 
     c(person(given = "Eliot J B",
              family = "McIntire",
@@ -55,7 +55,7 @@ Imports: data.table (>= 1.10.4), digest, filelock, fpCompare, lobstr,
 Suggests: covr, crayon, DBI, fastdigest, future, geodata, glue,
         googledrive, httr, knitr, parallel, qs, raster (>= 3.5-15),
         RCurl (>= 1.95-4.8), rlang, rmarkdown, RSQLite, sf, sp (>=
-        1.4-2), terra (>= 1.5-17), testthat, withr
+        1.4-2), terra (>= 1.7-20), testthat, withr
 Encoding: UTF-8
 Language: en-CA
 License: GPL-3
@@ -72,7 +72,7 @@ Collate: 'DBI.R' 'cache-helpers.R' 'cache-internals.R' 'robustDigest.R'
         'reproducible-package.R' 'search.R' 'showCacheEtc.R'
         'spatialObjects-class.R' 'terra-migration.R' 'zzz.R'
 NeedsCompilation: no
-Packaged: 2023-05-07 04:44:15 UTC; emcintir
+Packaged: 2023-05-30 20:17:42 UTC; emcintir
 Author: Eliot J B McIntire [aut, cre] (<https://orcid.org/0000-0002-6914-8316>),
   Alex M Chubaty [aut] (<https://orcid.org/0000-0001-7146-8135>),
   Tati Micheletti [ctb] (<https://orcid.org/0000-0003-4838-8342>),
@@ -82,4 +82,4 @@ Author: Eliot J B McIntire [aut, cre] (<https://orcid.org/0000-0002-6914-8316>),
     of Natural Resources Canada [cph]
 Maintainer: Eliot J B McIntire <eliot.mcintire@canada.ca>
 Repository: CRAN
-Date/Publication: 2023-05-07 05:00:02 UTC
+Date/Publication: 2023-05-31 17:00:02 UTC

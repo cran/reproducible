@@ -89,6 +89,7 @@ gdb
 geo
 geospatial
 getData
+gis
 google
 googledrive
 gridded
@@ -113,7 +114,6 @@ nbsmokee
 objSize
 permalink
 postProcess
-postProcessTo
 postProcessing
 postgresql
 postpend

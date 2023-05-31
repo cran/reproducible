@@ -2,31 +2,27 @@ library(data.table)
 origDTthreads <- getDTthreads()
 wantMoreTests <- isInteractive() || Sys.info()["user"] %in% "emcintir"
 if (wantMoreTests) {# this is for covr::package_coverage
-  Sys.setenv(NOT_CRAN="true")
-  Sys.setenv(SKIP_GAUTH="true")
+  Sys.setenv(NOT_CRAN = "true")
+  Sys.setenv(SKIP_GAUTH = "true")
 }
-opts <- options(# reproducible.rasterRead = "raster::raster",
-  reproducible.rasterRead = "terra::rast",
-  reproducible.useDBI = FALSE,
-  # reproducible.useDBI = TRUE,
-  reproducible.runLargeFileTests = FALSE) # Set to TRUE to run the 2 long tests -- 20 minutes
+opts <- options(
+  reproducible.runLargeFileTests = FALSE # Set to TRUE to run the 2 long tests -- 20 minutes
+)
 setDTthreads(2)
 withr::defer({
   if (wantMoreTests) {
     print(paste0("getOption('reproducible.rasterRead') = ", getOption("reproducible.rasterRead")))
     print(paste0("getOption('reproducible.runLargeFileTests') = ", getOption('reproducible.runLargeFileTests')))
     print(paste0("getOption('reproducible.useDBI') = ", getOption('reproducible.useDBI')))
-    Sys.setenv(NOT_CRAN="")
-    Sys.setenv(SKIP_GAUTH="")
+    Sys.setenv(NOT_CRAN = "")
+    Sys.setenv(SKIP_GAUTH = "")
   }
   options(opts)
-  setDTthreads(origDTthreads)
+  data.table::setDTthreads(origDTthreads)
   try(unlink("CHECKSUMS.txt"), silent = TRUE) # comes from an unknown place
 }, teardown_env())
 if (wantMoreTests) {
   print(paste0("getOption('reproducible.rasterRead') = ", getOption("reproducible.rasterRead")))
   print(paste0("getOption('reproducible.runLargeFileTests') = ", getOption('reproducible.runLargeFileTests')))
   print(paste0("getOption('reproducible.useDBI') = ", getOption('reproducible.useDBI')))
-
 }
-

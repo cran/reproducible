@@ -147,7 +147,7 @@ utils::globalVariables(c(
 #' \url{https://github.com/PredictiveEcology/SpaDES/wiki/Using-alternate-database-backends-for-Cache}.
 #'
 #'
-#' @section useCache:
+#' @section `useCache`:
 #' Logical or numeric. If `FALSE` or `0`, then the entire Caching
 #' mechanism is bypassed and the
 #' function is evaluated as if it was not being Cached. Default is
@@ -211,8 +211,17 @@ utils::globalVariables(c(
 #'   be `FALSE` or `TRUE`, respectively) so it can be turned on and off with
 #'   this option. NOTE: *This argument will not be passed into inner/nested Cache calls.*)
 #'
+#' @section Object attributes:
+#' Users should be cautioned that object attributes may not be preserved, especially
+#' in the case of objects that are file-backed, such as `Raster` or `SpatRaster` objects.
+#' If a user needs to keep attributes, they may need to manually re-attach them to
+#' the object after recovery. With the example of `SpatRaster` objects, saving
+#' to disk requires `terra::wrap` if it is a memory-backed object. When running
+#' `terra::unwrap` on this object, any attributes that a user had added are lost.
+#'
 #' @section `sideEffect`:
 #' This feature is now deprecated. Do not use as it is ignored.
+#'
 #'
 #'
 #' @note As indicated above, several objects require pre-treatment before
@@ -345,7 +354,7 @@ utils::globalVariables(c(
 #' @author Eliot McIntire
 #' @export
 #' @importFrom digest digest
-#' @importFrom data.table setDT := setkeyv .N .SD setattr
+#' @importFrom data.table setDT := setkeyv .N .SD
 #' @importFrom utils object.size tail
 #' @importFrom methods formalArgs
 #' @rdname Cache
@@ -759,26 +768,12 @@ Cache <-
         output <- "NULL"
       }
 
-      # browser(expr = identical(outputHash, "aa8b14f8ef51eddb"))
-      .setSubAttrInList(output, ".Cache", "newCache", .CacheIsNew)
-      setattr(output, "tags", paste0("cacheId:", outputHash))
-      setattr(output, "call", "")
-      if (!identical(attr(output, ".Cache")$newCache, .CacheIsNew))
-        stop("attributes are not correct 3")
-      if (!identical(attr(output, "call"), ""))
-        stop("attributes are not correct 4")
-      if (!identical(attr(output, "tags"), paste0("cacheId:", outputHash)))
-        stop("attributes are not correct 5")
+      output <- addCacheAttr(output, .CacheIsNew, outputHash, FUN)
 
-      if (isS4(FUN)) {
-        setattr(output, "function", FUN@generic)
-        if (!identical(attr(output, "function"), FUN@generic))
-          stop("There is an unknown error 03")
-      }
       # Can make new methods by class to add tags to outputs
       if (.CacheIsNew) {
         outputToSave <- .dealWithClass(output, cachePath, drv = drv, conn = conn, verbose = verbose)
-        output <- .CopyCacheAtts(outputToSave, output, passByReference = TRUE)
+        output <- .CopyCacheAtts(outputToSave, output)
         # .dealWithClass added tags; these should be transfered to output
         #          outputToSave <- .addTagsToOutput(outputToSave, outputObjects, FUN, preDigestByClass)
         #          output <- .addTagsToOutput(outputToSave, outputObjects, FUN, preDigestByClass)
@@ -846,11 +841,11 @@ Cache <-
           .reproEnv$futureEnv <- new.env(parent = emptyenv())
 
         if (isTRUE(getOption("reproducible.futurePlan"))) {
-          messageCache('options("reproducible.futurePlan") is TRUE. Setting it to "multiprocess".\n',
+          messageCache('options("reproducible.futurePlan") is TRUE. Setting it to "multisession".\n',
                        'Please specify a plan by name, e.g.,\n',
-                       '  options("reproducible.futurePlan" = "multiprocess")',
+                       '  options("reproducible.futurePlan" = "multisession")',
                        verbose = verbose)
-          future::plan("multiprocess", workers = 1)
+          future::plan("multisession", workers = 1)
         } else {
           if (!is(future::plan(), getOption("reproducible.futurePlan"))) {
             thePlan <- getOption("reproducible.futurePlan")
@@ -1454,26 +1449,25 @@ getFunctionName2 <- function(mc) {
 
 #' Set subattributes within a list by reference
 #'
-#' This uses `data.table::setattr`, but in the case where there is
-#' only a single element within a list attribute.
+#' Sets only a single element within a list attribute.
 #' @param object An arbitrary object
 #' @param attr The attribute name (that is a list object) to change
 #' @param subAttr The list element name to change
 #' @param value The new value
 #'
-#' @export
-#' @importFrom data.table setattr
 #' @return
 #' This sets or updates the `subAttr` element of a list that is located at
 #' `attr(object, attr)`, with the `value`. This, therefore, updates a sub-element
 #'  of a list attribute and returns that same object with the updated attribute.
 #'
+#' @export
 #' @rdname setSubAttrInList
 .setSubAttrInList <- function(object, attr, subAttr, value) {
   .CacheAttr <- attr(object, attr)
   if (is.null(.CacheAttr)) .CacheAttr <- list()
   .CacheAttr[[subAttr]] <- value
-  setattr(object, attr, .CacheAttr)
+  attr(object, attr) <- .CacheAttr
+  object
 }
 
 #' The exact digest function that `Cache` uses
@@ -1552,7 +1546,7 @@ CacheDigest <- function(objsToDigest, ..., algo = "xxhash64", calledFrom = "Cach
     preDigestQuick <- lapply(objsToDigestQuick, function(x) {
       # remove the "newCache" attribute, which is irrelevant for digest
       if (!is.null(attr(x, ".Cache")$newCache)) {
-        .setSubAttrInList(x, ".Cache", "newCache", NULL)
+        x <- .setSubAttrInList(x, ".Cache", "newCache", NULL)
         if (!identical(attr(x, ".Cache")$newCache, NULL)) stop("attributes are not correct 1")
       }
       .robustDigest(x, algo = algo, quick = TRUE, ...)
@@ -1564,7 +1558,7 @@ CacheDigest <- function(objsToDigest, ..., algo = "xxhash64", calledFrom = "Cach
   preDigest <- lapply(objsToDigest, function(x) {
     # remove the "newCache" attribute, which is irrelevant for digest
     if (!is.null(attr(x, ".Cache")$newCache)) {
-      .setSubAttrInList(x, ".Cache", "newCache", NULL)
+      x <- .setSubAttrInList(x, ".Cache", "newCache", NULL)
       if (!identical(attr(x, ".Cache")$newCache, NULL)) stop("attributes are not correct 1")
     }
     .robustDigest(x, algo = algo, quick = FALSE, ...)
@@ -2116,3 +2110,22 @@ browserCond <- function(expr) {
 
 spatVectorNamesForCache <- c("x", "type", "atts", "crs")
 
+
+addCacheAttr <- function(output, .CacheIsNew, outputHash, FUN) {
+  output <- .setSubAttrInList(output, ".Cache", "newCache", .CacheIsNew)
+  attr(output, "tags") <- paste0("cacheId:", outputHash)
+  attr(output, "call") <- ""
+  if (!identical(attr(output, ".Cache")$newCache, .CacheIsNew))
+    stop("attributes are not correct 3")
+  if (!identical(attr(output, "call"), ""))
+    stop("attributes are not correct 4")
+  if (!identical(attr(output, "tags"), paste0("cacheId:", outputHash)))
+    stop("attributes are not correct 5")
+
+  if (isS4(FUN)) {
+    attr(output, "function") <- FUN@generic
+    if (!identical(attr(output, "function"), FUN@generic))
+      stop("There is an unknown error 03")
+  }
+  output
+}
