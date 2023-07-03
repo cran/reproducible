@@ -6,7 +6,7 @@ if (requireNamespace("terra")) {
   tmpDir <- file.path(tempdir(), "reproducible_examples", "Cache")
   dir.create(tmpDir, recursive = TRUE)
   
-  ras <- terra::rast(terra::ext(0, 1000, 0, 1000), vals = 1:1e6, res = 1)
+  ras <- terra::rast(terra::ext(0, 300, 0, 300), vals = 1:9e4, res = 1)
   terra::crs(ras) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
   
   newCRS <- "+init=epsg:4326" # A longlat crs
@@ -23,7 +23,7 @@ if (requireNamespace("terra")) {
     })
   })
   
-  # faster the second time
+  # faster the second time; improvement depends on size of object and time to run function
   system.time({
     map2 <- Cache(terra::project, ras, newCRS, cachePath = tmpDir)
   })
@@ -42,6 +42,8 @@ ranNumsA <- Cache(rnorm, 10, 16, cachePath = tmpDir)
 ranNumsB <- Cache(rnorm, 10, 16, cachePath = tmpDir) # recovers cached copy
 ranNumsD1 <- Cache(quote(rnorm(n = 10, 16)), cachePath = tmpDir) # recovers cached copy
 ranNumsD2 <- Cache(rnorm(n = 10, 16), cachePath = tmpDir) # recovers cached copy
+# pipe
+ranNumsD3 <- rnorm(n = 10, 16) |> Cache(cachePath = tmpDir) # recovers cached copy
 
 # Any minor change makes it different
 ranNumsE <- Cache(rnorm, 10, 6, cachePath = tmpDir) # different
@@ -55,7 +57,7 @@ showCache(tmpDir, userTags = c("^a$")) # regular expression ... "a" exactly
 showCache(tmpDir, userTags = c("runif")) # show only cached objects made during runif call
 
 clearCache(tmpDir, userTags = c("runif"), ask = FALSE) # remove only cached objects made during runif call
-showCache(tmpDir) # only those made during rnorm call
+showCache(tmpDir) # all
 
 clearCache(tmpDir, ask = FALSE)
 
@@ -89,10 +91,10 @@ keepCache(tmpDir, after = Sys.time() - oneDay, ask = FALSE)
 
 # Keep all Cache items created with an rnorm() call
 keepCache(tmpDir, userTags = "rnorm", ask = FALSE)
+showCache(tmpDir)
 
 # Remove all Cache items that happened within a rnorm() call
 clearCache(tmpDir, userTags = "rnorm", ask = FALSE)
-
 showCache(tmpDir) ## empty
 
 # Also, can set a time before caching happens and remove based on this
