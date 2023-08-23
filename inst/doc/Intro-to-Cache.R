@@ -1,37 +1,42 @@
+## ----setup, include = FALSE---------------------------------------------------
+SuggestedPkgsNeeded <- c("terra")
+hasSuggests <- all(sapply(SuggestedPkgsNeeded, require, character.only = TRUE, quietly = TRUE))
+useSuggests <- !(tolower(Sys.getenv("_R_CHECK_DEPENDS_ONLY_")) == "true")
+
+knitr::opts_chunk$set(eval = hasSuggests && useSuggests)
+
 ## ----function-level, echo=TRUE------------------------------------------------
 library(reproducible)
 library(data.table)
-if (requireNamespace("terra")) {
-  
-  tmpDir <- file.path(tempdir(), "reproducible_examples", "Cache")
-  dir.create(tmpDir, recursive = TRUE)
-  
-  ras <- terra::rast(terra::ext(0, 300, 0, 300), vals = 1:9e4, res = 1)
-  terra::crs(ras) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
-  
-  newCRS <- "+init=epsg:4326" # A longlat crs
-  
-  # No Cache
-  system.time(suppressWarnings(map1 <- terra::project(ras, newCRS))) # Warnings due to new PROJ
-  
-  # Try with memoise for this example -- for many simple cases, memoising will not be faster
-  opts <- options("reproducible.useMemoise" = TRUE)
-  # With Cache -- a little slower the first time because saving to disk
-  system.time({
-    suppressWarnings({
-      map1 <- Cache(terra::project, ras, newCRS, cachePath = tmpDir, notOlderThan = Sys.time())
-    })
+
+tmpDir <- file.path(tempdir(), "reproducible_examples", "Cache")
+dir.create(tmpDir, recursive = TRUE)
+
+ras <- terra::rast(terra::ext(0, 300, 0, 300), vals = 1:9e4, res = 1)
+terra::crs(ras) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+
+newCRS <- "+init=epsg:4326" # A longlat crs
+
+# No Cache
+system.time(suppressWarnings(map1 <- terra::project(ras, newCRS))) # Warnings due to new PROJ
+
+# Try with memoise for this example -- for many simple cases, memoising will not be faster
+opts <- options("reproducible.useMemoise" = TRUE)
+# With Cache -- a little slower the first time because saving to disk
+system.time({
+  suppressWarnings({
+    map1 <- Cache(terra::project, ras, newCRS, cachePath = tmpDir, notOlderThan = Sys.time())
   })
-  
-  # faster the second time; improvement depends on size of object and time to run function
-  system.time({
-    map2 <- Cache(terra::project, ras, newCRS, cachePath = tmpDir)
-  })
-  
-  options(opts)
-  
-  all.equal(map1, map2, check.attributes = FALSE) # TRUE
-}
+})
+
+# faster the second time; improvement depends on size of object and time to run function
+system.time({
+  map2 <- Cache(terra::project, ras, newCRS, cachePath = tmpDir)
+})
+
+options(opts)
+
+all.equal(map1, map2, check.attributes = FALSE) # TRUE
 
 ## -----------------------------------------------------------------------------
 try(clearCache(tmpDir, ask = FALSE), silent = TRUE) # just to make sure it is clear
@@ -80,7 +85,6 @@ toRemove <- unique(wholeCache[!onlyRecentlyAccessed, on = "cacheId"], by = "cach
 clearCache(tmpDir, toRemove, ask = FALSE) # remove ones not recently accessed
 showCache(tmpDir) # still has more recently accessed
 
-
 ## ----keepCache----------------------------------------------------------------
 ranNumsA <- Cache(rnorm, 4, cachePath = tmpDir, userTags = "objectName:a")
 ranNumsB <- Cache(runif(4), cachePath = tmpDir, userTags = "objectName:b")
@@ -107,7 +111,6 @@ keepCache(tmpDir, after = startTime, ask = FALSE) # keep only those newer than s
 
 clearCache(tmpDir, ask = FALSE)
 
-
 ## ----searching-within-cache---------------------------------------------------
 # default userTags is "and" matching; for "or" matching use |
 ranNumsA <- Cache(runif, 4, cachePath = tmpDir, userTags = "objectName:a")
@@ -129,9 +132,11 @@ keepCache(tmpDir, userTags = "runif|rnorm", ask = FALSE)
 clearCache(tmpDir, ask = FALSE)
 
 ## ----expensive-computations---------------------------------------------------
-ras <- terra::rast(terra::ext(0, 5, 0, 5), res = 1,
-              vals = sample(1:5, replace = TRUE, size = 25),
-              crs = "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +ellps=WGS84")
+ras <- terra::rast(terra::ext(0, 5, 0, 5),
+  res = 1,
+  vals = sample(1:5, replace = TRUE, size = 25),
+  crs = "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +ellps=WGS84"
+)
 
 rasCRS <- terra::crs(ras)
 # A slow operation, like GIS operation
@@ -195,7 +200,6 @@ outer <- function(n) {
 aa <- Cache(outer, n = 2, cachePath = tmpdir1, userTags = outerTag)
 showCache(tmpdir1) # rnorm function has outerTag and innerTag, inner and outer only have outerTag
 
-
 ## ----selective-cacheId--------------------------------------------------------
 ### cacheId
 set.seed(1)
@@ -204,7 +208,6 @@ Cache(rnorm, 1, cachePath = tmpdir1)
 Cache(rnorm, 1, cachePath = tmpdir1, cacheId = "422bae4ed2f770cc") # same value
 # override even with different inputs:
 Cache(rnorm, 2, cachePath = tmpdir1, cacheId = "422bae4ed2f770cc")
-
 
 ## ----manual-cache-------------------------------------------------------------
 # As of reproducible version 1.0, there is a new backend directly using DBI
