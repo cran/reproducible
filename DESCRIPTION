@@ -19,8 +19,8 @@ SystemRequirements: 'unrar' (Linux/macOS) or '7-Zip' (Windows) to work
         with '.rar' files.
 URL: https://reproducible.predictiveecology.org,
         https://github.com/PredictiveEcology/reproducible
-Date: 2024-03-29
-Version: 2.0.11
+Date: 2024-04-15
+Version: 2.0.12
 Authors@R: 
     c(person(given = "Eliot J B",
              family = "McIntire",
@@ -72,7 +72,7 @@ Collate: 'DBI.R' 'cache-helpers.R' 'cache-internals.R' 'robustDigest.R'
         'reproducible-package.R' 'search.R' 'showCacheEtc.R'
         'spatialObjects-class.R' 'terra-migration.R' 'zzz.R'
 NeedsCompilation: no
-Packaged: 2024-03-29 22:24:02 UTC; emcintir
+Packaged: 2024-04-15 16:06:14 UTC; emcintir
 Author: Eliot J B McIntire [aut, cre] (<https://orcid.org/0000-0002-6914-8316>),
   Alex M Chubaty [aut] (<https://orcid.org/0000-0001-7146-8135>),
   Tati Micheletti [ctb] (<https://orcid.org/0000-0003-4838-8342>),
@@ -82,4 +82,4 @@ Author: Eliot J B McIntire [aut, cre] (<https://orcid.org/0000-0002-6914-8316>),
     of Natural Resources Canada [cph]
 Maintainer: Eliot J B McIntire <eliot.mcintire@canada.ca>
 Repository: CRAN
-Date/Publication: 2024-03-30 07:20:03 UTC
+Date/Publication: 2024-04-15 19:10:02 UTC
