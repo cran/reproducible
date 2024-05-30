@@ -19,8 +19,8 @@ SystemRequirements: 'unrar' (Linux/macOS) or '7-Zip' (Windows) to work
         with '.rar' files.
 URL: https://reproducible.predictiveecology.org,
         https://github.com/PredictiveEcology/reproducible
-Date: 2024-04-15
-Version: 2.0.12
+Date: 2024-05-27
+Version: 2.1.0
 Authors@R: 
     c(person(given = "Eliot J B",
              family = "McIntire",
@@ -52,10 +52,11 @@ Authors@R:
 Depends: R (>= 4.1)
 Imports: data.table (>= 1.10.4), digest, filelock, fpCompare, fs,
         lobstr, methods, stats, utils
-Suggests: covr, crayon, DBI, future, geodata, glue, googledrive, httr,
-        knitr, parallel, qs, raster (>= 3.5-15), RCurl (>= 1.95-4.8),
-        rlang, rmarkdown, RSQLite, sf, sp (>= 1.4-2), terra (>=
-        1.7-20), testthat, withr
+Suggests: archive, covr, crayon, DBI, future, geodata, glue,
+        googledrive, httr, knitr, parallel, qs, raster (>= 3.5-15),
+        RCurl (>= 1.95-4.8), rlang, rmarkdown, RSQLite, R.utils, sf, sp
+        (>= 1.4-2), terra (>= 1.7-20), testthat, withr
+Additional_repositories: https://predictiveecology.r-universe.dev/
 Encoding: UTF-8
 Language: en-CA
 License: GPL-3
@@ -65,14 +66,15 @@ ByteCompile: yes
 RoxygenNote: 7.3.1
 Collate: 'DBI.R' 'cache-helpers.R' 'cache-internals.R' 'robustDigest.R'
         'cache.R' 'cacheGeo.R' 'checksums.R' 'cloud.R' 'convertPaths.R'
-        'copy.R' 'download.R' 'exportedMethods.R' 'gis.R' 'helpers.R'
-        'messages.R' 'objectSize.R' 'options.R' 'packages.R' 'paths.R'
-        'pipe.R' 'postProcess.R' 'postProcessTo.R' 'preProcess.R'
-        'prepInputs.R' 'reproducible-deprecated.R'
-        'reproducible-package.R' 'search.R' 'showCacheEtc.R'
-        'spatialObjects-class.R' 'terra-migration.R' 'zzz.R'
+        'copy.R' 'download.R' 'messages.R' 'exportedMethods.R' 'gis.R'
+        'helpers.R' 'listNamed.R' 'objectSize.R' 'options.R'
+        'packages.R' 'paths.R' 'pipe.R' 'postProcess.R'
+        'postProcessTo.R' 'preProcess.R' 'prepInputs.R'
+        'reproducible-deprecated.R' 'reproducible-package.R' 'search.R'
+        'showCacheEtc.R' 'spatialObjects-class.R' 'terra-migration.R'
+        'zzz.R'
 NeedsCompilation: no
-Packaged: 2024-04-15 16:06:14 UTC; emcintir
+Packaged: 2024-05-29 18:22:29 UTC; achubaty
 Author: Eliot J B McIntire [aut, cre] (<https://orcid.org/0000-0002-6914-8316>),
   Alex M Chubaty [aut] (<https://orcid.org/0000-0001-7146-8135>),
   Tati Micheletti [ctb] (<https://orcid.org/0000-0003-4838-8342>),
@@ -82,4 +84,4 @@ Author: Eliot J B McIntire [aut, cre] (<https://orcid.org/0000-0002-6914-8316>),
     of Natural Resources Canada [cph]
 Maintainer: Eliot J B McIntire <eliot.mcintire@canada.ca>
 Repository: CRAN
-Date/Publication: 2024-04-15 19:10:02 UTC
+Date/Publication: 2024-05-30 00:20:02 UTC
