@@ -9,29 +9,40 @@ knitr::opts_chunk$set(eval = hasSuggests && useSuggests)
 library(reproducible)
 library(data.table)
 
-tmpDir <- file.path(tempdir(), "reproducible_examples", "Cache")
+tmpDir <- file.path(tempfile(), "reproducible_examples", "Cache")
 dir.create(tmpDir, recursive = TRUE)
 
+# Source raster with a complete LCC definition
 ras <- terra::rast(terra::ext(0, 300, 0, 300), vals = 1:9e4, res = 1)
-terra::crs(ras) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+terra::crs(ras) <- "+proj=lcc +lat_1=60 +lat_2=70 +lat_0=50 +lon_0=-100 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
 
-newCRS <- "+init=epsg:4326" # A longlat crs
+# Target CRS in PROJ form (no EPSG lookup)
+newCRS <- "+proj=longlat +datum=WGS84 +no_defs"
+
+# Derive target extent from source extent (no registry lookup)
+target_ext <- terra::project(terra::ext(ras), from = terra::crs(ras), to = newCRS)
+
+# Build template with chosen resolution; assign CRS
+tmplate <- terra::rast(target_ext, resolution = 0.00001)
+terra::crs(tmplate) <- newCRS
 
 # No Cache
-system.time(suppressWarnings(map1 <- terra::project(ras, newCRS))) # Warnings due to new PROJ
+system.time(map1 <- terra::project(ras, tmplate, method = "near"))
 
 # Try with memoise for this example -- for many simple cases, memoising will not be faster
 opts <- options("reproducible.useMemoise" = TRUE)
 # With Cache -- a little slower the first time because saving to disk
 system.time({
   suppressWarnings({
-    map1 <- Cache(terra::project, ras, newCRS, cachePath = tmpDir, notOlderThan = Sys.time())
+    map1 <- terra::project(ras, tmplate, method = "near") |> 
+      Cache(cachePath = tmpDir)
   })
 })
 
 # faster the second time; improvement depends on size of object and time to run function
 system.time({
-  map2 <- Cache(terra::project, ras, newCRS, cachePath = tmpDir)
+  map2 <- terra::project(ras, tmplate, method = "near") |> 
+    Cache(cachePath = tmpDir)
 })
 
 options(opts)
@@ -41,21 +52,21 @@ all.equal(map1, map2, check.attributes = FALSE) # TRUE
 ## -----------------------------------------------------------------------------
 try(clearCache(tmpDir, ask = FALSE), silent = TRUE) # just to make sure it is clear
 
-ranNumsA <- Cache(rnorm, 10, 16, cachePath = tmpDir)
+ranNumsA <- rnorm(10, 16) |> Cache(cachePath = tmpDir)
 
 # All same
-ranNumsB <- Cache(rnorm, 10, 16, cachePath = tmpDir) # recovers cached copy
-ranNumsD1 <- Cache(quote(rnorm(n = 10, 16)), cachePath = tmpDir) # recovers cached copy
-ranNumsD2 <- Cache(rnorm(n = 10, 16), cachePath = tmpDir) # recovers cached copy
+ranNumsB <- rnorm(10, 16) |> Cache(cachePath = tmpDir) # recovers cached copy
+ranNumsD1 <- Cache(quote(rnorm(n = 10, 16))) |> Cache(cachePath = tmpDir) # recovers cached copy
+ranNumsD2 <- Cache(rnorm(n = 10, 16)) |> Cache(cachePath = tmpDir) # recovers cached copy
 # pipe
 ranNumsD3 <- rnorm(n = 10, 16) |> Cache(cachePath = tmpDir) # recovers cached copy
 
 # Any minor change makes it different
-ranNumsE <- Cache(rnorm, 10, 6, cachePath = tmpDir) # different
+ranNumsE <- rnorm(10, 6) |> Cache(cachePath = tmpDir) # different
 
 ## ----tags---------------------------------------------------------------------
-ranNumsA <- Cache(rnorm, 4, cachePath = tmpDir, userTags = "objectName:a")
-ranNumsB <- Cache(runif(4), cachePath = tmpDir, userTags = "objectName:b")
+ranNumsA <- rnorm(4) |> Cache(cachePath = tmpDir, userTags = "objectName:a")
+ranNumsB <- runif(4) |> Cache(cachePath = tmpDir, userTags = "objectName:b")
 
 showCache(tmpDir, userTags = c("objectName"))
 showCache(tmpDir, userTags = c("^a$")) # regular expression ... "a" exactly
@@ -67,12 +78,12 @@ showCache(tmpDir) # all
 clearCache(tmpDir, ask = FALSE)
 
 ## ----accessed-tag-------------------------------------------------------------
-ranNumsA <- Cache(rnorm, 4, cachePath = tmpDir, userTags = "objectName:a")
-ranNumsB <- Cache(runif, 4, cachePath = tmpDir, userTags = "objectName:b")
+ranNumsA <- rnorm(4) |> Cache(cachePath = tmpDir, userTags = "objectName:a")
+ranNumsB <- runif(4) |> Cache(cachePath = tmpDir, userTags = "objectName:b")
 
 # access it again, from Cache
 Sys.sleep(1)
-ranNumsA <- Cache(rnorm, 4, cachePath = tmpDir, userTags = "objectName:a")
+ranNumsA <- rnorm(4) |> Cache(cachePath = tmpDir, userTags = "objectName:a")
 wholeCache <- showCache(tmpDir)
 
 # keep only items accessed "recently" (i.e., only objectName:a)
@@ -86,8 +97,8 @@ clearCache(tmpDir, toRemove, ask = FALSE) # remove ones not recently accessed
 showCache(tmpDir) # still has more recently accessed
 
 ## ----keepCache----------------------------------------------------------------
-ranNumsA <- Cache(rnorm, 4, cachePath = tmpDir, userTags = "objectName:a")
-ranNumsB <- Cache(runif(4), cachePath = tmpDir, userTags = "objectName:b")
+ranNumsA <- rnorm(4) |> Cache(cachePath = tmpDir, userTags = "objectName:a")
+ranNumsB <- Cache(runif(4)) |> Cache(cachePath = tmpDir, userTags = "objectName:b")
 
 # keep only those cached items from the last 24 hours
 oneDay <- 60 * 60 * 24
@@ -103,18 +114,18 @@ showCache(tmpDir) ## empty
 
 # Also, can set a time before caching happens and remove based on this
 #  --> a useful, simple way to control Cache
-ranNumsA <- Cache(rnorm, 4, cachePath = tmpDir, userTags = "objectName:a")
+ranNumsA <- rnorm(4) |> Cache(cachePath = tmpDir, userTags = "objectName:a")
 startTime <- Sys.time()
 Sys.sleep(1)
-ranNumsB <- Cache(rnorm, 5, cachePath = tmpDir, userTags = "objectName:b")
+ranNumsB <- rnorm(5) |> Cache(cachePath = tmpDir, userTags = "objectName:b")
 keepCache(tmpDir, after = startTime, ask = FALSE) # keep only those newer than startTime
 
 clearCache(tmpDir, ask = FALSE)
 
 ## ----searching-within-cache---------------------------------------------------
 # default userTags is "and" matching; for "or" matching use |
-ranNumsA <- Cache(runif, 4, cachePath = tmpDir, userTags = "objectName:a")
-ranNumsB <- Cache(rnorm, 4, cachePath = tmpDir, userTags = "objectName:b")
+ranNumsA <- runif(4) |> Cache(cachePath = tmpDir, userTags = "objectName:a")
+ranNumsB <- rnorm(4) |> Cache(cachePath = tmpDir, userTags = "objectName:b")
 
 # show all objects (runif and rnorm in this case)
 showCache(tmpDir)
@@ -148,13 +159,13 @@ notCached <- suppressWarnings(
 cached <- suppressWarnings(
   # project raster generates warnings when run non-interactively
   # using quote works also
-  Cache(terra::project, ras, rasCRS, res = 5, cachePath = tmpDir)
+  terra::project(ras, rasCRS, res = 5) |> Cache(cachePath = tmpDir)
 )
 
 # second time is much faster
 reRun <- suppressWarnings(
   # project raster generates warnings when run non-interactively
-  Cache(terra::project, ras, rasCRS, res = 5, cachePath = tmpDir)
+  terra::project(ras, rasCRS, res = 5) |> Cache(cachePath = tmpDir)
 )
 
 # recovered cached version is same as non-cached version
@@ -166,21 +177,21 @@ all.equal(notCached, reRun, check.attributes = FALSE) ## TRUE
 # Make 2 functions
 inner <- function(mean) {
   d <- 1
-  Cache(rnorm, n = 3, mean = mean)
+  rnorm(n = 3, mean = mean)
 }
 outer <- function(n) {
-  Cache(inner, 0.1, cachePath = tmpdir2)
+  inner(0.1) |> Cache(cachePath = tmpdir2)
 }
 
 # make 2 different cache paths
-tmpdir1 <- file.path(tempdir(), "first")
-tmpdir2 <- file.path(tempdir(), "second")
+tmpdir1 <- file.path(tempfile(), "first")
+tmpdir2 <- file.path(tempfile(), "second")
 
 # Run the Cache ... notOlderThan propagates to all 3 Cache calls,
 #   but cachePath is tmpdir1 in top level Cache and all nested
 #   Cache calls, unless individually overridden ... here inner
 #   uses tmpdir2 repository
-Cache(outer, n = 2, cachePath = tmpdir1, notOlderThan = Sys.time())
+outer(n = 2) |> Cache(cachePath = tmpdir1)
 
 showCache(tmpdir1) # 2 function calls
 showCache(tmpdir2) # 1 function call
@@ -192,22 +203,22 @@ outerTag <- "outerTag"
 innerTag <- "innerTag"
 inner <- function(mean) {
   d <- 1
-  Cache(rnorm, n = 3, mean = mean, notOlderThan = Sys.time() - 1e5, userTags = innerTag)
+  rnorm(n = 3, mean = mean) |> Cache(notOlderThan = Sys.time() - 1e5, userTags = innerTag)
 }
 outer <- function(n) {
-  Cache(inner, 0.1)
+  inner(0.1) |> Cache()
 }
-aa <- Cache(outer, n = 2, cachePath = tmpdir1, userTags = outerTag)
+aa <- Cache(outer, n = 2) |> Cache(cachePath = tmpdir1, userTags = outerTag)
 showCache(tmpdir1) # rnorm function has outerTag and innerTag, inner and outer only have outerTag
 
 ## ----selective-cacheId--------------------------------------------------------
 ### cacheId
 set.seed(1)
-Cache(rnorm, 1, cachePath = tmpdir1)
-# manually look at output attribute which shows cacheId: 7072c305d8c69df0
-Cache(rnorm, 1, cachePath = tmpdir1, cacheId = "422bae4ed2f770cc") # same value
+rnorm(1) |> Cache(cachePath = tmpdir1)
+# manually look at output attribute which shows cacheId: 422bae4ed2f770cc
+rnorm(1) |> Cache(cachePath = tmpdir1, cacheId = "422bae4ed2f770cc") # same value
 # override even with different inputs:
-Cache(rnorm, 2, cachePath = tmpdir1, cacheId = "422bae4ed2f770cc")
+rnorm(2) |> Cache(cachePath = tmpdir1, cacheId = "422bae4ed2f770cc")
 
 ## ----manual-cache-------------------------------------------------------------
 # As of reproducible version 1.0, there is a new backend directly using DBI
